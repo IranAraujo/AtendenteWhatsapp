@@ -1,0 +1,64 @@
+/**
+ * Converte string "HH:mm" e data "YYYY-MM-DD" em objeto Date JS
+ */
+export function parseDateTime(dateStr, timeStr) {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return new Date(year, month - 1, day, hours, minutes, 0, 0);
+}
+/**
+ * Formata objeto Date JS para string "HH:mm"
+ */
+export function formatTimeHHMM(date) {
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${hours}:${minutes}`;
+}
+/**
+ * Calcula os horários de início disponíveis para um determinado serviço em um dia específico.
+ */
+export function calculateAvailableSlots(params) {
+    const { dateStr, serviceDurationMinutes, schedule, isExceptionUnavailable = false, existingAppointments, slotIntervalMinutes = 30 } = params;
+    // Se o profissional registrou folga/exceção de indisponibilidade
+    if (isExceptionUnavailable || !schedule) {
+        return [];
+    }
+    const workStart = parseDateTime(dateStr, schedule.startTime);
+    const workEnd = parseDateTime(dateStr, schedule.endTime);
+    const lunchStart = schedule.lunchStartTime ? parseDateTime(dateStr, schedule.lunchStartTime) : null;
+    const lunchEnd = schedule.lunchEndTime ? parseDateTime(dateStr, schedule.lunchEndTime) : null;
+    const availableSlots = [];
+    let currentSlotStart = new Date(workStart.getTime());
+    while (currentSlotStart < workEnd) {
+        const currentSlotEnd = new Date(currentSlotStart.getTime() + serviceDurationMinutes * 60 * 1000);
+        // 1. O slot termina após o horário de expediente?
+        if (currentSlotEnd > workEnd) {
+            break;
+        }
+        // 2. O slot conflita com o horário de almoço?
+        let overlapsLunch = false;
+        if (lunchStart && lunchEnd) {
+            // Conflito se o início do slot for antes do fim do almoço E o fim do slot for depois do início do almoço
+            if (currentSlotStart < lunchEnd && currentSlotEnd > lunchStart) {
+                overlapsLunch = true;
+            }
+        }
+        // 3. O slot conflita com algum agendamento existente?
+        let overlapsAppointment = false;
+        if (!overlapsLunch) {
+            for (const appt of existingAppointments) {
+                if (currentSlotStart < appt.endTime && currentSlotEnd > appt.startTime) {
+                    overlapsAppointment = true;
+                    break;
+                }
+            }
+        }
+        // Se estiver livre de almoço e de outros agendamentos, adiciona à lista
+        if (!overlapsLunch && !overlapsAppointment) {
+            availableSlots.push(formatTimeHHMM(currentSlotStart));
+        }
+        // Incrementa pelo intervalo do slot (ex: de 30 em 30 min)
+        currentSlotStart = new Date(currentSlotStart.getTime() + slotIntervalMinutes * 60 * 1000);
+    }
+    return availableSlots;
+}

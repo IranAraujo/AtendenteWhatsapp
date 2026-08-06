@@ -1,0 +1,178 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  PROFESSIONAL
+  RECEPTIONIST
+}
+
+enum AppointmentStatus {
+  PENDING_PAYMENT
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+enum DepositType {
+  FIXED
+  PERCENTAGE
+}
+
+model Tenant {
+  id                    String   @id @default(uuid())
+  name                  String
+  slug                  String   @unique
+  planId                String   @default("SOLO")
+  active                Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  // WhatsApp Configuration
+  whatsappStatus        String   @default("DISCONNECTED") // DISCONNECTED, CONNECTING, CONNECTED
+  whatsappInstance      String?  @unique
+
+  // Feature Toggles & Settings
+  enablePixDeposit      Boolean     @default(false)
+  pixDepositType        DepositType @default(FIXED)
+  pixDepositValue       Float       @default(0.0)
+  pixGatewayConfig      Json?
+
+  enableAudioTranscribe Boolean  @default(true)
+  enableHumanTransfer   Boolean  @default(true)
+
+  // Relationships
+  users                 User[]
+  services              Service[]
+  customers             Customer[]
+  appointments          Appointment[]
+  aiConfig              AiConfig?
+}
+
+model User {
+  id                    String   @id @default(uuid())
+  tenantId              String
+  tenant                Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name                  String
+  email                 String
+  phone                 String?
+  role                  Role     @default(PROFESSIONAL)
+  avatarUrl             String?
+  active                Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  schedules             WorkSchedule[]
+  exceptions            ScheduleException[]
+  appointments          Appointment[]
+  services              ProfessionalService[]
+}
+
+model Service {
+  id                    String   @id @default(uuid())
+  tenantId              String
+  tenant                Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name                  String
+  description           String?
+  durationMinutes       Int
+  price                 Float
+  active                Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  professionals         ProfessionalService[]
+  appointments          Appointment[]
+}
+
+model ProfessionalService {
+  id                    String   @id @default(uuid())
+  userId                String
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  serviceId             String
+  service               Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  customPrice           Float?
+  customDuration        Int?
+
+  @@unique([userId, serviceId])
+}
+
+model WorkSchedule {
+  id                    String   @id @default(uuid())
+  userId                String
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dayOfWeek             Int      // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  startTime             String   // HH:mm (e.g. "08:00")
+  endTime               String   // HH:mm (e.g. "18:00")
+  lunchStartTime        String?  // HH:mm (e.g. "12:00")
+  lunchEndTime          String?  // HH:mm (e.g. "13:00")
+  active                Boolean  @default(true)
+
+  @@unique([userId, dayOfWeek])
+}
+
+model ScheduleException {
+  id                    String   @id @default(uuid())
+  userId                String
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date                  String   // YYYY-MM-DD
+  isUnavailable         Boolean  @default(true)
+  customStartTime       String?  // HH:mm
+  customEndTime         String?  // HH:mm
+  reason                String?
+}
+
+model Customer {
+  id                    String   @id @default(uuid())
+  tenantId              String
+  tenant                Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  phone                 String
+  name                  String
+  notes                 String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  appointments          Appointment[]
+
+  @@unique([tenantId, phone])
+}
+
+model Appointment {
+  id                    String            @id @default(uuid())
+  tenantId              String
+  tenant                Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId                String
+  user                  User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  serviceId             String
+  service               Service           @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  customerId            String?
+  customer              Customer?         @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  
+  customerName          String
+  customerPhone         String
+  startTime             DateTime
+  endTime               DateTime
+  status                AppointmentStatus @default(CONFIRMED)
+
+  pixTxId               String?
+  pixQrCode             String?
+  notes                 String?
+
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+}
+
+model AiConfig {
+  id                    String   @id @default(uuid())
+  tenantId              String   @unique
+  tenant                Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  systemPrompt          String   @default("Você é um atendente simpático e prestativo. Ajude o cliente a agendar seus serviços.")
+  businessInfo          String   @default("Endereço: Rua Principal, 100. Horário de Atendimento: Segunda a Sábado das 08:00 às 18:00.")
+  welcomeMessage        String?
+}

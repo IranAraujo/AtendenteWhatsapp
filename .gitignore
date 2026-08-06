@@ -1,0 +1,20 @@
+# Dependências
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Variáveis de ambiente e Chaves de API
+.env
+.env.local
+.env.*.local
+
+# Autenticação e Sessões do WhatsApp Baileys (Sessões reais do WhatsApp)
+data/baileys_auth_*
+
+# Sistema Operacional e IDEs
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log

@@ -1,0 +1,321 @@
+{
+  "tenants": [
+    {
+      "id": "tenant-demo-estilo",
+      "name": "Estilo & Beleza Premium",
+      "slug": "estilo-beleza-premium",
+      "ownerEmail": "dono@estilobeleza.com.br",
+      "planTier": "MULTI_USER",
+      "maxUsers": 5,
+      "status": "ACTIVE",
+      "enablePixDeposit": true,
+      "pixDepositValue": 15,
+      "aiConfig": {
+        "systemPrompt": "Somos um centro de estética e beleza moderno. Trate o cliente com cordialidade, simpatia e eficiência.",
+        "businessInfo": "Endereço: Av. Central, 500 - Centro. Horário: Segunda a Sábado das 08h às 19h."
+      },
+      "users": [
+        {
+          "id": "usr-1",
+          "tenantId": "tenant-demo-estilo",
+          "name": "Lucas Silva",
+          "email": "dono@estilobeleza.com.br",
+          "passwordHash": "$2b$10$VPKOpXFR6eN0ugjZp8BIBuT2YBfdy6xq0UyY3nZINcd/LN787q9Fu",
+          "role": "OWNER",
+          "professionalId": "prof-1"
+        },
+        {
+          "id": "usr-2",
+          "tenantId": "tenant-demo-estilo",
+          "name": "Matheus Santos",
+          "email": "matheus@estilobeleza.com.br",
+          "passwordHash": "$2b$10$/Rf3jn2VDAavfRDnC/b0TevBWnH4mwAvDmjU8W9g4oDzZfy8h5LU.",
+          "role": "PROFESSIONAL",
+          "professionalId": "prof-2"
+        }
+      ],
+      "remindersConfig": {
+        "enable24hReminder": true,
+        "custom24hText": "Olá {nome}! Passando para lembrar do seu agendamento amanhã ({data}) às {horario} com {profissional}. ✨\n\nResponda *1* para *CONFIRMAR* ou *2* para *CANCELAR*.",
+        "enable1hReminder": true,
+        "custom1hText": "Olá {nome}! Seu atendimento é daqui a 1 hora às {horario} com {profissional}. ✨\n\nResponda *1* para *CONFIRMAR* ou *2* para *CANCELAR*."
+      }
+    },
+    {
+      "id": "tenant-demo-clinica",
+      "name": "Clínica Saúde & Bem Estar",
+      "slug": "clinica-saude-bemestar",
+      "ownerEmail": "contato@clinicasaude.com.br",
+      "planTier": "SINGLE_USER",
+      "maxUsers": 1,
+      "status": "ACTIVE",
+      "enablePixDeposit": false,
+      "pixDepositValue": 0,
+      "aiConfig": {
+        "systemPrompt": "Somos uma clínica de saúde e bem-estar. Trate os pacientes com empatia, respeito e clareza.",
+        "businessInfo": "Endereço: Rua das Flores, 120 - Jardim América. Horário: Segunda a Sexta das 08h às 18h."
+      },
+      "users": [
+        {
+          "id": "usr-3",
+          "tenantId": "tenant-demo-clinica",
+          "name": "Dra. Ana Paula",
+          "email": "contato@clinicasaude.com.br",
+          "passwordHash": "$2b$10$oLO.A7BReLsZoUTruILECuDO.1AMKPbmuiCT2V4/KJmmPeAogO2q2",
+          "role": "OWNER",
+          "professionalId": "prof-3"
+        }
+      ],
+      "remindersConfig": {
+        "enable24hReminder": true,
+        "custom24hText": "Olá {nome}! Passando para lembrar do seu agendamento amanhã ({data}) às {horario} com {profissional}. ✨\n\nResponda *1* para *CONFIRMAR* ou *2* para *CANCELAR*.",
+        "enable1hReminder": true,
+        "custom1hText": "Olá {nome}! Seu atendimento é daqui a 1 hora às {horario} com {profissional}. ✨\n\nResponda *1* para *CONFIRMAR* ou *2* para *CANCELAR*."
+      }
+    }
+  ],
+  "services": [
+    {
+      "id": "srv-1",
+      "tenantId": "tenant-demo-estilo",
+      "name": "Atendimento Estético Completo",
+      "price": 80,
+      "durationMinutes": 45,
+      "description": "Sessão completa de cuidados com pele e cabelo"
+    },
+    {
+      "id": "srv-2",
+      "tenantId": "tenant-demo-estilo",
+      "name": "Corte e Modelagem Especial",
+      "price": 50,
+      "durationMinutes": 30,
+      "description": "Corte personalizado e finalização"
+    },
+    {
+      "id": "srv-3",
+      "tenantId": "tenant-demo-clinica",
+      "name": "Consulta / Avaliação Geral",
+      "price": 120,
+      "durationMinutes": 60,
+      "description": "Avaliação presencial completa com profissional especializado"
+    },
+    {
+      "id": "srv-1785951284149",
+      "tenantId": "tenant-demo-estilo",
+      "name": "Corte simples",
+      "price": 50,
+      "durationMinutes": 30,
+      "description": ""
+    }
+  ],
+  "products": [
+    {
+      "id": "prod-1",
+      "tenantId": "tenant-demo-estilo",
+      "name": "Kit Hidratação Intensiva",
+      "price": 59.9,
+      "stock": 12,
+      "description": "Creme hidratante e shampoo nutritivo (250ml)"
+    },
+    {
+      "id": "prod-2",
+      "tenantId": "tenant-demo-estilo",
+      "name": "Óleo Reparador de Pontas",
+      "price": 34.9,
+      "stock": 15,
+      "description": "Sérum concentrado reparador de fios (30ml)"
+    }
+  ],
+  "professionals": [
+    {
+      "id": "prof-1",
+      "tenantId": "tenant-demo-estilo",
+      "name": "Lucas Silva",
+      "userId": "usr-1",
+      "servicesHandled": [
+        "srv-1",
+        "srv-1785951284149"
+      ],
+      "workSchedule": {
+        "startTime": "09:00",
+        "endTime": "19:00",
+        "lunchStartTime": "12:30",
+        "lunchEndTime": "13:30",
+        "workDays": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      }
+    },
+    {
+      "id": "prof-2",
+      "tenantId": "tenant-demo-estilo",
+      "name": "Matheus Santos",
+      "userId": "usr-2"
+    },
+    {
+      "id": "prof-3",
+      "tenantId": "tenant-demo-clinica",
+      "name": "Dra. Ana Paula",
+      "userId": "usr-3",
+      "servicesHandled": [
+        "srv-3"
+      ],
+      "workSchedule": {
+        "startTime": "08:00",
+        "endTime": "20:00",
+        "lunchStartTime": "12:00",
+        "lunchEndTime": "13:00",
+        "workDays": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ]
+      }
+    }
+  ],
+  "appointments": [
+    {
+      "id": "appt-demo-1",
+      "tenantId": "tenant-demo-estilo",
+      "professionalId": "prof-1",
+      "serviceId": "srv-1",
+      "customerName": "Carlos Eduardo",
+      "customerPhone": "5511987654321",
+      "startTime": "2026-08-04T17:00:00.000Z",
+      "endTime": "2026-08-04T17:45:00.000Z",
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "appt-demo-2",
+      "tenantId": "tenant-demo-estilo",
+      "professionalId": "prof-2",
+      "serviceId": "srv-2",
+      "customerName": "Rafael Souza",
+      "customerPhone": "5511991238877",
+      "startTime": "2026-08-04T18:30:00.000Z",
+      "endTime": "2026-08-04T19:00:00.000Z",
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "appt-1785867739232",
+      "tenantId": "tenant-demo-estilo",
+      "professionalId": "prof-1",
+      "serviceId": "srv-1",
+      "customerName": "Cliente",
+      "customerPhone": "5511955554444",
+      "startTime": "2026-08-06T16:00:00.000Z",
+      "endTime": "2026-08-06T16:45:00.000Z",
+      "status": "CONFIRMED",
+      "pixQrCode": "00020126580014br.gov.bcb.pix01361785867739232"
+    },
+    {
+      "id": "appt-1785867741001",
+      "tenantId": "tenant-demo-estilo",
+      "professionalId": "prof-1",
+      "serviceId": "srv-1",
+      "customerName": "Cliente Teste",
+      "customerPhone": "5511933332222",
+      "startTime": "2026-08-06T17:00:00.000Z",
+      "endTime": "2026-08-06T17:45:00.000Z",
+      "status": "CONFIRMED",
+      "pixQrCode": "00020126580014br.gov.bcb.pix01361785867741001"
+    },
+    {
+      "id": "appt-1785868994766",
+      "tenantId": "tenant-demo-estilo",
+      "professionalId": "Matheus Santos",
+      "serviceId": "Atendimento Estético Completo",
+      "customerName": "Iran Araujo",
+      "customerPhone": "(00) 00000-0000",
+      "startTime": "2026-08-05T13:00:00.000Z",
+      "endTime": "2026-08-05T13:45:00.000Z",
+      "status": "PENDING_PAYMENT",
+      "pixQrCode": "00020126580014br.gov.bcb.pix01361785868994766"
+    },
+    {
+      "id": "appt-1785927979749",
+      "tenantId": "tenant-demo-estilo",
+      "professionalId": "prof-1",
+      "serviceId": "srv-1",
+      "customerName": "Iran Araujo",
+      "customerPhone": "5511977776666",
+      "startTime": "2026-08-06T17:00:00.000Z",
+      "endTime": "2026-08-06T17:45:00.000Z",
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "appt-1785927991384",
+      "tenantId": "tenant-demo-estilo",
+      "professionalId": "prof-1",
+      "serviceId": "srv-1",
+      "customerName": "Cliente",
+      "customerPhone": "5511988887777",
+      "startTime": "2026-08-06T18:00:00.000Z",
+      "endTime": "2026-08-06T18:45:00.000Z",
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "appt-1785928026086",
+      "tenantId": "tenant-demo-estilo",
+      "professionalId": "prof-1",
+      "serviceId": "srv-1",
+      "customerName": "Iran Araujo",
+      "customerPhone": "5511944443333",
+      "startTime": "2026-08-06T19:00:00.000Z",
+      "endTime": "2026-08-06T19:45:00.000Z",
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "appt-1785951298992",
+      "tenantId": "tenant-demo-estilo",
+      "professionalId": "prof-1",
+      "serviceId": "srv-1",
+      "customerName": "Iran",
+      "customerPhone": "5584988234441",
+      "startTime": "2026-08-06T14:30:00.000Z",
+      "endTime": "2026-08-06T15:15:00.000Z",
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "appt-1785952930644",
+      "tenantId": "tenant-demo-estilo",
+      "professionalId": "prof-1",
+      "serviceId": "srv-1",
+      "customerName": "Julio Augusto",
+      "customerPhone": "5584988234449",
+      "startTime": "2026-08-06T13:00:00.000Z",
+      "endTime": "2026-08-06T13:45:00.000Z",
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "appt-1785956564339",
+      "tenantId": "tenant-demo-estilo",
+      "professionalId": "prof-1",
+      "serviceId": "srv-1",
+      "customerName": "Julio Silva",
+      "customerPhone": "558491092495",
+      "startTime": "2026-08-06T20:00:00.000Z",
+      "endTime": "2026-08-06T20:45:00.000Z",
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "appt-1785959348294",
+      "tenantId": "tenant-demo-clinica",
+      "professionalId": "prof-3",
+      "serviceId": "srv-3",
+      "customerName": "Cliente",
+      "customerPhone": "5584988234441",
+      "startTime": "2026-08-05T21:00:00.000Z",
+      "endTime": "2026-08-05T21:30:00.000Z",
+      "status": "CANCELLED",
+      "reminder1hSent": true
+    }
+  ]
+}
