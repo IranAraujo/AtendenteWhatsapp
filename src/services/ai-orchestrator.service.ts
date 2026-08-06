@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { dbRepository } from './db.service.js';
-import { calculateAvailableSlots } from './schedule.service.js';
+import { calculateAvailableSlots, ScheduleTimeBlock } from './schedule.service.js';
 import { buildSystemInstruction, aiTools } from './ai.service.js';
 
 export interface ProcessMessageResult {
@@ -308,7 +308,7 @@ export class AiOrchestratorService {
       const service = services.find(s => s.id === serviceId) || services[0];
       const serviceDuration = service ? service.durationMinutes : 30;
 
-      let scheduleToUse = { startTime: '08:00', endTime: '18:00', lunchStartTime: '12:00', lunchEndTime: '13:00' };
+      let scheduleToUse: ScheduleTimeBlock = { startTime: '08:00', endTime: '18:00', lunchStartTime: '12:00', lunchEndTime: '13:00' };
 
       if (prof && prof.workSchedule) {
         const [y, m, d] = dateStr.split('-').map(Number);
@@ -644,14 +644,14 @@ ORIENTAÇÃO CRÍTICA DE RESPOSTA HUMANA:
 
         if (isExplicitReminderConfirm) {
           activeAppt.status = 'CONFIRMED';
-          await dbRepository.saveData();
+          await dbRepository.updateAppointmentDetails(activeAppt.id, { status: 'CONFIRMED' });
           return {
             replyText: `Maravilha, *${clientNameStr}*! Seu agendamento para *${dateFormatted} às ${timeStrFormatted}* foi **CONFIRMADO** com sucesso! Te esperamos aqui. `,
             functionCallsExecuted: ['confirm_appointment']
           };
         } else if (isExplicitReminderCancel) {
           activeAppt.status = 'CANCELLED';
-          await dbRepository.saveData();
+          await dbRepository.updateAppointmentDetails(activeAppt.id, { status: 'CANCELLED' });
           return {
             replyText: `Entendido, *${clientNameStr}*! Seu agendamento para *${dateFormatted} às ${timeStrFormatted}* foi **CANCELADO**. Se quiser agendar para outro dia ou horário, é só nos chamar por aqui! `,
             functionCallsExecuted: ['cancel_appointment']

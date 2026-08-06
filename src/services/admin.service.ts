@@ -29,8 +29,10 @@ export class AdminService {
       users: [
         {
           id: `usr-${Date.now()}`,
+          tenantId: `tenant-${Date.now()}`,
           name: data.name + ' (Admin)',
           email: data.ownerEmail,
+          passwordHash: '',
           role: 'OWNER'
         }
       ]
@@ -47,7 +49,7 @@ export class AdminService {
     return dbRepository.deleteTenant(tenantId);
   }
 
-  async addTenantUser(tenantId: string, user: { name: string; email: string; role: 'BARBER' | 'RECEPTIONIST' }): Promise<{ success: boolean; message: string; user?: DbTenantUser }> {
+  async addTenantUser(tenantId: string, user: { name: string; email: string; role: 'PROFESSIONAL' | 'RECEPTIONIST' | 'BARBER' }): Promise<{ success: boolean; message: string; user?: DbTenantUser }> {
     const tenant = await dbRepository.getTenantById(tenantId);
     if (!tenant) return { success: false, message: 'Tenant não encontrado' };
 
@@ -58,11 +60,15 @@ export class AdminService {
       };
     }
 
+    const newUserRole: DbTenantUser['role'] = (user.role === 'BARBER' ? 'PROFESSIONAL' : user.role);
+
     const newUser: DbTenantUser = {
       id: `usr-${Date.now()}`,
+      tenantId,
       name: user.name,
       email: user.email,
-      role: user.role
+      passwordHash: '',
+      role: newUserRole
     };
 
     tenant.users.push(newUser);

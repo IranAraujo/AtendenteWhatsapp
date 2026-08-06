@@ -18,3 +18,4 @@ data/baileys_auth_*
 .DS_Store
 Thumbs.db
 *.log
+dist/

@@ -23,8 +23,8 @@ export interface DbProductItem {
 export interface DbProfessionalWorkSchedule {
   startTime: string;       // "08:00"
   endTime: string;         // "18:00"
-  lunchStartTime?: string; // "12:00"
-  lunchEndTime?: string;   // "13:00"
+  lunchStartTime?: string | null; // "12:00"
+  lunchEndTime?: string | null;   // "13:00"
   workDays?: number[];     // [1, 2, 3, 4, 5, 6] (0=Dom, 1=Seg, 2=Ter, 3=Qua, 4=Qui, 5=Sex, 6=Sáb)
 }
 
@@ -74,7 +74,7 @@ export interface DbTenantItem {
   name: string;
   slug: string;
   ownerEmail: string;
-  planTier: 'SINGLE_USER' | 'MULTI_USER';
+  planTier: 'SINGLE_USER' | 'MULTI_USER' | 'ENTERPRISE';
   maxUsers: number;
   status: 'ACTIVE' | 'SUSPENDED';
   enablePixDeposit?: boolean;

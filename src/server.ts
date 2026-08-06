@@ -11,7 +11,7 @@ import { aiOrchestrator } from './services/ai-orchestrator.service.js';
 import { whatsappService } from './services/whatsapp.service.js';
 import { adminService } from './services/admin.service.js';
 import { dbRepository } from './services/db.service.js';
-import { generateJwtToken, comparePassword } from './services/auth.service.js';
+import { generateJwtToken, comparePassword, hashPassword } from './services/auth.service.js';
 import { requireAuth } from './middleware/auth.middleware.js';
 
 dotenv.config();
