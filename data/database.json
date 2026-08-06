@@ -36,9 +36,9 @@
       ],
       "remindersConfig": {
         "enable24hReminder": true,
-        "custom24hText": "Olá {nome}! Passando para lembrar do seu agendamento amanhã ({data}) às {horario} com {profissional}. ✨\n\nResponda *1* para *CONFIRMAR* ou *2* para *CANCELAR*.",
+        "custom24hText": "Olá {nome}! Passando para lembrar do seu agendamento amanhã ({data}) às {horario} com {profissional}. \n\nResponda *1* para *CONFIRMAR* ou *2* para *CANCELAR*.",
         "enable1hReminder": true,
-        "custom1hText": "Olá {nome}! Seu atendimento é daqui a 1 hora às {horario} com {profissional}. ✨\n\nResponda *1* para *CONFIRMAR* ou *2* para *CANCELAR*."
+        "custom1hText": "Olá {nome}! Seu atendimento é daqui a 1 hora às {horario} com {profissional}. \n\nResponda *1* para *CONFIRMAR* ou *2* para *CANCELAR*."
       }
     },
     {
@@ -68,9 +68,9 @@
       ],
       "remindersConfig": {
         "enable24hReminder": true,
-        "custom24hText": "Olá {nome}! Passando para lembrar do seu agendamento amanhã ({data}) às {horario} com {profissional}. ✨\n\nResponda *1* para *CONFIRMAR* ou *2* para *CANCELAR*.",
+        "custom24hText": "Olá {nome}! Passando para lembrar do seu agendamento amanhã ({data}) às {horario} com {profissional}. \n\nResponda *1* para *CONFIRMAR* ou *2* para *CANCELAR*.",
         "enable1hReminder": true,
-        "custom1hText": "Olá {nome}! Seu atendimento é daqui a 1 hora às {horario} com {profissional}. ✨\n\nResponda *1* para *CONFIRMAR* ou *2* para *CANCELAR*."
+        "custom1hText": "Olá {nome}! Seu atendimento é daqui a 1 hora às {horario} com {profissional}. \n\nResponda *1* para *CONFIRMAR* ou *2* para *CANCELAR*."
       }
     }
   ],
@@ -210,8 +210,8 @@
       "serviceId": "srv-1",
       "customerName": "Cliente",
       "customerPhone": "5511955554444",
-      "startTime": "2026-08-06T16:00:00.000Z",
-      "endTime": "2026-08-06T16:45:00.000Z",
+      "startTime": "2026-08-07T16:00:00.000Z",
+      "endTime": "2026-08-07T16:45:00.000Z",
       "status": "CONFIRMED",
       "pixQrCode": "00020126580014br.gov.bcb.pix01361785867739232"
     },
@@ -222,8 +222,8 @@
       "serviceId": "srv-1",
       "customerName": "Cliente Teste",
       "customerPhone": "5511933332222",
-      "startTime": "2026-08-06T17:00:00.000Z",
-      "endTime": "2026-08-06T17:45:00.000Z",
+      "startTime": "2026-08-07T17:00:00.000Z",
+      "endTime": "2026-08-07T17:45:00.000Z",
       "status": "CONFIRMED",
       "pixQrCode": "00020126580014br.gov.bcb.pix01361785867741001"
     },

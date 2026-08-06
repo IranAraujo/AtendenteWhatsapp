@@ -684,6 +684,25 @@
     .calendar-cell.other-month { opacity: 0.3; }
     .calendar-cell.today { background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.4); }
 
+    .btn-view {
+      background: transparent;
+      color: var(--text-muted);
+      border: none;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-view.active, .btn-view:hover {
+      background: var(--primary);
+      color: white;
+    }
+
     .day-number { font-size: 13px; font-weight: 700; color: var(--text-muted); margin-bottom: 4px; }
 
     .cell-event {
@@ -697,6 +716,7 @@
     }
 
     .cell-event.confirmed { border-left-color: var(--accent-green); background: rgba(16, 185, 129, 0.15); }
+    .cell-event.past { border-left-color: #64748b; background: rgba(51, 65, 85, 0.4); color: #94a3b8; opacity: 0.8; }
 
     .chat-box {
       background: #0f172a;
@@ -763,9 +783,262 @@
       border-radius: var(--radius-lg);
       width: 520px; max-width: 92%; max-height: 90vh; overflow-y: auto; padding: 24px;
     }
+
+    /* ============================================================= */
+    /* RESPONSIVIDADE & ADAPTAÇÃO PARA DISPOSITIVOS MÓVEIS (CELULARES) */
+    /* ============================================================= */
+    
+    .mobile-header-bar {
+      display: none;
+    }
+
+    .sidebar-backdrop {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 9998;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+
+    .sidebar-backdrop.active {
+      display: block;
+      opacity: 1;
+    }
+
+    @media (max-width: 900px) {
+      body {
+        flex-direction: column;
+        overflow: auto;
+      }
+
+      .mobile-header-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 16px;
+        background: var(--bg-sidebar);
+        border-bottom: 1px solid var(--bg-card-border);
+        position: sticky;
+        top: 0;
+        z-index: 990;
+      }
+
+      .mobile-menu-btn {
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid var(--bg-card-border);
+        color: white;
+        width: 38px;
+        height: 38px;
+        border-radius: var(--radius-md);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        cursor: pointer;
+      }
+
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 280px;
+        z-index: 9999;
+        transform: translateX(-100%);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 4px 0 24px rgba(0, 0, 0, 0.6);
+      }
+
+      .sidebar.mobile-open {
+        transform: translateX(0);
+      }
+
+      .main-content {
+        padding: 16px 12px;
+        overflow-y: visible;
+      }
+
+      .tenant-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+        padding-bottom: 16px;
+        margin-bottom: 20px;
+      }
+
+      .tenant-header > div:last-child {
+        width: 100%;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      /* DASHBOARD MOBILE RE-ORDERING (PRÓXIMOS ATENDIMENTOS NO TOPO!) */
+      #tab-dashboard.active {
+        display: flex !important;
+        flex-direction: column;
+      }
+
+      .dashboard-bottom-grid {
+        display: flex !important;
+        flex-direction: column;
+      }
+
+      #dash-upcoming-box {
+        order: 1 !important;
+        margin-bottom: 16px;
+      }
+
+      .metrics-grid {
+        order: 2 !important;
+        grid-template-columns: 1fr !important;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+
+      #dash-chart-box {
+        order: 3 !important;
+      }
+
+      /* ENFASE NO CALENDÁRIO & ACESSIBILIDADE */
+      #calendar-controls-bar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+      }
+
+      #calendar-controls-bar > div {
+        width: 100%;
+        justify-content: space-between;
+      }
+
+      #calendar-controls-bar .btn-group {
+        display: flex;
+        width: 100%;
+      }
+
+      #calendar-controls-bar .btn-group button {
+        flex: 1;
+        text-align: center;
+        justify-content: center;
+        padding: 8px 4px;
+        font-size: 12.5px;
+      }
+
+      .calendar-grid-wrapper {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        border-radius: var(--radius-md);
+      }
+
+      .calendar-grid {
+        min-width: 580px;
+      }
+
+      .calendar-cell {
+        min-height: 85px;
+        padding: 4px;
+      }
+
+      .day-number {
+        font-size: 11px;
+      }
+
+      .cell-event {
+        font-size: 10.5px;
+        padding: 4px 6px;
+      }
+
+      /* CORREÇÃO DE PAINÉIS E CARDS EM 2 COLUNAS (IA, EQUIPE, SERVIÇOS) */
+      .panel-box {
+        padding: 16px 12px !important;
+      }
+
+      .panel-box-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+
+      .panel-box-header button, 
+      .panel-box-header .btn-primary,
+      .panel-box-header .btn-secondary {
+        width: 100% !important;
+        justify-content: center !important;
+        text-align: center !important;
+      }
+
+      #cfg-section-ia > div {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+      }
+
+      #team-cards-container, 
+      #services-grid-container, 
+      #products-grid-container {
+        grid-template-columns: 1fr !important;
+        gap: 14px !important;
+      }
+
+      #header-profile-btn {
+        display: none !important;
+      }
+
+      .modal-card {
+        width: 95% !important;
+        max-width: 95% !important;
+        padding: 18px 14px !important;
+        max-height: 92vh !important;
+      }
+
+      .form-control, button {
+        min-height: 42px;
+      }
+    }
+
+    @media (max-width: 500px) {
+      .tenant-title {
+        font-size: 19px;
+      }
+
+      .tenant-subtitle {
+        font-size: 12px;
+      }
+
+      .metric-value {
+        font-size: 24px;
+      }
+
+      #header-user-name {
+        display: none;
+      }
+    }
   </style>
-</head>
 <body>
+
+  <!-- Backdrop e Barra Superior Mobile -->
+  <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="closeMobileSidebar()"></div>
+
+  <div class="mobile-header-bar" id="mobile-topbar">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <button type="button" class="mobile-menu-btn" onclick="toggleMobileSidebar()" title="Abrir Menu">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+      <div style="font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 16px; color: white;">
+        SaaS Atendente
+      </div>
+    </div>
+
+    <button type="button" onclick="openUserProfileModal()" style="background: rgba(30, 41, 59, 0.8); border: 1px solid var(--bg-card-border); border-radius: 30px; padding: 4px 10px 4px 6px; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+      <div style="width: 28px; height: 28px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px;" id="mobile-user-avatar">
+        U
+      </div>
+    </button>
+  </div>
 
   <!-- Sidebar -->
   <aside class="sidebar">
@@ -820,9 +1093,6 @@
           <li class="nav-subitem" data-subtab="ia" onclick="selectConfigOption('ia', this)">
             <i class="fa-solid fa-brain"></i> Personalizar IA & Chat
           </li>
-          <li class="nav-subitem" data-subtab="pix" onclick="selectConfigOption('pix', this)">
-            <i class="fa-solid fa-qrcode"></i> Módulo Sinal PIX
-          </li>
           <li class="nav-subitem" data-subtab="reminders" onclick="selectConfigOption('reminders', this)">
             <i class="fa-solid fa-bell"></i> Lembretes Automáticos
           </li>
@@ -852,9 +1122,23 @@
           <p class="tenant-subtitle">Painel Administrativo de Atendimento</p>
         </div>
 
-        <div class="status-badge-pill" id="whatsapp-header-badge">
-          <span class="badge-dot" id="whatsapp-header-dot"></span>
-          <span id="whatsapp-header-text">WhatsApp Desconectado</span>
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <div class="status-badge-pill" id="whatsapp-header-badge">
+            <span class="badge-dot" id="whatsapp-header-dot"></span>
+            <span id="whatsapp-header-text">WhatsApp Desconectado</span>
+          </div>
+
+          <!-- BOTAO/PERFIL DO USUARIO NO CANTO SUPERIOR DIREITO -->
+          <button type="button" id="header-profile-btn" onclick="openUserProfileModal()" style="background: rgba(30, 41, 59, 0.8); border: 1px solid var(--bg-card-border); border-radius: 30px; padding: 6px 14px 6px 8px; display: flex; align-items: center; gap: 10px; cursor: pointer; transition: all 0.2s ease;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--bg-card-border)'" title="Ver Perfil do Usuário & Conta">
+            <div style="width: 32px; height: 32px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px;" id="header-user-avatar">
+              U
+            </div>
+            <div style="text-align: left;">
+              <div style="font-size: 13px; font-weight: 700; color: white; line-height: 1.1;" id="header-user-name">Usuário</div>
+              <span id="header-plan-badge" style="background: rgba(59, 130, 246, 0.2); color: #60a5fa; padding: 2px 6px; border-radius: 10px; font-size: 10px; font-weight: 700; text-transform: uppercase;">Single-User</span>
+            </div>
+            <i class="fa-solid fa-chevron-down" style="font-size: 11px; color: var(--text-muted); margin-left: 4px;"></i>
+          </button>
         </div>
       </div>
 
@@ -897,7 +1181,7 @@
         <div class="dashboard-bottom-grid">
           
           <!-- Left Column: Próximos Agendamentos -->
-          <div class="panel-box">
+          <div class="panel-box" id="dash-upcoming-box">
             <div class="panel-box-header">
               <div class="panel-box-title"><i class="fa-regular fa-clock"></i> Próximos Agendamentos</div>
               <div style="display: flex; align-items: center; gap: 12px;">
@@ -948,7 +1232,7 @@
           </div>
 
           <!-- Right Column: Atividade Semanal Chart -->
-          <div class="panel-box">
+          <div class="panel-box" id="dash-chart-box">
             <div class="panel-box-header">
               <div class="panel-box-title">Atividade Semanal</div>
             </div>
@@ -980,7 +1264,7 @@
             <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
               <label style="font-size: 13px; font-weight: 600; color: var(--text-muted);">Profissional:</label>
               <select id="calendar-professional-filter" class="form-control" style="width: auto; padding: 6px 12px; font-size: 13px;" onchange="loadAppointmentsFromServer()">
-                <option value="ALL">👤 Todos os Profissionais</option>
+                <option value="ALL"> Todos os Profissionais</option>
               </select>
               <button class="btn-primary" onclick="openNewAppointmentModal()" style="padding: 8px 16px; font-weight: 600; background: var(--primary);">
                 <i class="fa-solid fa-plus"></i> Novo Agendamento
@@ -988,16 +1272,24 @@
             </div>
           </div>
 
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 14px;">
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <button class="btn-secondary" onclick="prevMonth()"><i class="fa-solid fa-chevron-left"></i></button>
-              <h2 id="calendar-month-title" style="font-size: 18px; font-weight: 700;">Agosto 2026</h2>
-              <button class="btn-secondary" onclick="nextMonth()"><i class="fa-solid fa-chevron-right"></i></button>
-              <button class="btn-secondary" onclick="currentMonth()" style="margin-left: 8px;">Hoje</button>
+          <div id="calendar-controls-bar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 14px;">
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <button class="btn-secondary" onclick="prevCalendar()" title="Anterior"><i class="fa-solid fa-chevron-left"></i></button>
+              <button class="btn-secondary" onclick="todayCalendar()" style="font-weight: 700; background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4);">Hoje</button>
+              <button class="btn-secondary" onclick="nextCalendar()" title="Próximo"><i class="fa-solid fa-chevron-right"></i></button>
+              <h2 id="calendar-month-title" style="font-size: 18px; font-weight: 700; margin-left: 10px;">Agosto 2026</h2>
+            </div>
+
+            <div style="display: flex; background: #0f172a; border: 1px solid var(--bg-card-border); border-radius: 8px; padding: 4px; gap: 4px;" class="btn-group">
+              <button id="view-btn-month" class="btn-view active" onclick="switchCalendarView('month')"><i class="fa-solid fa-calendar-days"></i> Mês</button>
+              <button id="view-btn-week" class="btn-view" onclick="switchCalendarView('week')"><i class="fa-solid fa-calendar-week"></i> Semana</button>
+              <button id="view-btn-day" class="btn-view" onclick="switchCalendarView('day')"><i class="fa-regular fa-calendar-check"></i> Dia (Hoje)</button>
             </div>
           </div>
 
-          <div class="calendar-grid" id="calendar-cells-container"></div>
+          <div class="calendar-grid-wrapper">
+            <div id="calendar-cells-container"></div>
+          </div>
         </div>
       </div>
 
@@ -1107,7 +1399,7 @@
                   <span id="chat-simulator-title">Simulador de Cliente no WhatsApp</span>
                 </div>
                 <div class="chat-messages" id="chat-messages">
-                  <div class="message-bubble msg-bot">Olá! Sou a assistente virtual deste estabelecimento. Como posso te ajudar hoje? 😊</div>
+                  <div class="message-bubble msg-bot">Olá! Sou a assistente virtual deste estabelecimento. Como posso te ajudar hoje? </div>
                 </div>
                 <div class="chat-input-area">
                   <input type="text" id="chat-input" class="form-control" placeholder="Digite (ex: 'Quero agendar amanhã 14h')..." onkeypress="if(event.key === 'Enter') sendSimulatedMessage()">
@@ -1115,32 +1407,6 @@
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-
-        <!-- CONFIG SUBTAB 3: MÓDULO SINAL PIX -->
-        <div id="cfg-section-pix" class="config-section" style="display: none;">
-          <div class="panel-box">
-            <div class="panel-box-header">
-              <div class="panel-box-title"><i class="fa-solid fa-qrcode"></i> Módulo de Sinal PIX Anti-Faltas</div>
-            </div>
-
-            <div style="display: flex; align-items: center; justify-content: space-between; padding: 20px; background: #0f172a; border-radius: 12px; border: 1px solid var(--bg-card-border);">
-              <div>
-                <h4 style="font-size: 16px;">Exigir Sinal em Dinheiro para Confirmar Agendamento</h4>
-                <p style="color: var(--text-muted); font-size: 13px; margin-top: 4px;">O agendamento só fica confirmado quando o cliente realizar o pagamento do PIX.</p>
-              </div>
-              <div>
-                <input type="checkbox" id="pix-toggle" style="width: 20px; height: 20px; cursor: pointer;">
-              </div>
-            </div>
-
-            <div class="form-group" style="margin-top: 20px;">
-              <label>Valor do Sinal (R$)</label>
-              <input type="number" id="pix-deposit-value-input" class="form-control" value="15.00" style="max-width: 200px;">
-            </div>
-
-            <button class="btn-primary" onclick="saveTenantPixSettings()"><i class="fa-solid fa-check"></i> Salvar Módulo PIX Desta Conta</button>
           </div>
         </div>
 
@@ -1165,7 +1431,7 @@
 
               <div class="form-group" style="margin-bottom: 0;">
                 <label>Modelo de Mensagem (24h Antes)</label>
-                <textarea id="rem-24h-text" class="form-control" rows="3" style="font-size: 13px; resize: vertical;">Olá {nome}! Passando para lembrar do seu agendamento amanhã ({data}) às {horario} com {profissional}. ✨&#10;&#10;Responda *1* para *CONFIRMAR* ou *2* para *CANCELAR*.</textarea>
+                <textarea id="rem-24h-text" class="form-control" rows="3" style="font-size: 13px; resize: vertical;">Olá {nome}! Passando para lembrar do seu agendamento amanhã ({data}) às {horario} com {profissional}. &#10;&#10;Responda *1* para *CONFIRMAR* ou *2* para *CANCELAR*.</textarea>
                 <small style="color: var(--text-muted); font-size: 11px; display: block; margin-top: 4px;">Variáveis aceitas: <code>{nome}</code>, <code>{horario}</code>, <code>{data}</code>, <code>{profissional}</code>, <code>{servico}</code></small>
               </div>
             </div>
@@ -1184,7 +1450,7 @@
 
               <div class="form-group" style="margin-bottom: 0;">
                 <label>Modelo de Mensagem (1h Antes)</label>
-                <textarea id="rem-1h-text" class="form-control" rows="3" style="font-size: 13px; resize: vertical;">Olá {nome}! Seu atendimento é daqui a 1 hora às {horario} com {profissional}. ✨&#10;&#10;Responda *1* para *CONFIRMAR* ou *2* para *CANCELAR*.</textarea>
+                <textarea id="rem-1h-text" class="form-control" rows="3" style="font-size: 13px; resize: vertical;">Olá {nome}! Seu atendimento é daqui a 1 hora às {horario} com {profissional}. &#10;&#10;Responda *1* para *CONFIRMAR* ou *2* para *CANCELAR*.</textarea>
                 <small style="color: var(--text-muted); font-size: 11px; display: block; margin-top: 4px;">Variáveis aceitas: <code>{nome}</code>, <code>{horario}</code>, <code>{data}</code>, <code>{profissional}</code>, <code>{servico}</code></small>
               </div>
             </div>
@@ -1279,7 +1545,7 @@
       </div>
 
       <div class="form-group">
-        <label>🗓️ Dias da Semana em que Atende:</label>
+        <label> Dias da Semana em que Atende:</label>
         <div style="display: flex; flex-wrap: wrap; gap: 10px; background: #0f172a; padding: 12px; border-radius: 8px; border: 1px solid var(--bg-card-border);">
           <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer;"><input type="checkbox" class="work-day-cb" value="1" checked> Seg</label>
           <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer;"><input type="checkbox" class="work-day-cb" value="2" checked> Ter</label>
@@ -1334,6 +1600,181 @@
     </div>
   </div>
 
+  <!-- MODAL: ÁREA DE PERFIL DO USUÁRIO & GESTÃO DA CONTA -->
+  <div class="modal-overlay" id="user-profile-modal">
+    <div class="modal-card" style="max-width: 680px; width: 90%;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <div style="width: 44px; height: 44px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 18px;" id="profile-modal-avatar">
+            U
+          </div>
+          <div>
+            <h3 style="font-size: 17px; font-weight: 700; color: white;" id="profile-modal-name">Nome do Usuário</h3>
+            <p style="color: var(--text-muted); font-size: 13px;" id="profile-modal-email">usuario@email.com</p>
+          </div>
+        </div>
+        <button type="button" class="btn-secondary" onclick="closeUserProfileModal()" style="padding: 6px 12px;"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <!-- ABAS NAVEGÁVEIS DO PERFIL -->
+      <div style="display: flex; border-bottom: 1px solid var(--bg-card-border); margin-bottom: 20px; gap: 8px; flex-wrap: wrap;">
+        <button type="button" class="btn-view active" id="pnav-account" onclick="switchProfileTab('account')"><i class="fa-solid fa-user"></i> Meus Dados & Plano</button>
+        <button type="button" class="btn-view" id="pnav-security" onclick="switchProfileTab('security')"><i class="fa-solid fa-key"></i> Segurança</button>
+        <button type="button" class="btn-view" id="pnav-upgrade" onclick="switchProfileTab('upgrade')"><i class="fa-solid fa-rocket"></i> Upgrade de Plano</button>
+        <button type="button" class="btn-view" id="pnav-billing" onclick="switchProfileTab('billing')"><i class="fa-solid fa-credit-card"></i> Pagamento</button>
+      </div>
+
+      <!-- CONTEÚDO 1: MEUS DADOS & PLANO -->
+      <div id="ptab-account" class="profile-tab-content">
+        <div style="background: #0f172a; border: 1px solid var(--bg-card-border); border-radius: 12px; padding: 18px; margin-bottom: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <h4 style="font-size: 14px; font-weight: 700; color: white;"><i class="fa-solid fa-store" style="color: var(--primary);"></i> Estabelecimento Conectado</h4>
+            <span id="profile-plan-tier-badge" style="background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700;">SINGLE_USER</span>
+          </div>
+          <p style="font-size: 15px; font-weight: 700; color: white;" id="profile-tenant-name">Nome do Estabelecimento</p>
+          <p style="color: var(--text-muted); font-size: 13px; margin-top: 4px;" id="profile-quota-text">Cota de Uso: 1 / 1 Profissional Cadastrado</p>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label>Seu Nome</label>
+            <input type="text" id="prof-input-name" class="form-control" readonly style="opacity: 0.8;">
+          </div>
+          <div class="form-group">
+            <label>Seu E-mail</label>
+            <input type="email" id="prof-input-email" class="form-control" readonly style="opacity: 0.8;">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Sua Função no Sistema</label>
+          <input type="text" id="prof-input-role" class="form-control" readonly style="opacity: 0.8;">
+        </div>
+      </div>
+
+      <!-- CONTEÚDO 2: SEGURANÇA (TROCA DE SENHA) -->
+      <div id="ptab-security" class="profile-tab-content" style="display: none;">
+        <h4 style="font-size: 14px; font-weight: 700; color: white; margin-bottom: 14px;"><i class="fa-solid fa-lock" style="color: var(--primary);"></i> Alteração de Senha de Acesso</h4>
+        
+        <div class="form-group">
+          <label>Senha Atual</label>
+          <input type="password" id="prof-curr-pass" class="form-control" placeholder="••••••••">
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label>Nova Senha</label>
+            <input type="password" id="prof-new-pass" class="form-control" placeholder="Mínimo 6 caracteres">
+          </div>
+          <div class="form-group">
+            <label>Confirmar Nova Senha</label>
+            <input type="password" id="prof-confirm-pass" class="form-control" placeholder="Repita a nova senha">
+          </div>
+        </div>
+
+        <div id="prof-pass-feedback" style="font-size: 12px; margin-bottom: 12px; display: none;"></div>
+
+        <button type="button" class="btn-primary" onclick="submitChangePassword()" style="width: 100%; font-weight: 700;">
+          <i class="fa-solid fa-check"></i> Salvar Nova Senha
+        </button>
+      </div>
+
+      <!-- CONTEÚDO 3: UPGRADE DE PLANO -->
+      <div id="ptab-upgrade" class="profile-tab-content" style="display: none;">
+        <h4 style="font-size: 14px; font-weight: 700; color: white; margin-bottom: 14px;"><i class="fa-solid fa-layer-group" style="color: var(--primary);"></i> Escolha o Plano Ideal para seu Estabelecimento</h4>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
+          
+          <!-- CARD SINGLE USER -->
+          <div style="background: #0f172a; border: 1px solid var(--bg-card-border); border-radius: 12px; padding: 16px; text-align: center; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <span style="background: rgba(148, 163, 184, 0.15); color: #94a3b8; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700;">SINGLE-USER</span>
+              <h5 style="font-size: 18px; font-weight: 800; color: white; margin-top: 8px;">R$ 97<span style="font-size: 12px; color: var(--text-muted);">/mês</span></h5>
+              <ul style="list-style: none; font-size: 12px; color: var(--text-muted); margin-top: 10px; text-align: left; display: flex; flex-direction: column; gap: 6px;">
+                <li><i class="fa-solid fa-check" style="color: #4ade80;"></i> 1 Conexão WhatsApp</li>
+                <li><i class="fa-solid fa-check" style="color: #4ade80;"></i> 1 Atendente IA</li>
+                <li><i class="fa-solid fa-check" style="color: #4ade80;"></i> 1 Profissional</li>
+              </ul>
+            </div>
+            <button type="button" class="btn-secondary" onclick="submitUpgradePlan('SINGLE_USER')" style="margin-top: 14px; font-size: 12px; font-weight: 700;">Selecionar</button>
+          </div>
+
+          <!-- CARD MULTI USER -->
+          <div style="background: rgba(59, 130, 246, 0.1); border: 2px solid var(--primary); border-radius: 12px; padding: 16px; text-align: center; display: flex; flex-direction: column; justify-content: space-between; position: relative;">
+            <div style="position: absolute; top: -10px; right: 12px; background: var(--primary); color: white; font-size: 9px; font-weight: 800; padding: 2px 8px; border-radius: 10px; text-transform: uppercase;">Mais Popular</div>
+            <div>
+              <span style="background: rgba(59, 130, 246, 0.2); color: #60a5fa; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700;">MULTI-USER</span>
+              <h5 style="font-size: 18px; font-weight: 800; color: white; margin-top: 8px;">R$ 197<span style="font-size: 12px; color: var(--text-muted);">/mês</span></h5>
+              <ul style="list-style: none; font-size: 12px; color: var(--text-muted); margin-top: 10px; text-align: left; display: flex; flex-direction: column; gap: 6px;">
+                <li><i class="fa-solid fa-check" style="color: #4ade80;"></i> 1 Conexão WhatsApp</li>
+                <li><i class="fa-solid fa-check" style="color: #4ade80;"></i> 1 Atendente IA</li>
+                <li><i class="fa-solid fa-check" style="color: #4ade80;"></i> <strong>Até 5 Profissionais</strong></li>
+                <li><i class="fa-solid fa-check" style="color: #4ade80;"></i> Gestão de Equipe</li>
+              </ul>
+            </div>
+            <button type="button" class="btn-primary" onclick="submitUpgradePlan('MULTI_USER')" style="margin-top: 14px; font-size: 12px; font-weight: 700;">Fazer Upgrade</button>
+          </div>
+
+          <!-- CARD ENTERPRISE -->
+          <div style="background: #0f172a; border: 1px solid var(--bg-card-border); border-radius: 12px; padding: 16px; text-align: center; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <span style="background: rgba(168, 85, 247, 0.2); color: #c084fc; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700;">ENTERPRISE</span>
+              <h5 style="font-size: 18px; font-weight: 800; color: white; margin-top: 8px;">R$ 397<span style="font-size: 12px; color: var(--text-muted);">/mês</span></h5>
+              <ul style="list-style: none; font-size: 12px; color: var(--text-muted); margin-top: 10px; text-align: left; display: flex; flex-direction: column; gap: 6px;">
+                <li><i class="fa-solid fa-check" style="color: #4ade80;"></i> 1 Conexão WhatsApp</li>
+                <li><i class="fa-solid fa-check" style="color: #4ade80;"></i> <strong>Profissionais Ilimitados</strong></li>
+                <li><i class="fa-solid fa-check" style="color: #4ade80;"></i> Suporte Prioritário 24/7</li>
+              </ul>
+            </div>
+            <button type="button" class="btn-secondary" onclick="submitUpgradePlan('ENTERPRISE')" style="margin-top: 14px; font-size: 12px; font-weight: 700;">Migrar Enterprise</button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- CONTEÚDO 4: FORMAS DE PAGAMENTO -->
+      <div id="ptab-billing" class="profile-tab-content" style="display: none;">
+        <h4 style="font-size: 14px; font-weight: 700; color: white; margin-bottom: 14px;"><i class="fa-solid fa-wallet" style="color: var(--primary);"></i> Gestão de Pagamento & Cobrança</h4>
+
+        <div style="background: #0f172a; border: 1px solid var(--bg-card-border); border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <i class="fa-solid fa-credit-card" style="font-size: 24px; color: #60a5fa;"></i>
+              <div>
+                <div style="font-size: 14px; font-weight: 700; color: white;" id="prof-card-mask">Cartão de Crédito **** 4321</div>
+                <div style="font-size: 12px; color: var(--text-muted);">Renovação automática mensal</div>
+              </div>
+            </div>
+            <span style="background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 700;">Ativo</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Número do Cartão de Crédito / Chave PIX Recorrente</label>
+          <input type="text" id="prof-billing-input" class="form-control" placeholder="•••• •••• •••• 4321">
+        </div>
+
+        <div id="prof-billing-feedback" style="font-size: 12px; margin-bottom: 12px; display: none;"></div>
+
+        <button type="button" class="btn-primary" onclick="submitUpdateBilling()" style="width: 100%; font-weight: 700;">
+          <i class="fa-solid fa-floppy-disk"></i> Atualizar Forma de Pagamento
+        </button>
+
+        <h5 style="font-size: 13px; font-weight: 700; color: white; margin-top: 20px; margin-bottom: 10px;">Faturas Recentes</h5>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div style="background: #111827; border: 1px solid var(--bg-card-border); padding: 10px 14px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+            <div>
+              <span style="color: white; font-weight: 700;">Fatura Agosto/2026</span>
+              <span style="color: var(--text-muted); font-size: 11px; margin-left: 8px;">01/08/2026</span>
+            </div>
+            <span style="color: #4ade80; font-weight: 700;">R$ 197,00 (Pago)</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
   <!-- MODAL: DETALHES / EDITAR AGENDAMENTO DO CALENDÁRIO -->
   <div class="modal-overlay" id="appointment-modal">
     <div class="modal-card">
@@ -1369,6 +1810,23 @@
           <option value="PENDING_PAYMENT">Aguardando Sinal PIX</option>
           <option value="CANCELLED">Cancelado</option>
         </select>
+      </div>
+
+      <!-- PAINEL DE ENVIO DIRETO DE MENSAGEM NO WHATSAPP PELO BOT -->
+      <div style="background: rgba(37, 211, 102, 0.08); border: 1px solid rgba(37, 211, 102, 0.3); border-radius: 10px; padding: 14px; margin-top: 14px; margin-bottom: 14px;">
+        <div style="margin-bottom: 8px;">
+          <label style="font-size: 13px; font-weight: 700; color: #25d366; display: flex; align-items: center; gap: 6px; margin: 0;">
+            <i class="fa-brands fa-whatsapp" style="font-size: 16px;"></i> Enviar Mensagem no WhatsApp do Cliente
+          </label>
+        </div>
+        
+        <div style="display: flex; gap: 8px;">
+          <input type="text" id="modal-custom-wa-msg" class="form-control" placeholder="Digite uma mensagem (ex: Olá! Preciso confirmar seu horário...)" style="font-size: 13px;">
+          <button type="button" class="btn-primary" id="btn-send-wa-direct" onclick="sendDirectWhatsAppMsgFromModal()" style="background: #25d366; border: none; white-space: nowrap; font-weight: 700; display: flex; align-items: center; gap: 6px; padding: 8px 16px;">
+            <i class="fa-solid fa-paper-plane"></i> Enviar
+          </button>
+        </div>
+        <div id="modal-wa-status-feedback" style="font-size: 12px; margin-top: 6px; display: none;"></div>
       </div>
 
       <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
@@ -1465,11 +1923,25 @@
     }
 
     function switchTab(tabId, element) {
-      document.querySelectorAll('.tab-panel').forEach(panel => panel.style.display = 'none');
+      closeMobileSidebar();
+      document.querySelectorAll('.tab-panel').forEach(panel => {
+        panel.style.display = 'none';
+        panel.classList.remove('active');
+      });
       document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
 
-      document.getElementById(`tab-${tabId}`).style.display = 'block';
-      if (element) element.classList.add('active');
+      const targetPanel = document.getElementById(`tab-${tabId}`);
+      if (targetPanel) {
+        targetPanel.style.display = 'block';
+        targetPanel.classList.add('active');
+      }
+
+      if (element) {
+        element.classList.add('active');
+      } else {
+        const matchingNav = document.querySelector(`.nav-item[data-tab="${tabId}"]`);
+        if (matchingNav) matchingNav.classList.add('active');
+      }
 
       if (tabId !== 'configuracoes') {
         const submenu = document.getElementById('cfg-submenu');
@@ -1485,9 +1957,34 @@
         loadServicesAndProducts();
       } else if (tabId === 'equipe') {
         loadTeamUsers();
-      } else if (tabId === 'dashboard') {
+      } else if (tabId === 'dashboard' || tabId === 'agenda') {
+        if (tabId === 'agenda' && window.innerWidth <= 900) {
+          currentNavDate = new Date();
+          switchCalendarView('day');
+        }
         loadAppointmentsFromServer();
       }
+    }
+
+    function toggleMobileSidebar() {
+      const sidebar = document.querySelector('.sidebar');
+      const backdrop = document.getElementById('sidebar-backdrop');
+      const isOpen = sidebar.classList.contains('mobile-open');
+
+      if (isOpen) {
+        sidebar.classList.remove('mobile-open');
+        backdrop.classList.remove('active');
+      } else {
+        sidebar.classList.add('mobile-open');
+        backdrop.classList.add('active');
+      }
+    }
+
+    function closeMobileSidebar() {
+      const sidebar = document.querySelector('.sidebar');
+      const backdrop = document.getElementById('sidebar-backdrop');
+      if (sidebar) sidebar.classList.remove('mobile-open');
+      if (backdrop) backdrop.classList.remove('active');
     }
 
     function toggleConfigSubmenu(element) {
@@ -1559,12 +2056,38 @@
           document.getElementById('ai-business-info').value = tenant.aiConfig.businessInfo || '';
         }
 
-        document.getElementById('pix-toggle').checked = Boolean(tenant.enablePixDeposit);
-        document.getElementById('pix-deposit-value-input').value = tenant.pixDepositValue || 15.00;
-
         professionalsState = data.professionals || [];
         servicesState = data.services || [];
         populateProfessionalFilter(professionalsState);
+
+        // Popula os elementos de perfil e plano do usuário logado
+        if (currentUser) {
+          const initial = currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'U';
+          document.getElementById('header-user-avatar').textContent = initial;
+          const mobAvatar = document.getElementById('mobile-user-avatar');
+          if (mobAvatar) mobAvatar.textContent = initial;
+          document.getElementById('header-user-name').textContent = currentUser.name || 'Usuário';
+          
+          const planTier = tenant.planTier || 'SINGLE_USER';
+          const planBadge = document.getElementById('header-plan-badge');
+          if (planBadge) {
+            planBadge.textContent = planTier;
+            planBadge.style.background = planTier === 'MULTI_USER' ? 'rgba(59, 130, 246, 0.2)' : (planTier === 'ENTERPRISE' ? 'rgba(168, 85, 247, 0.2)' : 'rgba(148, 163, 184, 0.15)');
+            planBadge.style.color = planTier === 'MULTI_USER' ? '#60a5fa' : (planTier === 'ENTERPRISE' ? '#c084fc' : '#94a3b8');
+          }
+
+          document.getElementById('profile-modal-avatar').textContent = initial;
+          document.getElementById('profile-modal-name').textContent = currentUser.name;
+          document.getElementById('profile-modal-email').textContent = currentUser.email;
+
+          document.getElementById('prof-input-name').value = currentUser.name;
+          document.getElementById('prof-input-email').value = currentUser.email;
+          document.getElementById('prof-input-role').value = currentUser.role === 'OWNER' ? 'Proprietário(a) / Gerente' : (currentUser.role === 'RECEPTIONIST' ? 'Recepcionista' : 'Profissional / Atendente');
+
+          document.getElementById('profile-tenant-name').textContent = tenant.name;
+          document.getElementById('profile-plan-tier-badge').textContent = planTier;
+          document.getElementById('profile-quota-text').textContent = `Cota de Uso: ${(data.professionals || []).length} / ${tenant.maxUsers || 1} Profissionais Cadastrados`;
+        }
 
         renderServicesGrid(data.services || []);
         renderProductsGrid(data.products || []);
@@ -1576,14 +2099,147 @@
       }
     }
 
+    function openUserProfileModal() {
+      switchProfileTab('account');
+      document.getElementById('user-profile-modal').classList.add('open');
+    }
+
+    function closeUserProfileModal() {
+      document.getElementById('user-profile-modal').classList.remove('open');
+    }
+
+    function switchProfileTab(tabId) {
+      document.querySelectorAll('.profile-tab-content').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('#user-profile-modal .btn-view').forEach(btn => btn.classList.remove('active'));
+
+      const targetTab = document.getElementById(`ptab-${tabId}`);
+      if (targetTab) targetTab.style.display = 'block';
+
+      const targetBtn = document.getElementById(`pnav-${tabId}`);
+      if (targetBtn) targetBtn.classList.add('active');
+    }
+
+    async function submitChangePassword() {
+      const currentPassword = document.getElementById('prof-curr-pass').value;
+      const newPassword = document.getElementById('prof-new-pass').value;
+      const confirmPassword = document.getElementById('prof-confirm-pass').value;
+      const feedbackEl = document.getElementById('prof-pass-feedback');
+
+      if (!currentPassword || !newPassword || !confirmPassword) {
+        alert('Por favor, preencha todos os campos de senha.');
+        return;
+      }
+      if (newPassword !== confirmPassword) {
+        feedbackEl.style.display = 'block';
+        feedbackEl.style.color = '#f87171';
+        feedbackEl.textContent = 'A nova senha e a confirmação não coincidem.';
+        return;
+      }
+      if (newPassword.length < 6) {
+        feedbackEl.style.display = 'block';
+        feedbackEl.style.color = '#f87171';
+        feedbackEl.textContent = 'A nova senha deve ter no mínimo 6 caracteres.';
+        return;
+      }
+
+      try {
+        const response = await fetch(`${baseUrl}/api/auth/change-password`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: currentUser.id,
+            currentPassword,
+            newPassword
+          })
+        });
+        const data = await response.json();
+        if (data.success) {
+          feedbackEl.style.display = 'block';
+          feedbackEl.style.color = '#4ade80';
+          feedbackEl.textContent = 'Senha alterada com sucesso!';
+          document.getElementById('prof-curr-pass').value = '';
+          document.getElementById('prof-new-pass').value = '';
+          document.getElementById('prof-confirm-pass').value = '';
+        } else {
+          feedbackEl.style.display = 'block';
+          feedbackEl.style.color = '#f87171';
+          feedbackEl.textContent = data.error || 'Erro ao alterar senha.';
+        }
+      } catch (err) {
+        feedbackEl.style.display = 'block';
+        feedbackEl.style.color = '#f87171';
+        feedbackEl.textContent = 'Erro ao se conectar ao servidor.';
+      }
+    }
+
+    async function submitUpgradePlan(planTier) {
+      if (confirm(`Deseja confirmar a migração do seu plano para ${planTier}?`)) {
+        try {
+          const response = await fetch(`${baseUrl}/api/tenants/${currentTenantId}/upgrade-plan`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ planTier })
+          });
+          const data = await response.json();
+          if (data.success) {
+            alert(`✅ ${data.message}`);
+            loadTenantData();
+            loadTeamUsers();
+            switchProfileTab('account');
+          } else {
+            alert(`⚠️ ${data.error}`);
+          }
+        } catch (err) {
+          alert('Erro ao processar upgrade de plano.');
+        }
+      }
+    }
+
+    async function submitUpdateBilling() {
+      const billingInput = document.getElementById('prof-billing-input').value.trim();
+      const feedbackEl = document.getElementById('prof-billing-feedback');
+
+      if (!billingInput) {
+        alert('Por favor, informe os dados do cartão de crédito ou chave PIX.');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${baseUrl}/api/tenants/${currentTenantId}/billing`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            paymentMethod: 'CREDIT_CARD',
+            creditCardMasked: billingInput
+          })
+        });
+        const data = await response.json();
+        if (data.success) {
+          feedbackEl.style.display = 'block';
+          feedbackEl.style.color = '#4ade80';
+          feedbackEl.textContent = 'Forma de pagamento atualizada com sucesso!';
+          document.getElementById('prof-card-mask').textContent = `Cartão / Pagamento: ${billingInput}`;
+          document.getElementById('prof-billing-input').value = '';
+        } else {
+          feedbackEl.style.display = 'block';
+          feedbackEl.style.color = '#f87171';
+          feedbackEl.textContent = data.error || 'Erro ao atualizar forma de pagamento.';
+        }
+      } catch (err) {
+        feedbackEl.style.display = 'block';
+        feedbackEl.style.color = '#f87171';
+        feedbackEl.textContent = 'Erro ao conectar ao servidor.';
+      }
+    }
+
     function populateProfessionalFilter(professionals) {
       const filter = document.getElementById('calendar-professional-filter');
-      filter.innerHTML = '<option value="ALL">👤 Todos os Profissionais</option>';
+      filter.innerHTML = '<option value="ALL"> Todos os Profissionais</option>';
 
       professionals.forEach(p => {
         const opt = document.createElement('option');
         opt.value = p.id;
-        opt.textContent = `👤 ${p.name}`;
+        opt.textContent = ` ${p.name}`;
         filter.appendChild(opt);
       });
 
@@ -1620,7 +2276,7 @@
           if (profObj && profObj.servicesHandled && profObj.servicesHandled.length > 0) {
             servicesBadges = profObj.servicesHandled.map(sId => {
               const s = servicesState.find(serv => serv.id === sId);
-              return s ? `<span style="font-size: 10px; background: rgba(139, 92, 246, 0.2); color: #a78bfa; padding: 2px 6px; border-radius: 8px;">✨ ${s.name}</span>` : '';
+              return s ? `<span style="font-size: 10px; background: rgba(139, 92, 246, 0.2); color: #a78bfa; padding: 2px 6px; border-radius: 8px;"> ${s.name}</span>` : '';
             }).join(' ');
           }
 
@@ -1632,7 +2288,7 @@
 
           card.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <h4 style="font-size: 16px; font-weight: 700;">👤 ${u.name}</h4>
+              <h4 style="font-size: 16px; font-weight: 700;"> ${u.name}</h4>
               <span style="font-size: 11px; background: rgba(59, 130, 246, 0.2); color: #60a5fa; padding: 4px 8px; border-radius: 12px; font-weight: 600;">${roleLabels[u.role] || u.role}</span>
             </div>
             <p style="color: var(--text-muted); font-size: 13px; margin: 6px 0;"><i class="fa-regular fa-envelope"></i> ${u.email}</p>
@@ -1663,7 +2319,7 @@
         const isChecked = handledList.length === 0 || handledList.includes(s.id);
         const lbl = document.createElement('label');
         lbl.style.cssText = 'display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;';
-        lbl.innerHTML = `<input type="checkbox" class="prof-service-cb" value="${s.id}" ${isChecked ? 'checked' : ''}> ✨ ${s.name} (R$ ${s.price.toFixed(2)})`;
+        lbl.innerHTML = `<input type="checkbox" class="prof-service-cb" value="${s.id}" ${isChecked ? 'checked' : ''}>  ${s.name} (R$ ${s.price.toFixed(2)})`;
         checkboxesContainer.appendChild(lbl);
       });
 
@@ -1802,7 +2458,7 @@
         card.style.borderRadius = '12px';
         card.innerHTML = `
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-            <h4 style="font-size: 16px; font-weight: 700;">✨ ${srv.name}</h4>
+            <h4 style="font-size: 16px; font-weight: 700;"> ${srv.name}</h4>
             <span style="font-size: 12px; background: rgba(59, 130, 246, 0.2); color: #60a5fa; padding: 4px 8px; border-radius: 12px; font-weight: 600;">${srv.durationMinutes} min</span>
           </div>
           <p style="color: var(--text-muted); font-size: 13px; margin: 8px 0 14px 0;">${srv.description || 'Sem descrição.'}</p>
@@ -1905,11 +2561,63 @@
       document.getElementById('modal-appt-time').value = appt.timeStr || '';
       document.getElementById('modal-appt-status').value = appt.status || 'CONFIRMED';
 
+      const customMsgInput = document.getElementById('modal-custom-wa-msg');
+      if (customMsgInput) customMsgInput.value = '';
+      const feedbackEl = document.getElementById('modal-wa-status-feedback');
+      if (feedbackEl) feedbackEl.style.display = 'none';
+
       document.getElementById('appointment-modal').classList.add('open');
     }
 
     function closeAppointmentModal() {
       document.getElementById('appointment-modal').classList.remove('open');
+    }
+
+    async function sendDirectWhatsAppMsgFromModal() {
+      const rawPhone = document.getElementById('modal-appt-phone').value.trim();
+      const message = document.getElementById('modal-custom-wa-msg').value.trim();
+      const feedbackEl = document.getElementById('modal-wa-status-feedback');
+      const btnEl = document.getElementById('btn-send-wa-direct');
+
+      if (!rawPhone) {
+        alert('Por favor, digite o telefone do cliente.');
+        return;
+      }
+      if (!message) {
+        alert('Por favor, digite a mensagem que deseja enviar.');
+        return;
+      }
+
+      try {
+        btnEl.disabled = true;
+        btnEl.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Enviando...`;
+        feedbackEl.style.display = 'none';
+
+        const response = await fetch(`${baseUrl}/api/tenants/${currentTenantId}/whatsapp/send-direct`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: rawPhone, message })
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          feedbackEl.style.display = 'block';
+          feedbackEl.style.color = '#4ade80';
+          feedbackEl.textContent = 'Mensagem enviada com sucesso ao WhatsApp do cliente!';
+          document.getElementById('modal-custom-wa-msg').value = '';
+        } else {
+          feedbackEl.style.display = 'block';
+          feedbackEl.style.color = '#f87171';
+          feedbackEl.textContent = data.error || 'Erro ao enviar mensagem.';
+        }
+      } catch (err) {
+        feedbackEl.style.display = 'block';
+        feedbackEl.style.color = '#f87171';
+        feedbackEl.textContent = 'Erro ao conectar ao servidor.';
+      } finally {
+        btnEl.disabled = false;
+        btnEl.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Enviar`;
+      }
     }
 
     async function saveAppointmentSubmit() {
@@ -2102,19 +2810,44 @@
 
         const rawList = data.appointments;
         
-        // Atualiza métricas do Dashboard
-        document.getElementById('metric-appts-count').textContent = rawList.length.toString();
-        const estimatedRev = rawList.length * 75;
+        const todayObj = new Date();
+        const todayFormatted = `${todayObj.getFullYear()}-${String(todayObj.getMonth() + 1).padStart(2, '0')}-${String(todayObj.getDate()).padStart(2, '0')}`;
+
+        // Agendamentos específicos de HOJE (não cancelados)
+        const todayAppts = rawList.filter(a => {
+          const st = new Date(a.startTime);
+          const dStr = `${st.getFullYear()}-${String(st.getMonth() + 1).padStart(2, '0')}-${String(st.getDate()).padStart(2, '0')}`;
+          return dStr === todayFormatted && a.status !== 'CANCELLED';
+        });
+
+        // Agendamentos da SEMANA ATUAL
+        const startOfWeek = new Date(todayObj);
+        startOfWeek.setDate(todayObj.getDate() - todayObj.getDay());
+        startOfWeek.setHours(0, 0, 0, 0);
+
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
+        endOfWeek.setHours(23, 59, 59, 999);
+
+        const weekAppts = rawList.filter(a => {
+          const st = new Date(a.startTime);
+          return st >= startOfWeek && st <= endOfWeek && a.status !== 'CANCELLED';
+        });
+
+        // Atualiza métricas reais do Dashboard
+        document.getElementById('metric-appts-count').textContent = todayAppts.length.toString();
+        const estimatedRev = todayAppts.length * 75;
         document.getElementById('metric-revenue-sum').textContent = `R$ ${estimatedRev.toLocaleString('pt-BR')}`;
-        const uniquePhones = new Set(rawList.map(a => a.customerPhone));
+        const uniquePhones = new Set(rawList.filter(a => a.status !== 'CANCELLED').map(a => a.customerPhone));
         document.getElementById('metric-clients-count').textContent = uniquePhones.size.toString();
-        document.getElementById('weekly-total-val').textContent = (rawList.length * 5).toString();
+        document.getElementById('weekly-total-val').textContent = weekAppts.length.toString();
 
         // Renderiza lista recente no Dashboard
         renderDashboardRecentAppts(rawList);
 
         appointmentsState = rawList.map(a => {
           const startTime = new Date(a.startTime);
+          const endTime = new Date(a.endTime || startTime.getTime() + 45 * 60 * 1000);
           const year = startTime.getFullYear();
           const month = String(startTime.getMonth() + 1).padStart(2, '0');
           const day = String(startTime.getDate()).padStart(2, '0');
@@ -2128,9 +2861,11 @@
             prof: 'Profissional',
             dateStr,
             timeStr,
+            startTime,
+            endTime,
             status: a.status || 'CONFIRMED'
           };
-        });
+        }).sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
 
         renderGoogleCalendar();
       } catch (err) {
@@ -2138,26 +2873,62 @@
       }
     }
 
-    function renderDashboardRecentAppts(appts) {
+    function renderDashboardRecentAppts(allAppts) {
       const container = document.getElementById('dashboard-recent-appts-list');
       container.innerHTML = '';
 
-      if (appts.length === 0) {
-        container.innerHTML = '<p style="color: var(--text-muted); font-size: 13px;">Nenhum agendamento recente.</p>';
+      const now = new Date();
+      
+      // Filtra apenas agendamentos futuros ou em andamento (não cancelados)
+      const upcomingAppts = allAppts
+        .filter(a => {
+          if (a.status === 'CANCELLED') return false;
+          const endTime = new Date(a.endTime || new Date(a.startTime).getTime() + 45 * 60 * 1000);
+          return endTime >= now;
+        })
+        .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+
+      // Se não houver mais agendamentos futuros, mostra os últimos recentes
+      const displayAppts = upcomingAppts.length > 0 
+        ? upcomingAppts 
+        : allAppts
+            .filter(a => a.status !== 'CANCELLED')
+            .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
+
+      if (displayAppts.length === 0) {
+        container.innerHTML = '<p style="color: var(--text-muted); font-size: 13px; padding: 10px;">Nenhum agendamento cadastrado.</p>';
         return;
       }
 
+      const todayObj = new Date();
+      const todayFormatted = `${todayObj.getFullYear()}-${String(todayObj.getMonth() + 1).padStart(2, '0')}-${String(todayObj.getDate()).padStart(2, '0')}`;
+
+      const tomorrowObj = new Date(todayObj);
+      tomorrowObj.setDate(todayObj.getDate() + 1);
+      const tomorrowFormatted = `${tomorrowObj.getFullYear()}-${String(tomorrowObj.getMonth() + 1).padStart(2, '0')}-${String(tomorrowObj.getDate()).padStart(2, '0')}`;
+
       const colors = ['green', 'purple', 'amber'];
-      appts.slice(0, 4).forEach((a, idx) => {
+
+      displayAppts.slice(0, 4).forEach((a, idx) => {
         const startTime = new Date(a.startTime);
         const endTime = new Date(a.endTime || startTime.getTime() + 45 * 60 * 1000);
         
         const timeStr = `${String(startTime.getHours()).padStart(2, '0')}:${String(startTime.getMinutes()).padStart(2, '0')} - ${String(endTime.getHours()).padStart(2, '0')}:${String(endTime.getMinutes()).padStart(2, '0')}`;
         
+        const dateStr = `${startTime.getFullYear()}-${String(startTime.getMonth() + 1).padStart(2, '0')}-${String(startTime.getDate()).padStart(2, '0')}`;
+        let dayLabel = 'Hoje';
+        if (dateStr === tomorrowFormatted) {
+          dayLabel = 'Amanhã';
+        } else if (dateStr !== todayFormatted) {
+          dayLabel = `${String(startTime.getDate()).padStart(2, '0')}/${String(startTime.getMonth() + 1).padStart(2, '0')}`;
+        }
+
         const colorClass = colors[idx % colors.length];
 
         const item = document.createElement('div');
         item.className = 'appointment-item';
+        item.style.cursor = 'pointer';
+        item.onclick = () => openAppointmentModal(a.id);
         item.innerHTML = `
           <div class="appt-accent-bar ${colorClass}"></div>
           <div class="appt-info">
@@ -2166,7 +2937,7 @@
           </div>
           <div class="appt-time-box">
             <div class="appt-time">${timeStr}</div>
-            <div class="appt-day-label">Hoje</div>
+            <div class="appt-day-label">${dayLabel}</div>
           </div>
         `;
         container.appendChild(item);
@@ -2279,35 +3050,40 @@
       }
     }
 
-    async function saveTenantPixSettings() {
-      const enablePixDeposit = document.getElementById('pix-toggle').checked;
-      const pixDepositValue = parseFloat(document.getElementById('pix-deposit-value-input').value);
+    let currentCalendarMode = 'month';
 
-      try {
-        const response = await fetch(`${baseUrl}/api/tenants/${currentTenantId}/pix`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ enablePixDeposit, pixDepositValue })
-        });
-        const data = await response.json();
-        if (data.success) alert('Módulo PIX salvo!');
-      } catch (err) {
-        alert('Erro ao salvar Módulo PIX.');
-      }
-    }
-
-    function prevMonth() {
-      currentNavDate.setMonth(currentNavDate.getMonth() - 1);
+    function switchCalendarView(mode) {
+      currentCalendarMode = mode;
+      document.querySelectorAll('.btn-view').forEach(btn => btn.classList.remove('active'));
+      const activeBtn = document.getElementById(`view-btn-${mode}`);
+      if (activeBtn) activeBtn.classList.add('active');
       renderGoogleCalendar();
     }
 
-    function nextMonth() {
-      currentNavDate.setMonth(currentNavDate.getMonth() + 1);
-      renderGoogleCalendar();
-    }
-
-    function currentMonth() {
+    function todayCalendar() {
       currentNavDate = new Date();
+      switchCalendarView('day');
+    }
+
+    function prevCalendar() {
+      if (currentCalendarMode === 'month') {
+        currentNavDate.setMonth(currentNavDate.getMonth() - 1);
+      } else if (currentCalendarMode === 'week') {
+        currentNavDate.setDate(currentNavDate.getDate() - 7);
+      } else {
+        currentNavDate.setDate(currentNavDate.getDate() - 1);
+      }
+      renderGoogleCalendar();
+    }
+
+    function nextCalendar() {
+      if (currentCalendarMode === 'month') {
+        currentNavDate.setMonth(currentNavDate.getMonth() + 1);
+      } else if (currentCalendarMode === 'week') {
+        currentNavDate.setDate(currentNavDate.getDate() + 7);
+      } else {
+        currentNavDate.setDate(currentNavDate.getDate() + 1);
+      }
       renderGoogleCalendar();
     }
 
@@ -2318,57 +3094,236 @@
       cellsContainer.innerHTML = '';
 
       const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-      titleEl.textContent = `${monthNames[currentNavDate.getMonth()]} ${currentNavDate.getFullYear()}`;
-
-      const daysOfWeek = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-      daysOfWeek.forEach(d => {
-        const h = document.createElement('div');
-        h.className = 'calendar-day-header';
-        h.textContent = d;
-        cellsContainer.appendChild(h);
-      });
+      const weekDayNames = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
 
       const year = currentNavDate.getFullYear();
       const month = currentNavDate.getMonth();
-
-      const firstDayOfMonth = new Date(year, month, 1).getDay();
-      const daysInMonth = new Date(year, month + 1, 0).getDate();
-
       const todayObj = new Date();
       const todayFormatted = `${todayObj.getFullYear()}-${String(todayObj.getMonth() + 1).padStart(2, '0')}-${String(todayObj.getDate()).padStart(2, '0')}`;
 
-      const prevMonthDays = new Date(year, month, 0).getDate();
-      for (let i = firstDayOfMonth - 1; i >= 0; i--) {
-        const cell = document.createElement('div');
-        cell.className = 'calendar-cell other-month';
-        cell.innerHTML = `<div class="day-number">${prevMonthDays - i}</div>`;
-        cellsContainer.appendChild(cell);
-      }
+      // 1. VISUALIZAÇÃO POR MÊS (GRADE 7 COLUNAS)
+      if (currentCalendarMode === 'month') {
+        cellsContainer.className = 'calendar-grid';
+        cellsContainer.style.display = 'grid';
+        cellsContainer.style.gridTemplateColumns = 'repeat(7, 1fr)';
+        titleEl.textContent = `${monthNames[month]} ${year}`;
 
-      for (let day = 1; day <= daysInMonth; day++) {
-        const cell = document.createElement('div');
-        const dayStr = String(day).padStart(2, '0');
-        const monthStr = String(month + 1).padStart(2, '0');
-        const fullDateStr = `${year}-${monthStr}-${dayStr}`;
-
-        let isToday = (fullDateStr === todayFormatted);
-        cell.className = `calendar-cell${isToday ? ' today' : ''}`;
-        cell.innerHTML = `<div class="day-number">${day}</div>`;
-
-        const dayAppointments = appointmentsState.filter(a => a.dateStr === fullDateStr);
-
-        dayAppointments.forEach(appt => {
-          const evt = document.createElement('div');
-          evt.className = `cell-event ${appt.status === 'CONFIRMED' ? 'confirmed' : 'pending'}`;
-          evt.innerHTML = `<strong>${appt.timeStr}</strong> ${appt.client}`;
-          evt.onclick = (e) => {
-            e.stopPropagation();
-            openAppointmentModal(appt.id);
-          };
-          cell.appendChild(evt);
+        const daysOfWeek = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+        daysOfWeek.forEach(d => {
+          const h = document.createElement('div');
+          h.className = 'calendar-day-header';
+          h.textContent = d;
+          cellsContainer.appendChild(h);
         });
 
-        cellsContainer.appendChild(cell);
+        const firstDayOfMonth = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const prevMonthDays = new Date(year, month, 0).getDate();
+
+        for (let i = firstDayOfMonth - 1; i >= 0; i--) {
+          const cell = document.createElement('div');
+          cell.className = 'calendar-cell other-month';
+          cell.innerHTML = `<div class="day-number">${prevMonthDays - i}</div>`;
+          cellsContainer.appendChild(cell);
+        }
+
+        for (let day = 1; day <= daysInMonth; day++) {
+          const cell = document.createElement('div');
+          const dayStr = String(day).padStart(2, '0');
+          const monthStr = String(month + 1).padStart(2, '0');
+          const fullDateStr = `${year}-${monthStr}-${dayStr}`;
+
+          let isToday = (fullDateStr === todayFormatted);
+          cell.className = `calendar-cell${isToday ? ' today' : ''}`;
+          cell.innerHTML = `<div class="day-number">${day}</div>`;
+
+          cell.onclick = () => {
+            currentNavDate = new Date(year, month, day);
+            switchCalendarView('day');
+          };
+
+          const dayAppointments = appointmentsState
+            .filter(a => a.dateStr === fullDateStr)
+            .sort((a, b) => a.timeStr.localeCompare(b.timeStr));
+
+          const now = new Date();
+
+          dayAppointments.forEach(appt => {
+            const isPast = appt.endTime ? (new Date(appt.endTime) < now) : (new Date(appt.startTime) < now);
+            const evt = document.createElement('div');
+            let statusClass = appt.status === 'CONFIRMED' ? 'confirmed' : 'pending';
+            if (isPast) statusClass = 'past';
+            evt.className = `cell-event ${statusClass}`;
+            evt.innerHTML = `<strong>${appt.timeStr}</strong> ${appt.client}${isPast ? ' <span style="font-size:10px; opacity:0.8;">✓</span>' : ''}`;
+            evt.onclick = (e) => {
+              e.stopPropagation();
+              openAppointmentModal(appt.id);
+            };
+            cell.appendChild(evt);
+          });
+
+          cellsContainer.appendChild(cell);
+        }
+      }
+
+      // 2. VISUALIZAÇÃO POR SEMANA (7 COLUNAS DETALHADAS)
+      else if (currentCalendarMode === 'week') {
+        cellsContainer.className = 'calendar-grid';
+        cellsContainer.style.display = 'grid';
+        cellsContainer.style.gridTemplateColumns = 'repeat(7, 1fr)';
+
+        const startOfWeek = new Date(currentNavDate);
+        startOfWeek.setDate(currentNavDate.getDate() - currentNavDate.getDay());
+        
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
+
+        const startD = String(startOfWeek.getDate()).padStart(2, '0');
+        const startM = String(startOfWeek.getMonth() + 1).padStart(2, '0');
+        const endD = String(endOfWeek.getDate()).padStart(2, '0');
+        const endM = String(endOfWeek.getMonth() + 1).padStart(2, '0');
+
+        titleEl.textContent = `Semana: ${startD}/${startM} a ${endD}/${endM}/${endOfWeek.getFullYear()}`;
+
+        for (let i = 0; i < 7; i++) {
+          const colDate = new Date(startOfWeek);
+          colDate.setDate(startOfWeek.getDate() + i);
+
+          const colY = colDate.getFullYear();
+          const colM = String(colDate.getMonth() + 1).padStart(2, '0');
+          const colD = String(colDate.getDate()).padStart(2, '0');
+          const fullDateStr = `${colY}-${colM}-${colD}`;
+
+          const isToday = (fullDateStr === todayFormatted);
+
+          const colHeader = document.createElement('div');
+          colHeader.className = `calendar-day-header${isToday ? ' today' : ''}`;
+          colHeader.style.cursor = 'pointer';
+          colHeader.innerHTML = `<div>${['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][i]}</div><div style="font-size: 15px; font-weight: 700; color: white;">${colDate.getDate()}</div>`;
+          colHeader.onclick = () => {
+            currentNavDate = new Date(colDate);
+            switchCalendarView('day');
+          };
+          cellsContainer.appendChild(colHeader);
+        }
+
+        const now = new Date();
+
+        for (let i = 0; i < 7; i++) {
+          const colDate = new Date(startOfWeek);
+          colDate.setDate(startOfWeek.getDate() + i);
+
+          const colY = colDate.getFullYear();
+          const colM = String(colDate.getMonth() + 1).padStart(2, '0');
+          const colD = String(colDate.getDate()).padStart(2, '0');
+          const fullDateStr = `${colY}-${colM}-${colD}`;
+
+          const isToday = (fullDateStr === todayFormatted);
+          const cell = document.createElement('div');
+          cell.className = `calendar-cell${isToday ? ' today' : ''}`;
+          cell.style.minHeight = '250px';
+
+          const dayAppointments = appointmentsState
+            .filter(a => a.dateStr === fullDateStr)
+            .sort((a, b) => a.timeStr.localeCompare(b.timeStr));
+
+          if (dayAppointments.length === 0) {
+            cell.innerHTML = `<div style="color: var(--text-muted); font-size: 11px; text-align: center; margin-top: 15px;">Sem agendamentos</div>`;
+          } else {
+            dayAppointments.forEach(appt => {
+              const isPast = appt.endTime ? (new Date(appt.endTime) < now) : (new Date(appt.startTime) < now);
+              const evt = document.createElement('div');
+              let statusClass = appt.status === 'CONFIRMED' ? 'confirmed' : 'pending';
+              if (isPast) statusClass = 'past';
+              evt.className = `cell-event ${statusClass}`;
+              evt.innerHTML = `<strong>${appt.timeStr}</strong> ${appt.client}${isPast ? ' <span style="font-size:10px; opacity:0.8;">✓</span>' : ''}`;
+              evt.onclick = (e) => {
+                e.stopPropagation();
+                openAppointmentModal(appt.id);
+              };
+              cell.appendChild(evt);
+            });
+          }
+
+          cellsContainer.appendChild(cell);
+        }
+      }
+
+      // 3. VISUALIZAÇÃO POR DIA (AGENDA DETALHADA DO DIA)
+      else if (currentCalendarMode === 'day') {
+        cellsContainer.className = '';
+        cellsContainer.style.display = 'block';
+
+        const dayFormattedStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(currentNavDate.getDate()).padStart(2, '0')}`;
+        const dayLabel = `${weekDayNames[currentNavDate.getDay()]}, ${currentNavDate.getDate()} de ${monthNames[month]} de ${year}`;
+        const isToday = (dayFormattedStr === todayFormatted);
+
+        titleEl.textContent = `${isToday ? 'Hoje - ' : ''}${dayLabel}`;
+
+        const dayAppointments = appointmentsState.filter(a => a.dateStr === dayFormattedStr);
+        const now = new Date();
+
+        if (dayAppointments.length === 0) {
+          cellsContainer.innerHTML = `
+            <div style="background: #111827; border: 1px solid var(--bg-card-border); border-radius: 12px; padding: 40px 20px; text-align: center;">
+              <i class="fa-regular fa-calendar-xmark" style="font-size: 40px; color: var(--text-muted); margin-bottom: 14px;"></i>
+              <h3 style="font-size: 16px; font-weight: 700; color: white;">Nenhum agendamento para ${isToday ? 'hoje' : 'esta data'}</h3>
+              <p style="color: var(--text-muted); font-size: 13px; margin-top: 6px; margin-bottom: 20px;">Não há consultas ou serviços agendados para ${dayLabel}.</p>
+              <button class="btn-primary" onclick="openNewAppointmentModal()" style="margin: 0 auto; display: inline-flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-plus"></i> Novo Agendamento para este dia
+              </button>
+            </div>
+          `;
+        } else {
+          let dayHtml = `
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+          `;
+
+          dayAppointments.sort((a, b) => a.timeStr.localeCompare(b.timeStr)).forEach(appt => {
+            const isPast = appt.endTime ? (new Date(appt.endTime) < now) : (new Date(appt.startTime) < now);
+
+            let statusBadge = appt.status === 'CONFIRMED' 
+              ? `<span style="background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700;">Confirmado</span>`
+              : `<span style="background: rgba(234, 179, 8, 0.15); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.3); padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700;">Agendado</span>`;
+
+            if (isPast) {
+              statusBadge = `<span style="background: rgba(148, 163, 184, 0.15); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.3); padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700;"><i class="fa-solid fa-check"></i> Realizado</span>`;
+            }
+
+            const timeBoxBg = isPast 
+              ? 'background: rgba(148, 163, 184, 0.12); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.2);' 
+              : 'background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3);';
+
+            const cardStyle = isPast ? 'background: #0f172a; opacity: 0.75;' : 'background: #111827;';
+
+            dayHtml += `
+              <div style="${cardStyle} border: 1px solid var(--bg-card-border); border-radius: 12px; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; transition: all 0.2s ease;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--bg-card-border)'">
+                <div style="display: flex; align-items: center; gap: 16px;">
+                  <div style="${timeBoxBg} padding: 10px 16px; border-radius: 10px; font-size: 16px; font-weight: 800;">
+                    ${appt.timeStr}
+                  </div>
+                  <div>
+                    <h4 style="font-size: 15px; font-weight: 700; color: ${isPast ? '#cbd5e1' : 'white'}; margin-bottom: 2px;">
+                      ${appt.client} ${isPast ? '<span style="font-size: 11px; color: #94a3b8; font-weight: 400; margin-left: 6px;">(Realizado)</span>' : ''}
+                    </h4>
+                    <p style="color: var(--text-muted); font-size: 13px;">${appt.service} com <strong style="color: white;">${appt.professionalName || 'Profissional'}</strong></p>
+                    ${appt.phone ? `<p style="color: #60a5fa; font-size: 12px; margin-top: 2px;"><i class="fa-brands fa-whatsapp"></i> ${appt.phone}</p>` : ''}
+                  </div>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  ${statusBadge}
+                  <button class="btn-secondary" onclick="openAppointmentModal('${appt.id}')" style="padding: 6px 12px; font-size: 12px;">
+                    <i class="fa-regular fa-eye"></i> Detalhes
+                  </button>
+                </div>
+              </div>
+            `;
+          });
+
+          dayHtml += `</div>`;
+          cellsContainer.innerHTML = dayHtml;
+        }
       }
     }
 

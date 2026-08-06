@@ -1,8 +1,8 @@
-import makeWASocket, { useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion } from '@whiskeysockets/baileys';
+import makeWASocket, { useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, downloadMediaMessage } from '@whiskeysockets/baileys';
 import QRCode from 'qrcode';
 import path from 'path';
 import fs from 'fs';
-import { aiOrchestrator } from './ai-orchestrator.service.js';
+import { aiOrchestrator, transcribeAudioBuffer } from './ai-orchestrator.service.js';
 import { dbRepository } from './db.service.js';
 
 export interface WhatsAppSessionState {
@@ -97,7 +97,7 @@ export class WhatsAppService {
           session.qrCodeBase64 = undefined;
           const userJid = sock.user?.id || '';
           session.connectedPhone = userJid.split(':')[0] || userJid.split('@')[0];
-          console.log(`[WhatsApp Real Baileys] ✅ WhatsApp Conectado com sucesso para tenant ${tenantId}! Número: ${session.connectedPhone}`);
+          console.log(`[WhatsApp Real Baileys]  WhatsApp Conectado com sucesso para tenant ${tenantId}! Número: ${session.connectedPhone}`);
         }
 
         if (connection === 'close') {
@@ -126,7 +126,28 @@ export class WhatsAppService {
           const remoteJid = msg.key.remoteJid;
           if (!remoteJid || remoteJid.endsWith('@g.us')) continue;
 
-          const text = msg.message.conversation || msg.message.extendedTextMessage?.text;
+          let text = msg.message.conversation || msg.message.extendedTextMessage?.text;
+
+          // Suporte NATIVO para Áudio de Voz do WhatsApp (Multimodal Gemini AI)
+          if (!text && msg.message.audioMessage) {
+            const customerPhone = remoteJid.split('@')[0].split(':')[0].replace(/\D/g, '');
+            const pushName = msg.pushName || 'Cliente';
+            console.log(`[WhatsApp Real Audio] ️ Áudio de voz recebido de ${pushName} (${customerPhone}). Baixando e transcrevendo via Gemini AI...`);
+
+            try {
+              const buffer = await downloadMediaMessage(msg, 'buffer', {});
+              const mimeType = msg.message.audioMessage.mimetype || 'audio/ogg; codecs=opus';
+              text = await transcribeAudioBuffer(buffer as Buffer, mimeType);
+              console.log(`[WhatsApp Real Audio Transcribed]  Transcrição do áudio: "${text}"`);
+            } catch (audioErr: any) {
+              console.error('[WhatsApp Real Audio Error] Falha ao processar áudio:', audioErr.message);
+              await sock.sendMessage(remoteJid, { 
+                text: `Desculpe, no momento não consigo ouvir mensagens de áudio por aqui! ️ Por favor, me mande sua mensagem por escrito em texto para que eu possa te ajudar com seu agendamento! ` 
+              });
+              continue;
+            }
+          }
+
           if (!text) continue;
 
           const customerPhone = remoteJid.split('@')[0].split(':')[0].replace(/\D/g, '');

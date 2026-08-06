@@ -10,6 +10,33 @@ export interface ProcessMessageResult {
   appointmentCancelledId?: string;
 }
 
+export async function transcribeAudioBuffer(audioBuffer: Buffer, mimeType: string = 'audio/ogg'): Promise<string> {
+  const apiKey = process.env.GEMINI_API_KEY || '';
+  if (!apiKey) {
+    throw new Error('Chave GEMINI_API_KEY não configurada no servidor.');
+  }
+
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-lite' });
+
+  const cleanMimeType = mimeType.split(';')[0].trim() || 'audio/ogg';
+
+  const audioPart = {
+    inlineData: {
+      data: audioBuffer.toString('base64'),
+      mimeType: cleanMimeType
+    }
+  };
+
+  const result = await model.generateContent([
+    audioPart,
+    'Transcreva este áudio do WhatsApp exatamente como falado pelo cliente em português do Brasil. Retorne APENAS a transcrição textual exata do áudio, sem saudações, pontuações desnecessárias ou explicações.'
+  ]);
+
+  const response = await result.response;
+  return response.text().trim();
+}
+
 export interface CustomerSession {
   customerName?: string;
   customerPhone?: string;
@@ -619,14 +646,14 @@ ORIENTAÇÃO CRÍTICA DE RESPOSTA HUMANA:
           activeAppt.status = 'CONFIRMED';
           await dbRepository.saveData();
           return {
-            replyText: `Maravilha, *${clientNameStr}*! Seu agendamento para *${dateFormatted} às ${timeStrFormatted}* foi **CONFIRMADO** com sucesso! Te esperamos aqui. 😊👍`,
+            replyText: `Maravilha, *${clientNameStr}*! Seu agendamento para *${dateFormatted} às ${timeStrFormatted}* foi **CONFIRMADO** com sucesso! Te esperamos aqui. `,
             functionCallsExecuted: ['confirm_appointment']
           };
         } else if (isExplicitReminderCancel) {
           activeAppt.status = 'CANCELLED';
           await dbRepository.saveData();
           return {
-            replyText: `Entendido, *${clientNameStr}*! Seu agendamento para *${dateFormatted} às ${timeStrFormatted}* foi **CANCELADO**. Se quiser agendar para outro dia ou horário, é só nos chamar por aqui! 🌱`,
+            replyText: `Entendido, *${clientNameStr}*! Seu agendamento para *${dateFormatted} às ${timeStrFormatted}* foi **CANCELADO**. Se quiser agendar para outro dia ou horário, é só nos chamar por aqui! `,
             functionCallsExecuted: ['cancel_appointment']
           };
         }
@@ -636,13 +663,13 @@ ORIENTAÇÃO CRÍTICA DE RESPOSTA HUMANA:
     // 1. Agradecimento e Despedida
     if (lower.includes('obrigad') || lower.includes('valeu') || lower.includes('tmj') || lower.includes('muito obrigado') || lower.includes('flw')) {
       const name = session?.customerName ? `, ${session.customerName}` : '';
-      return { replyText: `Por nada${name}! Tamo junto! 👊 Qualquer coisa só me chamar aqui.`, functionCallsExecuted: [] };
+      return { replyText: `Por nada${name}! Tamo junto!  Qualquer coisa só me chamar aqui.`, functionCallsExecuted: [] };
     }
 
     // 2. Pergunta de Identidade ("como é seu nome?", "quem é você?", "quem fala?")
     if (lower.includes('seu nome') || lower.includes('como te chamo') || lower.includes('quem e voce') || lower.includes('quem é você') || lower.includes('com quem falo') || lower.includes('quem ta falando') || lower.includes('quem tá falando')) {
       return {
-        replyText: `Sou a Camila, assistente de atendimento e agendamentos! 😊 E com quem eu tô falando?`,
+        replyText: `Sou a Camila, assistente de atendimento e agendamentos!  E com quem eu tô falando?`,
         functionCallsExecuted: []
       };
     }
@@ -669,7 +696,7 @@ ORIENTAÇÃO CRÍTICA DE RESPOSTA HUMANA:
       const hasRealPhone = isValidRealPhoneNumber(phoneInText || session.customerPhone || customerPhone);
       if (session.customerName && !hasRealPhone) {
         return {
-          replyText: `Prazer, *${session.customerName}*! Anotado aqui. Me manda por favor o seu número de telefone/WhatsApp com DDD para eu fechar seu agendamento das *${targetTimeStr}* e te mandar os lembretes? 📱✨`,
+          replyText: `Prazer, *${session.customerName}*! Anotado aqui. Me manda por favor o seu número de telefone/WhatsApp com DDD para eu fechar seu agendamento das *${targetTimeStr}* e te mandar os lembretes? `,
           functionCallsExecuted: []
         };
       }
@@ -695,7 +722,7 @@ ORIENTAÇÃO CRÍTICA DE RESPOSTA HUMANA:
 
       const [y, m, d] = targetDateStr.split('-');
       return {
-        replyText: `Show de bola, *${clientName}*! Seu horário para *${session.lastQueryDateLabel || 'o dia escolhido'} (${d}/${m}/${y})* às *${targetTimeStr}* está **confirmado com sucesso**! ✨`,
+        replyText: `Show de bola, *${clientName}*! Seu horário para *${session.lastQueryDateLabel || 'o dia escolhido'} (${d}/${m}/${y})* às *${targetTimeStr}* está **confirmado com sucesso**! `,
         functionCallsExecuted: executedTools,
         appointmentCreated: exec.appointmentCreated
       };
@@ -716,7 +743,7 @@ ORIENTAÇÃO CRÍTICA DE RESPOSTA HUMANA:
         }
 
         return {
-          replyText: `Vi que você já tem um agendamento pra *${d}/${m} às ${apptTimeStr}*! 😊 Quer **mudar esse horário** pra *${dateFormattedLabel} às ${timeStr}* ou criar um **novo agendamento**?`,
+          replyText: `Vi que você já tem um agendamento pra *${d}/${m} às ${apptTimeStr}*!  Quer **mudar esse horário** pra *${dateFormattedLabel} às ${timeStr}* ou criar um **novo agendamento**?`,
           functionCallsExecuted: []
         };
       }
@@ -734,12 +761,12 @@ ORIENTAÇÃO CRÍTICA DE RESPOSTA HUMANA:
         if (!session?.customerName) {
           if (session?.suggestedPushName) {
             return {
-              replyText: `Fechado! O horário das *${timeStr}* para *${dateFormattedLabel}* está vago! 🗓️ O agendamento é em seu nome mesmo, *${session.suggestedPushName}*, ou para outra pessoa?`,
+              replyText: `Fechado! O horário das *${timeStr}* para *${dateFormattedLabel}* está vago! ️ O agendamento é em seu nome mesmo, *${session.suggestedPushName}*, ou para outra pessoa?`,
               functionCallsExecuted: executedTools
             };
           }
           return {
-            replyText: `Fechado! O horário das *${timeStr}* para *${dateFormattedLabel}* está vago! 🗓️ Me fala seu nome completo para eu colocar na agenda?`,
+            replyText: `Fechado! O horário das *${timeStr}* para *${dateFormattedLabel}* está vago! ️ Me fala seu nome completo para eu colocar na agenda?`,
             functionCallsExecuted: executedTools
           };
         }
@@ -747,7 +774,7 @@ ORIENTAÇÃO CRÍTICA DE RESPOSTA HUMANA:
         const hasValidRealPhone = isValidRealPhoneNumber(phoneInText || session?.customerPhone || customerPhone);
         if (!hasValidRealPhone) {
           return {
-            replyText: `Perfeito, *${session.customerName}*! O horário das *${timeStr}* para *${dateFormattedLabel}* é seu! 🗓️ Me envia o seu número de WhatsApp com DDD para eu confirmar e te mandar os lembretes?`,
+            replyText: `Perfeito, *${session.customerName}*! O horário das *${timeStr}* para *${dateFormattedLabel}* é seu! ️ Me envia o seu número de WhatsApp com DDD para eu confirmar e te mandar os lembretes?`,
             functionCallsExecuted: executedTools
           };
         }
@@ -767,8 +794,8 @@ ORIENTAÇÃO CRÍTICA DE RESPOSTA HUMANA:
         const [y, m, d] = dateStr.split('-');
 
         const replyMsg = existingAppt 
-          ? `Show de bola, *${clientName}*! Seu horário foi **alterado com sucesso** para *${dateFormattedLabel} (${d}/${m}/${y})* às *${timeStr}*! O horário anterior foi liberado. ✨`
-          : `Show de bola, *${clientName}*! Seu horário para *${dateFormattedLabel} (${d}/${m}/${y})* às *${timeStr}* tá confirmado! ✨`;
+          ? `Show de bola, *${clientName}*! Seu horário foi **alterado com sucesso** para *${dateFormattedLabel} (${d}/${m}/${y})* às *${timeStr}*! O horário anterior foi liberado. `
+          : `Show de bola, *${clientName}*! Seu horário para *${dateFormattedLabel} (${d}/${m}/${y})* às *${timeStr}* tá confirmado! `;
 
         if (session) {
           session.pendingBookingTime = undefined;
@@ -782,7 +809,7 @@ ORIENTAÇÃO CRÍTICA DE RESPOSTA HUMANA:
         };
       } else {
         return {
-          replyText: `Poxa, às *${timeStr}* já tá ocupado para *${dateFormattedLabel}*. 🙁 Olha os horários vagos:\n${formatHumanSlots(availableSlots)}`,
+          replyText: `Poxa, às *${timeStr}* já tá ocupado para *${dateFormattedLabel}*.  Olha os horários vagos:\n${formatHumanSlots(availableSlots)}`,
           functionCallsExecuted: executedTools
         };
       }
@@ -794,7 +821,7 @@ ORIENTAÇÃO CRÍTICA DE RESPOSTA HUMANA:
       
       let breakdown = 'Conheça nossa equipe e os serviços que cada profissional realiza:\n\n';
       for (const p of profs) {
-        breakdown += `👤 *${p.name}*\n`;
+        breakdown += ` *${p.name}*\n`;
         let pServices = services;
         if (p.servicesHandled && p.servicesHandled.length > 0) {
           pServices = services.filter(s => p.servicesHandled!.includes(s.id));
@@ -807,7 +834,7 @@ ORIENTAÇÃO CRÍTICA DE RESPOSTA HUMANA:
         }
         breakdown += `\n`;
       }
-      breakdown += `Com qual desses profissionais você prefere agendar seu horário? 😊`;
+      breakdown += `Com qual desses profissionais você prefere agendar seu horário? `;
 
       return {
         replyText: breakdown,
@@ -853,7 +880,7 @@ ORIENTAÇÃO CRÍTICA DE RESPOSTA HUMANA:
 
       const [y, m, d] = targetDateStr.split('-');
       return {
-        replyText: `Com certeza! Temos estes horários livres para *${targetDateFormatted} (${d}/${m})*:\n\n${formatHumanSlots(availableSlots)}\n\nQual desses fica melhor para você? ✨`,
+        replyText: `Com certeza! Temos estes horários livres para *${targetDateFormatted} (${d}/${m})*:\n\n${formatHumanSlots(availableSlots)}\n\nQual desses fica melhor para você? `,
         functionCallsExecuted: executedTools
       };
     }
@@ -883,7 +910,7 @@ ORIENTAÇÃO CRÍTICA DE RESPOSTA HUMANA:
       const [y, m, d] = dateStr.split('-');
 
       return {
-        replyText: `Para *${dateFormattedLabel} (${d}/${m})*${periodLabel}, temos estes horários livres na agenda:\n\n${formatHumanSlots(availableSlots, periodFilter)}\n\nQual desses fica melhor para você? ✨`,
+        replyText: `Para *${dateFormattedLabel} (${d}/${m})*${periodLabel}, temos estes horários livres na agenda:\n\n${formatHumanSlots(availableSlots, periodFilter)}\n\nQual desses fica melhor para você? `,
         functionCallsExecuted: executedTools
       };
     }
@@ -910,12 +937,12 @@ ORIENTAÇÃO CRÍTICA DE RESPOSTA HUMANA:
         const availableSlots: string[] = slotsExec.result.horariosDisponiveis || [];
 
         return {
-          replyText: `Com certeza! Vamos agendar ${serviceLabel} para *${dateFormattedLabel}*! ✨\n\nOlha os horários livres que temos:\n${formatHumanSlots(availableSlots)}\n\nQual desses fica melhor pra você?`,
+          replyText: `Com certeza! Vamos agendar ${serviceLabel} para *${dateFormattedLabel}*! \n\nOlha os horários livres que temos:\n${formatHumanSlots(availableSlots)}\n\nQual desses fica melhor pra você?`,
           functionCallsExecuted: executedTools
         };
       } else {
         return {
-          replyText: `Com certeza! Vamos agendar ${serviceLabel}! ✨ Qual dia (ex: hoje, amanhã, sábado) e horário fica melhor pra você vir?`,
+          replyText: `Com certeza! Vamos agendar ${serviceLabel}!  Qual dia (ex: hoje, amanhã, sábado) e horário fica melhor pra você vir?`,
           functionCallsExecuted: []
         };
       }
@@ -958,7 +985,7 @@ ORIENTAÇÃO CRÍTICA DE RESPOSTA HUMANA:
         executedTools.push('create_appointment');
         const [y, m, d] = newDateStr.split('-');
         return {
-          replyText: `Prontinho, *${clientName}*! Mudei seu horário para *${dateFormattedLabel} (${d}/${m}/${y})* às *${newTimeStr}*! O horário antigo foi liberado. ✨`,
+          replyText: `Prontinho, *${clientName}*! Mudei seu horário para *${dateFormattedLabel} (${d}/${m}/${y})* às *${newTimeStr}*! O horário antigo foi liberado. `,
           functionCallsExecuted: executedTools,
           appointmentCreated: exec.appointmentCreated
         };
@@ -974,7 +1001,7 @@ ORIENTAÇÃO CRÍTICA DE RESPOSTA HUMANA:
         executedTools.push('create_appointment');
         const [y, m, d] = newDateStr.split('-');
         return {
-          replyText: `Perfeito! Adicionei um *segundo agendamento* para *${dateFormattedLabel} (${d}/${m}/${y})* às *${newTimeStr}*! ✨`,
+          replyText: `Perfeito! Adicionei um *segundo agendamento* para *${dateFormattedLabel} (${d}/${m}/${y})* às *${newTimeStr}*! `,
           functionCallsExecuted: executedTools,
           appointmentCreated: exec.appointmentCreated
         };
@@ -994,7 +1021,7 @@ ORIENTAÇÃO CRÍTICA DE RESPOSTA HUMANA:
       const exec = await this.executeToolCall(tenantId, 'cancel_appointment', { customerPhone });
       executedTools.push('cancel_appointment');
       return {
-        replyText: `Sem problemas! Seu agendamento foi cancelado. Se precisar de outro horário depois, só me chamar! 👍`,
+        replyText: `Sem problemas! Seu agendamento foi cancelado. Se precisar de outro horário depois, só me chamar! `,
         functionCallsExecuted: executedTools,
         appointmentCancelledId: exec.appointmentCancelledId
       };
@@ -1003,7 +1030,7 @@ ORIENTAÇÃO CRÍTICA DE RESPOSTA HUMANA:
     // Resposta Humana Aberta
     const nameStr = session?.customerName ? ` ${session.customerName}` : '';
     return {
-      replyText: `Com certeza${nameStr}! Como posso te ajudar com seu atendimento hoje? Se quiser dar uma olhada nos horários pra agendar, só me avisar! ✨`,
+      replyText: `Com certeza${nameStr}! Como posso te ajudar com seu atendimento hoje? Se quiser dar uma olhada nos horários pra agendar, só me avisar! `,
       functionCallsExecuted: []
     };
   }

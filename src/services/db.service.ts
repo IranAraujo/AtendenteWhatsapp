@@ -77,8 +77,8 @@ export interface DbTenantItem {
   planTier: 'SINGLE_USER' | 'MULTI_USER';
   maxUsers: number;
   status: 'ACTIVE' | 'SUSPENDED';
-  enablePixDeposit: boolean;
-  pixDepositValue: number;
+  enablePixDeposit?: boolean;
+  pixDepositValue?: number;
   aiConfig: {
     systemPrompt: string;
     businessInfo: string;
@@ -610,6 +610,44 @@ class DbRepository {
       return true;
     }
     return false;
+  }
+
+  async updateUserPassword(userId: string, newPasswordHash: string): Promise<boolean> {
+    for (const t of this.tenants) {
+      const u = t.users.find(usr => usr.id === userId);
+      if (u) {
+        u.passwordHash = newPasswordHash;
+        this.saveData();
+        return true;
+      }
+    }
+    return false;
+  }
+
+  async updateTenantPlan(tenantId: string, planTier: 'SINGLE_USER' | 'MULTI_USER' | 'ENTERPRISE'): Promise<{ success: boolean; maxUsers: number }> {
+    const tenant = await this.getTenantById(tenantId);
+    if (!tenant) return { success: false, maxUsers: 1 };
+
+    let maxUsers = 1;
+    if (planTier === 'MULTI_USER') maxUsers = 5;
+    if (planTier === 'ENTERPRISE') maxUsers = 999;
+
+    tenant.planTier = planTier;
+    tenant.maxUsers = maxUsers;
+    this.saveData();
+    return { success: true, maxUsers };
+  }
+
+  async updateTenantBilling(tenantId: string, billingData: any): Promise<boolean> {
+    const tenant = await this.getTenantById(tenantId);
+    if (!tenant) return false;
+
+    (tenant as any).billing = {
+      ...(tenant as any).billing,
+      ...billingData
+    };
+    this.saveData();
+    return true;
   }
 }
 

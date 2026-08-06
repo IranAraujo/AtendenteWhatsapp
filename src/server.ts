@@ -132,6 +132,70 @@ app.post('/api/auth/login', loginLimiter, async (req: Request, res: Response) =>
   }
 });
 
+app.post('/api/auth/change-password', async (req: Request, res: Response) => {
+  try {
+    const { userId, currentPassword, newPassword } = req.body;
+    if (!userId || !currentPassword || !newPassword) {
+      return res.status(400).json({ success: false, error: 'Todos os campos são obrigatórios.' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ success: false, error: 'A nova senha deve ter no mínimo 6 caracteres.' });
+    }
+
+    let foundUser: any = null;
+    for (const t of (dbRepository as any)['tenants']) {
+      const u = t.users.find((usr: any) => usr.id === userId);
+      if (u) {
+        foundUser = u;
+        break;
+      }
+    }
+
+    if (!foundUser || !comparePassword(currentPassword, foundUser.passwordHash)) {
+      return res.status(401).json({ success: false, error: 'Senha atual incorreta.' });
+    }
+
+    const newHash = hashPassword(newPassword);
+    await dbRepository.updateUserPassword(userId, newHash);
+    res.json({ success: true, message: 'Senha alterada com sucesso!' });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/tenants/:id/upgrade-plan', async (req: Request, res: Response) => {
+  try {
+    const { planTier } = req.body;
+    if (!planTier || !['SINGLE_USER', 'MULTI_USER', 'ENTERPRISE'].includes(planTier)) {
+      return res.status(400).json({ success: false, error: 'Plano inválido.' });
+    }
+
+    const result = await dbRepository.updateTenantPlan(req.params.id, planTier as any);
+    if (result.success) {
+      res.json({ success: true, message: `Plano atualizado para ${planTier}!`, maxUsers: result.maxUsers, planTier });
+    } else {
+      res.status(404).json({ success: false, error: 'Estabelecimento não encontrado.' });
+    }
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.put('/api/tenants/:id/billing', async (req: Request, res: Response) => {
+  try {
+    const { paymentMethod, creditCardMasked, pixKey } = req.body;
+    const updated = await dbRepository.updateTenantBilling(req.params.id, { paymentMethod, creditCardMasked, pixKey, updatedAt: new Date().toISOString() });
+    if (updated) {
+      res.json({ success: true, message: 'Forma de pagamento atualizada com sucesso!' });
+    } else {
+      res.status(404).json({ success: false, error: 'Estabelecimento não encontrado.' });
+    }
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // -------------------------------------------------------------
 // API AGENDAMENTOS AO VIVO PARA O CALENDÁRIO WEB
 // -------------------------------------------------------------
@@ -256,27 +320,27 @@ app.put('/api/tenants/:id/ai', async (req: Request, res: Response) => {
   }
 });
 
-app.put('/api/tenants/:id/pix', async (req: Request, res: Response) => {
+// -------------------------------------------------------------
+// GESTÃO DE EQUIPE, PROFISSIONAIS & HORÁRIOS DA JORNADA DE TRABALHO
+// -------------------------------------------------------------
+
+app.post('/api/tenants/:id/whatsapp/send-direct', async (req: Request, res: Response) => {
   try {
-    const { enablePixDeposit, pixDepositValue } = req.body;
-    const tenant = await dbRepository.getTenantById(req.params.id);
-    if (!tenant) {
-      return res.status(404).json({ success: false, error: 'Estabelecimento não encontrado' });
+    const { phone, message } = req.body;
+    if (!phone || !message) {
+      return res.status(400).json({ success: false, error: 'Telefone e mensagem são obrigatórios.' });
     }
 
-    if (enablePixDeposit !== undefined) tenant.enablePixDeposit = Boolean(enablePixDeposit);
-    if (pixDepositValue !== undefined) tenant.pixDepositValue = Number(pixDepositValue);
-
-    const updated = await dbRepository.saveTenant(tenant);
-    res.json({ success: true, tenant: updated });
+    const sent = await whatsappService.sendMessage(req.params.id, phone, message);
+    if (sent) {
+      res.json({ success: true, message: 'Mensagem enviada com sucesso ao WhatsApp do cliente!' });
+    } else {
+      res.status(400).json({ success: false, error: 'Falha ao enviar mensagem. Verifique se o WhatsApp está conectado.' });
+    }
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message });
   }
 });
-
-// -------------------------------------------------------------
-// GESTÃO DE EQUIPE, PROFISSIONAIS & HORÁRIOS DA JORNADA DE TRABALHO
-// -------------------------------------------------------------
 
 app.get('/api/tenants/:id/users', async (req: Request, res: Response) => {
   try {
@@ -591,13 +655,13 @@ app.post('/api/tenants/:id/reminders/test', async (req: Request, res: Response) 
     }
 
     const config = tenant.remindersConfig || {
-      custom24hText: 'Olá {nome}! Passando para lembrar do seu agendamento amanhã ({data}) às {horario} com {profissional}. ✨\n\nResponda *1* para *CONFIRMAR* ou *2* para *CANCELAR*.',
-      custom1hText: 'Olá {nome}! Seu atendimento é daqui a 1 hora às {horario} com {profissional}. ✨\n\nResponda *1* para *CONFIRMAR* ou *2* para *CANCELAR*.'
+      custom24hText: 'Olá {nome}! Passando para lembrar do seu agendamento amanhã ({data}) às {horario} com {profissional}. \n\nResponda *1* para *CONFIRMAR* ou *2* para *CANCELAR*.',
+      custom1hText: 'Olá {nome}! Seu atendimento é daqui a 1 hora às {horario} com {profissional}. \n\nResponda *1* para *CONFIRMAR* ou *2* para *CANCELAR*.'
     };
 
     const template = type === '24h' 
-      ? (config.custom24hText || 'Olá {nome}! Passando para lembrar do seu agendamento amanhã ({data}) às {horario} com {profissional}. ✨\n\nResponda *1* para *CONFIRMAR* ou *2* para *CANCELAR*.')
-      : (config.custom1hText || 'Olá {nome}! Seu atendimento é daqui a 1 hora às {horario} com {profissional}. ✨\n\nResponda *1* para *CONFIRMAR* ou *2* para *CANCELAR*.');
+      ? (config.custom24hText || 'Olá {nome}! Passando para lembrar do seu agendamento amanhã ({data}) às {horario} com {profissional}. \n\nResponda *1* para *CONFIRMAR* ou *2* para *CANCELAR*.')
+      : (config.custom1hText || 'Olá {nome}! Seu atendimento é daqui a 1 hora às {horario} com {profissional}. \n\nResponda *1* para *CONFIRMAR* ou *2* para *CANCELAR*.');
 
     const now = new Date();
     const dateStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -641,7 +705,7 @@ app.get('*', (req: Request, res: Response) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor SaaS Backend & WhatsApp Real Baileys rodando em http://localhost:${PORT}`);
+  console.log(` Servidor SaaS Backend & WhatsApp Real Baileys rodando em http://localhost:${PORT}`);
   reminderService.startScheduler();
   whatsappService.autoReconnectSavedSessions().catch(err => {
     console.warn('[WhatsApp AutoReconnect Warning]:', err.message);

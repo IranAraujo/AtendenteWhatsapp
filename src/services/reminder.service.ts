@@ -9,7 +9,7 @@ export class ReminderService {
     console.log('⏰ [Reminder Service] Agendador de lembretes automáticos iniciado (verificação a cada 1 minuto).');
     this.timer = setInterval(() => {
       this.checkAndDispatchReminders().catch(err => {
-        console.error('❌ [Reminder Service] Erro na rotina de verificação:', err.message);
+        console.error(' [Reminder Service] Erro na rotina de verificação:', err.message);
       });
     }, intervalMs);
 
@@ -33,9 +33,9 @@ export class ReminderService {
     for (const tenant of tenants) {
       const config = tenant.remindersConfig || {
         enable24hReminder: true,
-        custom24hText: 'Olá {nome}! Passando para lembrar do seu agendamento amanhã ({data}) às {horario} com {profissional}. ✨\n\nResponda *1* para *CONFIRMAR* ou *2* para *CANCELAR*.',
+        custom24hText: 'Olá {nome}! Passando para lembrar do seu agendamento amanhã ({data}) às {horario} com {profissional}. \n\nResponda *1* para *CONFIRMAR* ou *2* para *CANCELAR*.',
         enable1hReminder: true,
-        custom1hText: 'Olá {nome}! Seu atendimento é daqui a 1 hora às {horario} com {profissional}. ✨\n\nResponda *1* para *CONFIRMAR* ou *2* para *CANCELAR*.'
+        custom1hText: 'Olá {nome}! Seu atendimento é daqui a 1 hora às {horario} com {profissional}. \n\nResponda *1* para *CONFIRMAR* ou *2* para *CANCELAR*.'
       };
 
       if (!config.enable24hReminder && !config.enable1hReminder) {
@@ -59,7 +59,7 @@ export class ReminderService {
 
         // Lembrete 24 Horas / 1 Dia Antes (entre 23h30m e 24h30m -> 1410 a 1470 minutos)
         if (config.enable24hReminder && !appt.reminder24hSent && diffMinutes >= 1410 && diffMinutes <= 1470) {
-          const rawText = config.custom24hText || 'Olá {nome}! Lembrando do seu agendamento amanhã ({data}) às {horario} com {profissional}. ✨';
+          const rawText = config.custom24hText || 'Olá {nome}! Lembrando do seu agendamento amanhã ({data}) às {horario} com {profissional}. ';
           const messageText = this.interpolate(rawText, {
             nome: appt.customerName || 'Cliente',
             horario: timeStr,
@@ -77,7 +77,7 @@ export class ReminderService {
 
         // Lembrete 1 Hora Antes (entre 50 min e 70 min antes -> 50 a 70 minutos)
         if (config.enable1hReminder && !appt.reminder1hSent && diffMinutes >= 50 && diffMinutes <= 70) {
-          const rawText = config.custom1hText || 'Olá {nome}! Seu atendimento é daqui a 1 hora às {horario} com {profissional}. ✨';
+          const rawText = config.custom1hText || 'Olá {nome}! Seu atendimento é daqui a 1 hora às {horario} com {profissional}. ';
           const messageText = this.interpolate(rawText, {
             nome: appt.customerName || 'Cliente',
             horario: timeStr,

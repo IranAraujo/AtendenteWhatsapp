@@ -22,8 +22,6 @@ export class AdminService {
       planTier: data.planTier,
       maxUsers,
       status: 'ACTIVE',
-      enablePixDeposit: true,
-      pixDepositValue: 15.00,
       aiConfig: {
         systemPrompt: `Somos a ${data.name}, uma barbearia moderna. Trate o cliente com simpatia e foco na excelência dos cortes!`,
         businessInfo: 'Horário de Atendimento: Segunda a Sábado das 08h às 19h.'
