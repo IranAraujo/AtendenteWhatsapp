@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
+import { rateLimit } from 'express-rate-limit';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -15,17 +15,19 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
+const helmetFn = helmet.default || helmet;
+const rateLimitFn = rateLimit || rateLimit.default;
 // Proteção de Cabeçalhos HTTP com Helmet (permitindo inline scripts para o dashboard local)
-app.use(helmet({ contentSecurityPolicy: false }));
+app.use(helmetFn({ contentSecurityPolicy: false }));
 app.use(cors());
 app.use(express.json());
 // Rate Limiter para Proteção contra Ataques de Força Bruta
-const loginLimiter = rateLimit({
+const loginLimiter = rateLimitFn({
     windowMs: 60 * 1000, // 1 minuto
     max: 15, // Máximo 15 tentativas por minuto por IP
     message: { success: false, error: 'Muitas tentativas de login. Aguarde 1 minuto e tente novamente.' }
 });
-const apiLimiter = rateLimit({
+const apiLimiter = rateLimitFn({
     windowMs: 60 * 1000,
     max: 150,
     message: { success: false, error: 'Limite de requisições excedido. Aguarde alguns instantes.' }
