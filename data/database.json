@@ -32,6 +32,14 @@
           "passwordHash": "$2b$10$/Rf3jn2VDAavfRDnC/b0TevBWnH4mwAvDmjU8W9g4oDzZfy8h5LU.",
           "role": "PROFESSIONAL",
           "professionalId": "prof-2"
+        },
+        {
+          "id": "usr-super-admin",
+          "tenantId": "tenant-demo-estilo",
+          "name": "Super Admin Master",
+          "email": "admin@saas.com",
+          "passwordHash": "$2b$10$VPKOpXFR6eN0ugjZp8BIBuT2YBfdy6xq0UyY3nZINcd/LN787q9Fu",
+          "role": "SUPER_ADMIN"
         }
       ],
       "remindersConfig": {

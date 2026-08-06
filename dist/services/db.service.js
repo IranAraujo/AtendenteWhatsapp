@@ -9,11 +9,25 @@ class DbRepository {
     products = [];
     professionals = [];
     constructor() {
-        const dataDir = path.join(process.cwd(), 'data');
+        const isVercel = !!process.env.VERCEL || process.env.NODE_ENV === 'production';
+        const baseDir = isVercel ? '/tmp' : process.cwd();
+        const dataDir = path.join(baseDir, 'data');
         if (!fs.existsSync(dataDir)) {
-            fs.mkdirSync(dataDir, { recursive: true });
+            try {
+                fs.mkdirSync(dataDir, { recursive: true });
+            }
+            catch (e) { }
         }
         this.dataFilePath = path.join(dataDir, 'database.json');
+        if (isVercel && !fs.existsSync(this.dataFilePath)) {
+            const origPath = path.join(process.cwd(), 'data', 'database.json');
+            if (fs.existsSync(origPath)) {
+                try {
+                    fs.copyFileSync(origPath, this.dataFilePath);
+                }
+                catch (e) { }
+            }
+        }
         this.loadData();
     }
     loadData() {

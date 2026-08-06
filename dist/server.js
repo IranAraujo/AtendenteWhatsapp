@@ -649,10 +649,13 @@ app.post('/api/tenants/:id/reminders/test', async (req, res) => {
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/index.html'));
 });
-app.listen(PORT, () => {
-    console.log(` Servidor SaaS Backend & WhatsApp Real Baileys rodando em http://localhost:${PORT}`);
-    reminderService.startScheduler();
-    whatsappService.autoReconnectSavedSessions().catch(err => {
-        console.warn('[WhatsApp AutoReconnect Warning]:', err.message);
+if (!process.env.VERCEL) {
+    app.listen(PORT, () => {
+        console.log(` Servidor SaaS Backend & WhatsApp Real Baileys rodando em http://localhost:${PORT}`);
+        reminderService.startScheduler();
+        whatsappService.autoReconnectSavedSessions().catch(err => {
+            console.warn('[WhatsApp AutoReconnect Warning]:', err.message);
+        });
     });
-});
+}
+export default app;

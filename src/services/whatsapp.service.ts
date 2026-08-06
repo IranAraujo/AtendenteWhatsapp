@@ -15,6 +15,18 @@ export interface WhatsAppSessionState {
 
 const activeSessions = new Map<string, WhatsAppSessionState>();
 
+function getAuthBaseDir(): string {
+  const isVercel = !!process.env.VERCEL || process.env.NODE_ENV === 'production';
+  const baseDir = isVercel ? '/tmp' : process.cwd();
+  const dataDir = path.join(baseDir, 'data');
+  if (!fs.existsSync(dataDir)) {
+    try {
+      fs.mkdirSync(dataDir, { recursive: true });
+    } catch (e) {}
+  }
+  return dataDir;
+}
+
 export class WhatsAppService {
   getSessionState(tenantId: string): Omit<WhatsAppSessionState, 'sock'> {
     if (!activeSessions.has(tenantId)) {
@@ -40,7 +52,8 @@ export class WhatsAppService {
       return this.getSessionState(tenantId);
     }
 
-    const authFolder = path.join(process.cwd(), 'data', 'baileys_auth_' + tenantId);
+    const dataDir = getAuthBaseDir();
+    const authFolder = path.join(dataDir, 'baileys_auth_' + tenantId);
 
     // Se estiver solicitando novo QR Code ou se o estado não for CONECTADO, limpa sessão obsoleta para evitar travamento em 401/reconexão
     if (forceClean || session.status === 'DISCONNECTED' || !session.sock) {
@@ -52,9 +65,13 @@ export class WhatsAppService {
         session.sock = undefined;
       }
       if (fs.existsSync(authFolder)) {
-        fs.rmSync(authFolder, { recursive: true, force: true });
+        try {
+          fs.rmSync(authFolder, { recursive: true, force: true });
+        } catch (e) {}
       }
-      fs.mkdirSync(authFolder, { recursive: true });
+      try {
+        fs.mkdirSync(authFolder, { recursive: true });
+      } catch (e) {}
     }
 
     session.status = 'INITIALIZING';
@@ -167,6 +184,13 @@ export class WhatsAppService {
         }
       });
 
+      // Aguarda até 8 segundos pela geração do QR Code se o estado estiver em INITIALIZING
+      let attempts = 0;
+      while ((session.status === 'INITIALIZING' && !session.qrCodeBase64) && attempts < 16) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+        attempts++;
+      }
+
       return this.getSessionState(tenantId);
     } catch (err: any) {
       console.error('[WhatsApp Real Baileys Init Error]', err.message);
@@ -245,7 +269,7 @@ export class WhatsAppService {
   }
 
   async autoReconnectSavedSessions() {
-    const dataDir = path.join(process.cwd(), 'data');
+    const dataDir = getAuthBaseDir();
     if (!fs.existsSync(dataDir)) return;
 
     const files = fs.readdirSync(dataDir);
