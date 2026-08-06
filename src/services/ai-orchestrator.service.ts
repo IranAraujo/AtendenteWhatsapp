@@ -660,6 +660,25 @@ ORIENTAÇÃO CRÍTICA DE RESPOSTA HUMANA:
       }
     }
 
+    // 0. Saudação Pura / Cumprimento ("boa tarde", "bom dia", "boa noite", "oi", "olá", "tudo bem?")
+    const isPureGreeting = 
+      /^(bom\s*dia|boa\s*tarde|boa\s*noite|olá|ola|oi|opa|tudo\s*bem|fala|e\s*ai|e\s*aí)[!.\s]*$/i.test(lower.trim());
+
+    if (isPureGreeting) {
+      const nowHour = new Date().getHours();
+      let greetingTime = 'Olá';
+      if (nowHour >= 5 && nowHour < 12) greetingTime = 'Bom dia';
+      else if (nowHour >= 12 && nowHour < 18) greetingTime = 'Boa tarde';
+      else greetingTime = 'Boa noite';
+
+      const tenantObj = await dbRepository.getTenantById(tenantId);
+      const tenantName = tenantObj ? tenantObj.name : 'nosso estabelecimento';
+      return {
+        replyText: `Olá! ${greetingTime}! Seja muito bem-vindo(a) à *${tenantName}*. 😊\n\nComo posso te ajudar hoje? Você pode agendar um horário, consultar nossos serviços ou tirar dúvidas sobre o atendimento!`,
+        functionCallsExecuted: []
+      };
+    }
+
     // 1. Agradecimento e Despedida
     if (lower.includes('obrigad') || lower.includes('valeu') || lower.includes('tmj') || lower.includes('muito obrigado') || lower.includes('flw')) {
       const name = session?.customerName ? `, ${session.customerName}` : '';
@@ -888,10 +907,14 @@ ORIENTAÇÃO CRÍTICA DE RESPOSTA HUMANA:
     // 7. Consulta de Dia / Período
     const isPeriodOrDayQuery = 
       hasExplicitDateInMessage || 
-      lower.includes('manhã') || 
-      lower.includes('manha') || 
-      lower.includes('tarde') || 
-      lower.includes('noite') || 
+      lower.includes('pela manhã') || 
+      lower.includes('pela manha') || 
+      lower.includes('pela tarde') || 
+      lower.includes('pela noite') || 
+      lower.includes('de manhã') || 
+      lower.includes('de manha') || 
+      lower.includes('de tarde') || 
+      lower.includes('de noite') || 
       lower.includes('horario') || 
       lower.includes('horário') || 
       lower.includes('vaga') || 
