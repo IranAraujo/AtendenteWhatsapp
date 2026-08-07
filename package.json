@@ -11,6 +11,9 @@
     "db:generate": "prisma generate",
     "test": "tsx --test src/tests/**/*.test.ts"
   },
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",

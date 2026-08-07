@@ -1,14 +1,21 @@
-FROM node:18-alpine
+FROM node:20-alpine
 
 WORKDIR /app
 
-# Copia manifestos e instala dependências
-COPY package*.json ./
-RUN npm ci --only=production
+# Instala dependências do sistema
+RUN apk add --no-cache python3 make g++
 
-# Copia código fonte e arquivos estáticos
+COPY package*.json ./
+
+RUN npm install
+
 COPY . .
 
-EXPOSE 3001
+RUN npm run build
 
-CMD ["npx", "tsx", "src/server.ts"]
+EXPOSE 10000
+
+ENV PORT=10000
+ENV NODE_ENV=production
+
+CMD ["npm", "start"]
