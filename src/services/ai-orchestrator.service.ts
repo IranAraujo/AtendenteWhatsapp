@@ -262,7 +262,11 @@ export function parseNaturalLanguageDateTime(
   };
 }
 
-export function formatHumanSlots(slots: string[], periodFilter?: 'morning' | 'afternoon'): string {
+export function formatHumanSlots(
+  slots: string[], 
+  periodFilter?: 'morning' | 'afternoon',
+  profMap?: Record<string, string[]>
+): string {
   if (!slots || slots.length === 0) {
     return 'Nenhum horário disponível para esta data.';
   }
@@ -278,7 +282,12 @@ export function formatHumanSlots(slots: string[], periodFilter?: 'morning' | 'af
     filteredSlots = slots;
   }
 
-  return filteredSlots.map(s => `• *${s}*`).join('\n');
+  return filteredSlots.map(s => {
+    const profsList = profMap && profMap[s] && profMap[s].length > 0
+      ? ` _(${profMap[s].join(', ')})_`
+      : '';
+    return `• *${s}*${profsList}`;
+  }).join('\n');
 }
 
 export class AiOrchestratorService {
@@ -301,43 +310,62 @@ export class AiOrchestratorService {
 
     if (functionName === 'get_available_slots') {
       const { professionalId, serviceId, dateStr } = args;
-      const targetProfId = professionalId || 'prof-1';
-      const prof = await dbRepository.getProfessionalById(tenantId, targetProfId);
-      
+      const profs = await dbRepository.listProfessionals(tenantId);
       const services = await dbRepository.listServices(tenantId);
       const service = services.find(s => s.id === serviceId) || services[0];
       const serviceDuration = service ? service.durationMinutes : 30;
 
-      let scheduleToUse: ScheduleTimeBlock = { startTime: '08:00', endTime: '18:00', lunchStartTime: '12:00', lunchEndTime: '13:00' };
+      const profMap: Record<string, string[]> = {};
+      const allUniqueSlots = new Set<string>();
 
-      if (prof && prof.workSchedule) {
-        const [y, m, d] = dateStr.split('-').map(Number);
-        const targetDate = new Date(y, m - 1, d);
-        const dayOfWeek = targetDate.getDay();
+      const targetProfs = professionalId 
+        ? profs.filter(p => p.id === professionalId) 
+        : (profs.length > 0 ? profs : [{ id: 'prof-1', name: 'Atendente', workSchedule: { startTime: '08:00', endTime: '18:00', lunchStartTime: '12:00', lunchEndTime: '13:00' } }]);
 
-        if (prof.workSchedule.workDays && prof.workSchedule.workDays.length > 0 && !prof.workSchedule.workDays.includes(dayOfWeek)) {
-          return { result: { data: dateStr, horariosDisponiveis: [] } };
+      for (const prof of targetProfs) {
+        let scheduleToUse: ScheduleTimeBlock = { startTime: '08:00', endTime: '18:00', lunchStartTime: '12:00', lunchEndTime: '13:00' };
+        if (prof.workSchedule) {
+          const [y, m, d] = dateStr.split('-').map(Number);
+          const targetDate = new Date(y, m - 1, d);
+          const dayOfWeek = targetDate.getDay();
+
+          const workDays = (prof.workSchedule as any)?.workDays;
+          if (workDays && workDays.length > 0 && !workDays.includes(dayOfWeek)) {
+            continue;
+          }
+
+          scheduleToUse = {
+            startTime: prof.workSchedule.startTime || '08:00',
+            endTime: prof.workSchedule.endTime || '18:00',
+            lunchStartTime: prof.workSchedule.lunchStartTime || null,
+            lunchEndTime: prof.workSchedule.lunchEndTime || null
+          };
         }
 
-        scheduleToUse = {
-          startTime: prof.workSchedule.startTime || '08:00',
-          endTime: prof.workSchedule.endTime || '18:00',
-          lunchStartTime: prof.workSchedule.lunchStartTime || null,
-          lunchEndTime: prof.workSchedule.lunchEndTime || null
-        };
+        const existingAppointments = await dbRepository.getAppointmentsForProfessional(prof.id, dateStr);
+        const slots = calculateAvailableSlots({
+          dateStr,
+          serviceDurationMinutes: serviceDuration,
+          schedule: scheduleToUse,
+          existingAppointments: existingAppointments.map(a => ({ startTime: a.startTime, endTime: a.endTime })),
+          slotIntervalMinutes: 30
+        });
+
+        for (const s of slots) {
+          allUniqueSlots.add(s);
+          if (!profMap[s]) profMap[s] = [];
+          profMap[s].push(prof.name);
+        }
       }
 
-      const existingAppointments = await dbRepository.getAppointmentsForProfessional(targetProfId, dateStr);
-
-      const slots = calculateAvailableSlots({
-        dateStr,
-        serviceDurationMinutes: serviceDuration,
-        schedule: scheduleToUse,
-        existingAppointments: existingAppointments.map(a => ({ startTime: a.startTime, endTime: a.endTime })),
-        slotIntervalMinutes: 30
-      });
-
-      return { result: { data: dateStr, horariosDisponiveis: slots } };
+      const sortedSlots = Array.from(allUniqueSlots).sort();
+      return { 
+        result: { 
+          data: dateStr, 
+          horariosDisponiveis: sortedSlots,
+          profMap: profMap
+        } 
+      };
     }
 
     if (functionName === 'create_appointment') {
@@ -955,19 +983,26 @@ ORIENTAÇÃO CRÍTICA DE RESPOSTA HUMANA:
       if (availableSlots.length === 0 && dateFormattedLabel === 'Hoje') {
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
-        const y = tomorrow.getFullYear();
-        const m = String(tomorrow.getMonth() + 1).padStart(2, '0');
-        const d = String(tomorrow.getDate()).padStart(2, '0');
-        targetDateStr = `${y}-${m}-${d}`;
+        const tomY = tomorrow.getFullYear();
+        const tomM = String(tomorrow.getMonth() + 1).padStart(2, '0');
+        const tomD = String(tomorrow.getDate()).padStart(2, '0');
+        targetDateStr = `${tomY}-${tomM}-${tomD}`;
         targetDateFormatted = 'Amanhã';
 
         const tomSlotsExec = await this.executeToolCall(tenantId, 'get_available_slots', { professionalId: defaultProfId, serviceId: defaultServiceId, dateStr: targetDateStr });
         availableSlots = tomSlotsExec.result.horariosDisponiveis || [];
+        const tomProfMap = tomSlotsExec.result.profMap;
+        const [tY, tM, tD] = targetDateStr.split('-');
+        return {
+          replyText: `Com certeza! Temos estes horários livres para *${targetDateFormatted} (${tD}/${tM})*:\n\n${formatHumanSlots(availableSlots, undefined, tomProfMap)}\n\nQual desses fica melhor para você? `,
+          functionCallsExecuted: executedTools
+        };
       }
 
-      const [y, m, d] = targetDateStr.split('-');
+      const profMap = slotsExec.result.profMap;
+      const [curY, curM, curD] = targetDateStr.split('-');
       return {
-        replyText: `Com certeza! Temos estes horários livres para *${targetDateFormatted} (${d}/${m})*:\n\n${formatHumanSlots(availableSlots)}\n\nQual desses fica melhor para você? `,
+        replyText: `Com certeza! Temos estes horários livres para *${targetDateFormatted} (${curD}/${curM})*:\n\n${formatHumanSlots(availableSlots, undefined, profMap)}\n\nQual desses fica melhor para você? `,
         functionCallsExecuted: executedTools
       };
     }
@@ -991,7 +1026,8 @@ ORIENTAÇÃO CRÍTICA DE RESPOSTA HUMANA:
     if (isPeriodOrDayQuery) {
       const slotsExec = await this.executeToolCall(tenantId, 'get_available_slots', { professionalId: defaultProfId, serviceId: defaultServiceId, dateStr });
       executedTools.push('get_available_slots');
-      const availableSlots: string[] = slotsExec.result.horariosDisponiveis || [];
+      let availableSlots: string[] = slotsExec.result.horariosDisponiveis || [];
+      const profMap = slotsExec.result.profMap;
 
       let periodFilter: 'morning' | 'afternoon' | undefined = undefined;
       if (/\bmanhã\b|\bmanha\b/i.test(lower)) periodFilter = 'morning';
@@ -1001,7 +1037,7 @@ ORIENTAÇÃO CRÍTICA DE RESPOSTA HUMANA:
       const [y, m, d] = dateStr.split('-');
 
       return {
-        replyText: `Para *${dateFormattedLabel} (${d}/${m})*${periodLabel}, temos estes horários livres na agenda:\n\n${formatHumanSlots(availableSlots, periodFilter)}\n\nQual desses fica melhor para você? `,
+        replyText: `Para *${dateFormattedLabel} (${d}/${m})*${periodLabel}, temos estes horários livres na agenda:\n\n${formatHumanSlots(availableSlots, periodFilter, profMap)}\n\nQual desses fica melhor para você? `,
         functionCallsExecuted: executedTools
       };
     }
@@ -1026,9 +1062,10 @@ ORIENTAÇÃO CRÍTICA DE RESPOSTA HUMANA:
         const slotsExec = await this.executeToolCall(tenantId, 'get_available_slots', { professionalId: defaultProfId, serviceId: matchedService ? matchedService.id : defaultServiceId, dateStr });
         executedTools.push('get_available_slots');
         const availableSlots: string[] = slotsExec.result.horariosDisponiveis || [];
+        const profMap = slotsExec.result.profMap;
 
         return {
-          replyText: `Com certeza! Vamos agendar ${serviceLabel} para *${dateFormattedLabel}*! \n\nOlha os horários livres que temos:\n${formatHumanSlots(availableSlots)}\n\nQual desses fica melhor pra você?`,
+          replyText: `Com certeza! Vamos agendar ${serviceLabel} para *${dateFormattedLabel}*! \n\nOlha os horários livres que temos:\n${formatHumanSlots(availableSlots, undefined, profMap)}\n\nQual desses fica melhor pra você?`,
           functionCallsExecuted: executedTools
         };
       } else {

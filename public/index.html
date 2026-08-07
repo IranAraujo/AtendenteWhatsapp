@@ -760,6 +760,29 @@
     .msg-user { align-self: flex-end; background: var(--primary); color: white; border-bottom-right-radius: 2px; }
     .msg-bot { align-self: flex-start; background: #1e293b; border: 1px solid var(--bg-card-border); color: var(--text-main); border-bottom-left-radius: 2px; }
 
+    .typing-bubble {
+      display: inline-flex !important;
+      align-items: center;
+      gap: 5px;
+      padding: 12px 18px !important;
+      min-width: 54px;
+    }
+    .typing-dot {
+      width: 7px;
+      height: 7px;
+      background: var(--text-muted);
+      border-radius: 50%;
+      display: inline-block;
+      animation: typingBounce 1.4s infinite ease-in-out both;
+    }
+    .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+    .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+    .typing-dot:nth-child(3) { animation-delay: 0s; }
+    @keyframes typingBounce {
+      0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+      40% { transform: scale(1.15); opacity: 1; background: var(--primary); }
+    }
+
     .chat-input-area {
       padding: 12px;
       border-top: 1px solid var(--bg-card-border);
@@ -3347,14 +3370,14 @@
       input.value = '';
       chatMessages.scrollTop = chatMessages.scrollHeight;
 
-      const loadingBubble = document.createElement('div');
-      loadingBubble.className = 'message-bubble msg-bot';
-      loadingBubble.textContent = 'IA pensando...';
-      chatMessages.appendChild(loadingBubble);
+      const typingBubble = document.createElement('div');
+      typingBubble.className = 'message-bubble msg-bot typing-bubble';
+      typingBubble.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
+      chatMessages.appendChild(typingBubble);
       chatMessages.scrollTop = chatMessages.scrollHeight;
 
       try {
-        const response = await fetch(`${baseUrl}/api/chat/simulate`, {
+        const responsePromise = fetch(`${baseUrl}/api/chat/simulate`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
@@ -3366,10 +3389,17 @@
             pushName: currentUser ? currentUser.name : 'Cliente Teste'
           })
         });
+
+        // Simula o tempo de digitação humana realista (mínimo 900ms)
+        const [response] = await Promise.all([
+          responsePromise,
+          new Promise(res => setTimeout(res, 900))
+        ]);
+
         const data = await response.json();
 
-        if (chatMessages.contains(loadingBubble)) {
-          chatMessages.removeChild(loadingBubble);
+        if (chatMessages.contains(typingBubble)) {
+          chatMessages.removeChild(typingBubble);
         }
 
         const botBubble = document.createElement('div');
@@ -3381,8 +3411,8 @@
           loadAppointmentsFromServer();
         }
       } catch (err) {
-        if (chatMessages.contains(loadingBubble)) {
-          chatMessages.removeChild(loadingBubble);
+        if (chatMessages.contains(typingBubble)) {
+          chatMessages.removeChild(typingBubble);
         }
         const errBubble = document.createElement('div');
         errBubble.className = 'message-bubble msg-bot';

@@ -148,8 +148,20 @@ export class WhatsAppService {
                     const pushName = msg.pushName || undefined;
                     console.log(`[WhatsApp Real Input] Mensagem recebida de ${customerPhone} (${pushName || 'Cliente'}) (tenant ${tenantId}): "${text}"`);
                     try {
+                        // 1. Simula que a atendente está digitando ("Digitando...")
+                        try {
+                            await sock.sendPresenceUpdate('composing', remoteJid);
+                        }
+                        catch (e) { }
                         const aiResult = await aiOrchestrator.processIncomingMessage(tenantId, customerPhone, text, { pushName });
                         if (aiResult.replyText) {
+                            // 2. Tempo de digitação humano realista proporcional ao tamanho do texto (1.2s a 2.8s)
+                            const typingDelay = Math.min(Math.max(aiResult.replyText.length * 15, 1200), 2800);
+                            await new Promise(resolve => setTimeout(resolve, typingDelay));
+                            try {
+                                await sock.sendPresenceUpdate('paused', remoteJid);
+                            }
+                            catch (e) { }
                             await sock.sendMessage(remoteJid, { text: aiResult.replyText });
                             console.log(`[WhatsApp Real Output] Resposta enviada para ${customerPhone}: "${aiResult.replyText}"`);
                         }

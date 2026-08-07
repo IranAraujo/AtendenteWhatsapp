@@ -92,8 +92,17 @@ export function calculateAvailableSlots(params: CalculateAvailableSlotsParams): 
       }
     }
 
-    // Se estiver livre de almoço e de outros agendamentos, adiciona à lista
-    if (!overlapsLunch && !overlapsAppointment) {
+    // 4. Se a data for hoje, não mostra horários que já passaram
+    const now = new Date();
+    const [curYear, curMonth, curDay] = [now.getFullYear(), now.getMonth() + 1, now.getDate()];
+    const todayStr = `${curYear}-${String(curMonth).padStart(2, '0')}-${String(curDay).padStart(2, '0')}`;
+    let isPastTime = false;
+    if (dateStr === todayStr && currentSlotStart.getTime() <= now.getTime()) {
+      isPastTime = true;
+    }
+
+    // Se estiver livre de almoço, de outros agendamentos e não for horário passado, adiciona à lista
+    if (!overlapsLunch && !overlapsAppointment && !isPastTime) {
       availableSlots.push(formatTimeHHMM(currentSlotStart));
     }
 
