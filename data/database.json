@@ -218,8 +218,8 @@
       "serviceId": "srv-1",
       "customerName": "Cliente",
       "customerPhone": "5511955554444",
-      "startTime": "2026-08-07T16:00:00.000Z",
-      "endTime": "2026-08-07T16:45:00.000Z",
+      "startTime": "2026-08-08T16:00:00.000Z",
+      "endTime": "2026-08-08T16:45:00.000Z",
       "status": "CONFIRMED",
       "pixQrCode": "00020126580014br.gov.bcb.pix01361785867739232"
     },
@@ -230,8 +230,8 @@
       "serviceId": "srv-1",
       "customerName": "Cliente Teste",
       "customerPhone": "5511933332222",
-      "startTime": "2026-08-07T17:00:00.000Z",
-      "endTime": "2026-08-07T17:45:00.000Z",
+      "startTime": "2026-08-08T17:00:00.000Z",
+      "endTime": "2026-08-08T17:45:00.000Z",
       "status": "CONFIRMED",
       "pixQrCode": "00020126580014br.gov.bcb.pix01361785867741001"
     },

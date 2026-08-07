@@ -552,6 +552,42 @@ ORIENTAÇÃO CRÍTICA DE RESPOSTA HUMANA:
                 }
             }
         }
+        // Extrai profissional se o cliente mencionou o nome de algum profissional (ex: "com Matheus", "com o Lucas", "vai ser com Matheus")
+        const matchedProf = profs.find(p => {
+            const pNameLower = p.name.toLowerCase();
+            const firstName = pNameLower.split(' ')[0];
+            return lower.includes(pNameLower) ||
+                lower.includes(`com ${firstName}`) ||
+                lower.includes(`com o ${firstName}`) ||
+                lower.includes(`com a ${firstName}`) ||
+                lower.includes(`ser com ${firstName}`) ||
+                lower.includes(`vai ser com ${firstName}`) ||
+                lower.includes(`prefiro ${firstName}`) ||
+                lower.includes(`prefiro o ${firstName}`) ||
+                lower.includes(`quero o ${firstName}`) ||
+                lower.includes(`pode ser ${firstName}`) ||
+                lower === firstName ||
+                lower === pNameLower;
+        });
+        if (matchedProf && session) {
+            session.pendingBookingProfId = matchedProf.id;
+        }
+        // 0.0 Pergunta de Verificação de Agendamento ("Está marcado com Matheus?", "Confirmado com Lucas?")
+        if (lower.includes('marcado com') || lower.includes('agendado com') || lower.includes('vai ser com') || lower.includes('com o matheus') || lower.includes('com o lucas')) {
+            const activeAppt = await dbRepository.findActiveAppointmentByPhone(tenantId, customerPhone);
+            if (activeAppt) {
+                const apptDate = new Date(activeAppt.startTime);
+                const [y, m, d] = activeAppt.startTime.toISOString().split('T')[0].split('-');
+                const timeFormatted = `${String(apptDate.getHours()).padStart(2, '0')}:${String(apptDate.getMinutes()).padStart(2, '0')}`;
+                const pObj = profs.find(p => p.id === activeAppt.professionalId);
+                const pName = pObj ? pObj.name : 'nosso profissional';
+                const clientName = activeAppt.customerName || session?.customerName || 'Cliente';
+                return {
+                    replyText: `Isso mesmo, *${clientName}*! Seu agendamento está 100% confirmado com o *${pName}* às *${timeFormatted}* de *${d}/${m}/${y}*! Te esperamos logo mais. `,
+                    functionCallsExecuted: []
+                };
+            }
+        }
         // 0. Saudação Pura / Cumprimento ("boa tarde", "bom dia", "boa noite", "oi", "olá", "tudo bem?")
         const isPureGreeting = /^(bom\s*dia|boa\s*tarde|boa\s*noite|olá|ola|oi|opa|tudo\s*bem|fala|e\s*ai|e\s*aí)[!.\s]*$/i.test(lower.trim());
         if (isPureGreeting) {
@@ -582,6 +618,26 @@ ORIENTAÇÃO CRÍTICA DE RESPOSTA HUMANA:
                 functionCallsExecuted: []
             };
         }
+        // 2.1 Resposta à escolha explícita de profissional quando já temos horário pendente
+        const isProfOnlyChoice = Boolean(matchedProf) && !hasTimeSpecified && !phoneInText && !lower.includes('hoje') && !lower.includes('amanhã');
+        if (isProfOnlyChoice && session?.pendingBookingTime) {
+            const profName = matchedProf ? matchedProf.name : 'nosso profissional';
+            const targetTimeStr = session.pendingBookingTime;
+            const clientName = session.customerName;
+            const hasRealPhone = isValidRealPhoneNumber(phoneInText || session.customerPhone || customerPhone);
+            if (!clientName) {
+                return {
+                    replyText: `Fechado! Agendamento com o *${profName}* para as *${targetTimeStr}* anotado! ✂️ O agendamento é em seu nome mesmo ou para outra pessoa?`,
+                    functionCallsExecuted: []
+                };
+            }
+            if (!hasRealPhone) {
+                return {
+                    replyText: `Perfeito, *${clientName}*! Agendamento com o *${profName}* às *${targetTimeStr}*! ✂️ Me manda por favor o seu número de WhatsApp com DDD para eu confirmar e te mandar os lembretes?`,
+                    functionCallsExecuted: []
+                };
+            }
+        }
         // 3. SE EXISTE UM HORÁRIO EM NEGOCIAÇÃO E ESTAMOS COLETANDO NOME / TELEFONE
         if (session?.pendingBookingTime) {
             const targetDateStr = session.pendingBookingDateStr || dateStr;
@@ -590,7 +646,8 @@ ORIENTAÇÃO CRÍTICA DE RESPOSTA HUMANA:
             const targetServiceId = session.pendingBookingServiceId || defaultServiceId;
             // Se a mensagem for afirmação ("sim", "pra mim", "isso", "mesmo", "sou eu") e temos o nome do perfil
             const isSelfConfirm = lower.includes('sim') || lower.includes('mim') || lower.includes('isso') || lower.includes('mesmo') || lower.includes('sou eu') || lower.includes('meu nome') || lower.includes('pra mim');
-            if (!session.customerName) {
+            const isProfMention = Boolean(matchedProf) || lower.includes('com ') || lower.includes('com o ') || lower.includes('vai ser com');
+            if (!session.customerName && !isProfMention) {
                 if (isSelfConfirm && session.suggestedPushName) {
                     session.customerName = session.suggestedPushName;
                 }
@@ -601,8 +658,10 @@ ORIENTAÇÃO CRÍTICA DE RESPOSTA HUMANA:
             // Se temos o nome mas não temos um número de telefone real válido (ex: simulador ou conta WhatsApp LID)
             const hasRealPhone = isValidRealPhoneNumber(phoneInText || session.customerPhone || customerPhone);
             if (session.customerName && !hasRealPhone) {
+                const profObj = profs.find(p => p.id === targetProfId) || profs[0];
+                const profLabel = profObj ? ` com o *${profObj.name}*` : '';
                 return {
-                    replyText: `Prazer, *${session.customerName}*! Anotado aqui. Me manda por favor o seu número de telefone/WhatsApp com DDD para eu fechar seu agendamento das *${targetTimeStr}* e te mandar os lembretes? `,
+                    replyText: `Prazer, *${session.customerName}*! Agendamento${profLabel} anotado aqui. Me manda por favor o seu número de telefone/WhatsApp com DDD para eu fechar seu horário das *${targetTimeStr}* e te mandar os lembretes? `,
                     functionCallsExecuted: []
                 };
             }
@@ -622,9 +681,11 @@ ORIENTAÇÃO CRÍTICA DE RESPOSTA HUMANA:
             executedTools.push('create_appointment');
             session.pendingBookingTime = undefined;
             session.pendingBookingDateStr = undefined;
+            const profObj = profs.find(p => p.id === targetProfId) || profs[0];
+            const profName = profObj ? ` com o *${profObj.name}*` : '';
             const [y, m, d] = targetDateStr.split('-');
             return {
-                replyText: `Show de bola, *${clientName}*! Seu horário para *${session.lastQueryDateLabel || 'o dia escolhido'} (${d}/${m}/${y})* às *${targetTimeStr}* está **confirmado com sucesso**! `,
+                replyText: `Show de bola, *${clientName}*! Seu horário${profName} para *${session.lastQueryDateLabel || 'o dia escolhido'} (${d}/${m}/${y})* às *${targetTimeStr}* está **confirmado com sucesso**! `,
                 functionCallsExecuted: executedTools,
                 appointmentCreated: exec.appointmentCreated
             };
