@@ -142,19 +142,20 @@
       "userId": "usr-1",
       "servicesHandled": [
         "srv-1",
-        "srv-1785951284149"
+        "srv-2"
       ],
       "workSchedule": {
-        "startTime": "09:00",
-        "endTime": "19:00",
-        "lunchStartTime": "12:30",
-        "lunchEndTime": "13:30",
+        "startTime": "08:00",
+        "endTime": "18:00",
+        "lunchStartTime": "12:00",
+        "lunchEndTime": "13:00",
         "workDays": [
           1,
           2,
           3,
           4,
-          5
+          5,
+          6
         ]
       }
     },
@@ -162,7 +163,25 @@
       "id": "prof-2",
       "tenantId": "tenant-demo-estilo",
       "name": "Matheus Santos",
-      "userId": "usr-2"
+      "userId": "usr-2",
+      "servicesHandled": [
+        "srv-1",
+        "srv-2"
+      ],
+      "workSchedule": {
+        "startTime": "09:00",
+        "endTime": "19:00",
+        "lunchStartTime": "13:00",
+        "lunchEndTime": "14:00",
+        "workDays": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ]
+      }
     },
     {
       "id": "prof-3",

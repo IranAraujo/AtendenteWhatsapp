@@ -728,7 +728,71 @@ ORIENTAÇÃO CRÍTICA DE RESPOSTA HUMANA:
       }
     }
 
-    // 0. Saudação Pura / Cumprimento ("boa tarde", "bom dia", "boa noite", "oi", "olá", "tudo bem?")
+    // 0.1 Pergunta de Quem Atende / Quem faz o serviço ("quem está atendendo hoje para um corte", "quem corta", "quem faz cabelo")
+    const isWhoAttendsQuery = 
+      lower.includes('quem atende') || 
+      lower.includes('quem está atendendo') || 
+      lower.includes('quem esta atendendo') || 
+      lower.includes('quem corta') || 
+      lower.includes('quem faz') || 
+      lower.includes('quem trabalha');
+
+    const matchedServiceForWho = services.find(s => {
+      const sNameLower = s.name.toLowerCase();
+      return lower.includes(sNameLower) || sNameLower.split(' ').filter(w => w.length > 3).some(w => lower.includes(w));
+    });
+
+    if (isWhoAttendsQuery) {
+      let matchingProfs = profs;
+      if (matchedServiceForWho) {
+        matchingProfs = profs.filter(p => !p.servicesHandled || p.servicesHandled.length === 0 || p.servicesHandled.includes(matchedServiceForWho.id));
+        if (matchingProfs.length === 0) matchingProfs = profs;
+      }
+      const profNames = matchingProfs.map(p => `*${p.name}*`).join(' e ');
+      const sName = matchedServiceForWho ? ` para o *${matchedServiceForWho.name}*` : '';
+      return {
+        replyText: `Para${sName}, nós temos ${profNames} atendendo por aqui! ✂️\n\nVocê gostaria de ver os horários de algum deles ou prefere dar uma olhada na agenda completa?`,
+        functionCallsExecuted: []
+      };
+    }
+
+    // 0.2 Pergunta de Profissionais Específicos ("so lucas está atendendo amanhã?", "só o lucas?", "o matheus também atende?")
+    if (lower.includes('so lucas') || lower.includes('só lucas') || lower.includes('só o lucas') || lower.includes('so o lucas') || lower.includes('so matheus') || lower.includes('só matheus') || lower.includes('so o matheus') || lower.includes('só o matheus') || lower.includes('tambem atende') || lower.includes('também atende')) {
+      const profNames = profs.map(p => `*${p.name}*`).join(' e ');
+      return {
+        replyText: `Nós temos ${profNames} atendendo na nossa equipe! ✂️\n\nSe você preferir agendar com um profissional específico, só me avisar o nome dele que busco os horários dele para você!`,
+        functionCallsExecuted: []
+      };
+    }
+
+    // 0.3 Pergunta de Ausência de Horários ("não tem horario para hoje?", "não tem horário hoje?", "lotado hoje?")
+    if (lower.includes('não tem') || lower.includes('nao tem') || lower.includes('sem horario') || lower.includes('sem horário') || lower.includes('lotado')) {
+      return {
+        replyText: `Olha, para hoje nossa agenda tá totalmente lotada, não sobrou nenhum espacinho livre mesmo! 💈\n\nMas para *Amanhã* nós temos vários horários abertos com a equipe. Quer dar uma olhada nos horários de amanhã?`,
+        functionCallsExecuted: []
+      };
+    }
+
+    // 0.4 Pergunta de Horários de Amanhã ("e para amanha", "e para amanhã", "e amanha", "e amanhã")
+    if (lower === 'e para amanha' || lower === 'e para amanhã' || lower === 'e amanha' || lower === 'e amanhã' || lower === 'e pra amanha' || lower === 'e pra amanhã' || lower === 'e amanhã?' || lower === 'e amanha?') {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const tomY = tomorrow.getFullYear();
+      const tomM = String(tomorrow.getMonth() + 1).padStart(2, '0');
+      const tomD = String(tomorrow.getDate()).padStart(2, '0');
+      const tomDateStr = `${tomY}-${tomM}-${tomD}`;
+
+      const tomSlotsExec = await this.executeToolCall(tenantId, 'get_available_slots', { professionalId: session?.pendingBookingProfId || defaultProfId, serviceId: defaultServiceId, dateStr: tomDateStr });
+      const availableSlots = tomSlotsExec.result.horariosDisponiveis || [];
+      const tomProfMap = tomSlotsExec.result.profMap;
+
+      return {
+        replyText: `Para *Amanhã (${tomD}/${tomM})*, temos estes horários livres na agenda:\n\n${formatHumanSlots(availableSlots, undefined, tomProfMap)}\n\nQual desses fica melhor para você? `,
+        functionCallsExecuted: ['get_available_slots']
+      };
+    }
+
+    // 0.5 Saudação Pura / Cumprimento ("boa tarde", "bom dia", "boa noite", "oi", "olá", "tudo bem?")
     const isPureGreeting = 
       /^(bom\s*dia|boa\s*tarde|boa\s*noite|olá|ola|oi|opa|tudo\s*bem|fala|e\s*ai|e\s*aí)[!.\s]*$/i.test(lower.trim());
 
@@ -761,26 +825,64 @@ ORIENTAÇÃO CRÍTICA DE RESPOSTA HUMANA:
       };
     }
 
-    // 2.1 Resposta à escolha explícita de profissional quando já temos horário pendente
-    const isProfOnlyChoice = Boolean(matchedProf) && !hasTimeSpecified && !phoneInText && !lower.includes('hoje') && !lower.includes('amanhã');
-    if (isProfOnlyChoice && session?.pendingBookingTime) {
-      const profName = matchedProf ? matchedProf.name : 'nosso profissional';
-      const targetTimeStr = session.pendingBookingTime;
-      const clientName = session.customerName;
-      const hasRealPhone = isValidRealPhoneNumber(phoneInText || session.customerPhone || customerPhone);
-
-      if (!clientName) {
-        return {
-          replyText: `Fechado! Agendamento com o *${profName}* para as *${targetTimeStr}* anotado! ✂️ O agendamento é em seu nome mesmo ou para outra pessoa?`,
-          functionCallsExecuted: []
-        };
+    // 2.1 Resposta à escolha explícita de profissional quando o usuário responde apenas o nome do profissional (ex: "matheus", "lucas", "com matheus")
+    const isJustProfName = Boolean(matchedProf) && !hasTimeSpecified && !phoneInText && !lower.includes('hoje') && !lower.includes('amanhã');
+    if (isJustProfName && matchedProf) {
+      if (session) {
+        session.pendingBookingProfId = matchedProf.id;
       }
+      const profName = matchedProf.name;
 
-      if (!hasRealPhone) {
-        return {
-          replyText: `Perfeito, *${clientName}*! Agendamento com o *${profName}* às *${targetTimeStr}*! ✂️ Me manda por favor o seu número de WhatsApp com DDD para eu confirmar e te mandar os lembretes?`,
-          functionCallsExecuted: []
-        };
+      if (session?.pendingBookingTime) {
+        const targetTimeStr = session.pendingBookingTime;
+        const clientName = session.customerName;
+        const hasRealPhone = isValidRealPhoneNumber(phoneInText || session.customerPhone || customerPhone);
+
+        if (!clientName) {
+          return {
+            replyText: `Fechado! Agendamento com o *${profName}* para as *${targetTimeStr}* anotado! ✂️ O agendamento é em seu nome mesmo ou para outra pessoa?`,
+            functionCallsExecuted: []
+          };
+        }
+
+        if (!hasRealPhone) {
+          return {
+            replyText: `Perfeito, *${clientName}*! Agendamento com o *${profName}* às *${targetTimeStr}*! ✂️ Me manda por favor o seu número de WhatsApp com DDD para eu confirmar e te mandar os lembretes?`,
+            functionCallsExecuted: []
+          };
+        }
+      } else {
+        // Se ainda não escolheu horário, exibe diretamente os horários livres desse profissional!
+        const slotsExec = await this.executeToolCall(tenantId, 'get_available_slots', { professionalId: matchedProf.id, serviceId: defaultServiceId, dateStr });
+        let availableSlots: string[] = slotsExec.result.horariosDisponiveis || [];
+        let targetDateFormatted = dateFormattedLabel;
+        let targetDateStr = dateStr;
+
+        if (availableSlots.length === 0 && dateFormattedLabel === 'Hoje') {
+          const tomorrow = new Date();
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          const tomY = tomorrow.getFullYear();
+          const tomM = String(tomorrow.getMonth() + 1).padStart(2, '0');
+          const tomD = String(tomorrow.getDate()).padStart(2, '0');
+          targetDateStr = `${tomY}-${tomM}-${tomD}`;
+          targetDateFormatted = 'Amanhã';
+
+          const tomSlotsExec = await this.executeToolCall(tenantId, 'get_available_slots', { professionalId: matchedProf.id, serviceId: defaultServiceId, dateStr: targetDateStr });
+          availableSlots = tomSlotsExec.result.horariosDisponiveis || [];
+        }
+
+        const [y, m, d] = targetDateStr.split('-');
+        if (availableSlots.length > 0) {
+          return {
+            replyText: `Show de bola! Para o *${profName}*, temos estes horários livres para *${targetDateFormatted} (${d}/${m})*:\n\n${availableSlots.map((s: string) => `• *${s}*`).join('\n')}\n\nQual desses horários fica melhor para você?`,
+            functionCallsExecuted: ['get_available_slots']
+          };
+        } else {
+          return {
+            replyText: `O *${profName}* está com a agenda lotada para hoje! Deseja ver os horários dele para amanhã ou consultar outro dia?`,
+            functionCallsExecuted: []
+          };
+        }
       }
     }
 
