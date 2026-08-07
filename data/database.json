@@ -300,17 +300,6 @@
       "status": "CONFIRMED"
     },
     {
-      "id": "appt-1785951298992",
-      "tenantId": "tenant-demo-estilo",
-      "professionalId": "prof-1",
-      "serviceId": "srv-1",
-      "customerName": "Iran",
-      "customerPhone": "5584988234441",
-      "startTime": "2026-08-06T14:30:00.000Z",
-      "endTime": "2026-08-06T15:15:00.000Z",
-      "status": "CONFIRMED"
-    },
-    {
       "id": "appt-1785952930644",
       "tenantId": "tenant-demo-estilo",
       "professionalId": "prof-1",
@@ -343,6 +332,28 @@
       "endTime": "2026-08-05T21:30:00.000Z",
       "status": "CANCELLED",
       "reminder1hSent": true
+    },
+    {
+      "id": "appt-1786131383845",
+      "tenantId": "tenant-demo-estilo",
+      "professionalId": "prof-2",
+      "serviceId": "srv-1",
+      "customerName": "Iran Araujo",
+      "customerPhone": "5584999991234",
+      "startTime": "2026-08-10T17:00:00.000Z",
+      "endTime": "2026-08-10T17:45:00.000Z",
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "appt-1786132500540",
+      "tenantId": "tenant-demo-estilo",
+      "professionalId": "prof-2",
+      "serviceId": "srv-1",
+      "customerName": "Iran Araujo",
+      "customerPhone": "5584988887766",
+      "startTime": "2026-08-10T18:00:00.000Z",
+      "endTime": "2026-08-10T18:45:00.000Z",
+      "status": "CONFIRMED"
     }
   ]
 }

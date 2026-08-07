@@ -1,13 +1,15 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { dbRepository } from './db.service.js';
 import { calculateAvailableSlots, ScheduleTimeBlock } from './schedule.service.js';
-import { buildSystemInstruction, aiTools } from './ai.service.js';
+import { buildSystemInstruction, buildDynamicBusinessMemory, aiTools } from './ai.service.js';
 
 export interface ProcessMessageResult {
   replyText: string;
   functionCallsExecuted: string[];
   appointmentCreated?: any;
   appointmentCancelledId?: string;
+  engine?: 'GEMINI_LIVE_LLM' | 'LOCAL_FALLBACK';
+  errorReason?: string;
 }
 
 export async function transcribeAudioBuffer(audioBuffer: Buffer, mimeType: string = 'audio/ogg'): Promise<string> {
@@ -282,7 +284,12 @@ export function formatHumanSlots(
     filteredSlots = slots;
   }
 
-  return filteredSlots.map(s => {
+  // Se houver mais de 6 horários, seleciona uma amostragem ideal (manhã/tarde) para não sobrecarregar o cliente
+  const displaySlots = filteredSlots.length > 8 
+    ? [filteredSlots[0], filteredSlots[1], filteredSlots[Math.floor(filteredSlots.length / 2)], filteredSlots[filteredSlots.length - 2], filteredSlots[filteredSlots.length - 1]]
+    : filteredSlots;
+
+  return displaySlots.map(s => {
     const profsList = profMap && profMap[s] && profMap[s].length > 0
       ? ` _(${profMap[s].join(', ')})_`
       : '';
@@ -484,47 +491,23 @@ export class AiOrchestratorService {
 
     const services = await dbRepository.listServices(tenantId);
     const profs = await dbRepository.listProfessionals(tenantId);
+    const products = await dbRepository.listProducts(tenantId);
 
-    let teamAndServicesText = '';
-    for (const p of profs) {
-      teamAndServicesText += `\n• Profissional: ${p.name}\n`;
-      let pServices = services;
-      if (p.servicesHandled && p.servicesHandled.length > 0) {
-        pServices = services.filter(s => p.servicesHandled!.includes(s.id));
-      }
-      pServices.forEach(s => {
-        teamAndServicesText += `  - ${s.name}: R$ ${s.price.toFixed(2)} (${s.durationMinutes} min)\n`;
-      });
-      if (p.workSchedule) {
-        teamAndServicesText += `  - Horário: ${p.workSchedule.startTime || '08:00'} às ${p.workSchedule.endTime || '18:00'}\n`;
-      }
-    }
-
-    const sessionContextText = `
-CONTEXTO DO CLIENTE EM ATENDIMENTO:
-- Telefone do WhatsApp do cliente: ${customerPhone}
-- Nome já informado pelo cliente: ${session.customerName || 'Ainda não informado'}
-- Horário em negociação: ${session.pendingBookingTime ? `${session.pendingBookingDateStr || 'Data pendente'} às ${session.pendingBookingTime}` : 'Nenhum'}
-`;
-
-    const fullInstruction = `${buildSystemInstruction({
+    const fullInstruction = buildDynamicBusinessMemory({
       tenantName: tenant.name,
       systemPrompt,
-      businessInfo
-    })}
-
-EQUIPE DE PROFISSIONAIS E SERVIÇOS QUE CADA UM REALIZA:
-${teamAndServicesText}
-
-${sessionContextText}
-
-DATA E HORA ATUAL DO SISTEMA: ${new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
-
-ORIENTAÇÃO CRÍTICA DE RESPOSTA HUMANA:
-1. Responda a QUALQUER pergunta de forma natural, simpática e humanizada como uma recepcionista real.
-2. NUNCA USE RESPOSTAS PRONTAS OU SCRIPTS RIGIDOS. Responda sempre de forma fluida baseada em todo o histórico da conversa.
-3. Se o cliente perguntar sobre os serviços ou não especificar o profissional desejado, apresente a lista dos profissionais e os serviços de cada um, perguntando com qual ele prefere agendar!
-4. Para confirmar qualquer agendamento, você DEVE solicitar o NOME COMPLETO e o TELEFONE do cliente. Se ele enviar o nome em uma mensagem e o telefone na mensagem seguinte, lembre-se do nome e prossiga sem reiniciar a conversa!`;
+      businessInfo,
+      enablePixDeposit: tenant.enablePixDeposit,
+      pixDepositValue: tenant.pixDepositValue,
+      services,
+      products,
+      professionals: profs,
+      customerPhone,
+      customerName: session.customerName,
+      pendingBookingTime: session.pendingBookingTime,
+      pendingBookingDateStr: session.pendingBookingDateStr,
+      pendingBookingProfId: session.pendingBookingProfId
+    });
 
     const apiKey = process.env.GEMINI_API_KEY || '';
 
@@ -541,7 +524,7 @@ ORIENTAÇÃO CRÍTICA DE RESPOSTA HUMANA:
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
       const model = genAI.getGenerativeModel({
-        model: 'gemini-3.5-flash-lite',
+        model: 'gemini-2.0-flash',
         systemInstruction: fullInstruction,
         tools: [{ functionDeclarations: aiTools }] as any
       });
@@ -588,7 +571,8 @@ ORIENTAÇÃO CRÍTICA DE RESPOSTA HUMANA:
             replyText: finalReply,
             functionCallsExecuted: executedTools,
             appointmentCreated,
-            appointmentCancelledId
+            appointmentCancelledId,
+            engine: 'GEMINI_LIVE_LLM'
           };
         }
       }
@@ -599,11 +583,14 @@ ORIENTAÇÃO CRÍTICA DE RESPOSTA HUMANA:
         replyText: finalReply,
         functionCallsExecuted: executedTools,
         appointmentCreated,
-        appointmentCancelledId
+        appointmentCancelledId,
+        engine: 'GEMINI_LIVE_LLM'
       };
     } catch (error: any) {
       console.warn('[Gemini Live LLM Engine Exception]:', error.message);
       const simResult = await this.simulateHumanReceptionist(tenantId, customerPhone, userMessage, systemPrompt, session);
+      simResult.engine = 'LOCAL_FALLBACK';
+      simResult.errorReason = error.message;
       session.history.push({ role: 'model', text: simResult.replyText });
       return simResult;
     }
@@ -688,22 +675,13 @@ ORIENTAÇÃO CRÍTICA DE RESPOSTA HUMANA:
       }
     }
 
-    // Extrai profissional se o cliente mencionou o nome de algum profissional (ex: "com Matheus", "com o Lucas", "vai ser com Matheus")
+    // Extrai profissional se o cliente mencionou o nome ou primeiro nome de algum profissional (ex: "Matheus tem horário?", "com o Lucas", "vai ser com Matheus")
     const matchedProf = profs.find(p => {
       const pNameLower = p.name.toLowerCase();
       const firstName = pNameLower.split(' ')[0];
-      return lower.includes(pNameLower) || 
-             lower.includes(`com ${firstName}`) || 
-             lower.includes(`com o ${firstName}`) || 
-             lower.includes(`com a ${firstName}`) || 
-             lower.includes(`ser com ${firstName}`) || 
-             lower.includes(`vai ser com ${firstName}`) || 
-             lower.includes(`prefiro ${firstName}`) || 
-             lower.includes(`prefiro o ${firstName}`) || 
-             lower.includes(`quero o ${firstName}`) || 
-             lower.includes(`pode ser ${firstName}`) || 
-             lower === firstName || 
-             lower === pNameLower;
+      const firstNameRegex = new RegExp(`\\b${firstName}\\b`, 'i');
+      const fullNameRegex = new RegExp(`\\b${pNameLower}\\b`, 'i');
+      return fullNameRegex.test(lower) || firstNameRegex.test(lower);
     });
 
     if (matchedProf && session) {
@@ -728,7 +706,7 @@ ORIENTAÇÃO CRÍTICA DE RESPOSTA HUMANA:
       }
     }
 
-    // 0.1 Pergunta de Quem Atende / Quem faz o serviço ("quem está atendendo hoje para um corte", "quem corta", "quem faz cabelo")
+    // 0.1 Pergunta de Quem Atende / Quem faz o serviço ("quem está atendendo na segunda?", "quem corta cabelo?", "quem faz sobrancelha?")
     const isWhoAttendsQuery = 
       lower.includes('quem atende') || 
       lower.includes('quem está atendendo') || 
@@ -749,26 +727,27 @@ ORIENTAÇÃO CRÍTICA DE RESPOSTA HUMANA:
         if (matchingProfs.length === 0) matchingProfs = profs;
       }
       const profNames = matchingProfs.map(p => `*${p.name}*`).join(' e ');
-      const sName = matchedServiceForWho ? ` para o *${matchedServiceForWho.name}*` : '';
+      const dayLabel = hasExplicitDateInMessage ? ` para *${dateFormattedLabel}*` : '';
+      const sLabel = matchedServiceForWho ? ` para *${matchedServiceForWho.name}*` : '';
       return {
-        replyText: `Para${sName}, nós temos ${profNames} atendendo por aqui! ✂️\n\nVocê gostaria de ver os horários de algum deles ou prefere dar uma olhada na agenda completa?`,
+        replyText: `Aqui na equipe${dayLabel}${sLabel}, quem atende é o ${profNames}! ✂️\n\nQuer dar uma olhada nos horários livres de algum deles ou prefere ver a agenda completa?`,
         functionCallsExecuted: []
       };
     }
 
-    // 0.2 Pergunta de Profissionais Específicos ("so lucas está atendendo amanhã?", "só o lucas?", "o matheus também atende?")
+    // 0.2 Pergunta de Profissionais Específicos ("só o lucas atende?", "o matheus também atende?")
     if (lower.includes('so lucas') || lower.includes('só lucas') || lower.includes('só o lucas') || lower.includes('so o lucas') || lower.includes('so matheus') || lower.includes('só matheus') || lower.includes('so o matheus') || lower.includes('só o matheus') || lower.includes('tambem atende') || lower.includes('também atende')) {
       const profNames = profs.map(p => `*${p.name}*`).join(' e ');
       return {
-        replyText: `Nós temos ${profNames} atendendo na nossa equipe! ✂️\n\nSe você preferir agendar com um profissional específico, só me avisar o nome dele que busco os horários dele para você!`,
+        replyText: `Nós temos ${profNames} atendendo na nossa equipe! ✂️\n\nSe você preferir agendar com um profissional específico, só me avisar o nome dele que busco os horários pra você!`,
         functionCallsExecuted: []
       };
     }
 
-    // 0.3 Pergunta de Ausência de Horários ("não tem horario para hoje?", "não tem horário hoje?", "lotado hoje?")
+    // 0.3 Pergunta de Ausência de Horários ("não tem horario para hoje?", "lotado hoje?")
     if (lower.includes('não tem') || lower.includes('nao tem') || lower.includes('sem horario') || lower.includes('sem horário') || lower.includes('lotado')) {
       return {
-        replyText: `Olha, para hoje nossa agenda tá totalmente lotada, não sobrou nenhum espacinho livre mesmo! 💈\n\nMas para *Amanhã* nós temos vários horários abertos com a equipe. Quer dar uma olhada nos horários de amanhã?`,
+        replyText: `Poxa, para hoje a nossa agenda já está 100% cheia! 💈\n\nMas para *Amanhã* eu consigo te encaixar com calma na equipe. Quer dar uma olhada nos horários livres de amanhã?`,
         functionCallsExecuted: []
       };
     }
@@ -787,7 +766,7 @@ ORIENTAÇÃO CRÍTICA DE RESPOSTA HUMANA:
       const tomProfMap = tomSlotsExec.result.profMap;
 
       return {
-        replyText: `Para *Amanhã (${tomD}/${tomM})*, temos estes horários livres na agenda:\n\n${formatHumanSlots(availableSlots, undefined, tomProfMap)}\n\nQual desses fica melhor para você? `,
+        replyText: `Para *Amanhã (${tomD}/${tomM})*, temos estes horários livres na agenda:\n\n${formatHumanSlots(availableSlots, undefined, tomProfMap)}\n\nQual desses horários fica melhor para você?`,
         functionCallsExecuted: ['get_available_slots']
       };
     }
@@ -803,10 +782,8 @@ ORIENTAÇÃO CRÍTICA DE RESPOSTA HUMANA:
       else if (nowHour >= 12 && nowHour < 18) greetingTime = 'Boa tarde';
       else greetingTime = 'Boa noite';
 
-      const tenantObj = await dbRepository.getTenantById(tenantId);
-      const tenantName = tenantObj ? tenantObj.name : 'nosso estabelecimento';
       return {
-        replyText: `Olá! ${greetingTime}! Seja muito bem-vindo(a) à *${tenantName}*. 😊\n\nComo posso te ajudar hoje? Você pode agendar um horário, consultar nossos serviços ou tirar dúvidas sobre o atendimento!`,
+        replyText: `${greetingTime}! Tudo ótimo por aqui! 😊 Como posso te ajudar hoje? Se quiser dar uma olhada nos horários, serviços ou agendar um atendimento, só me avisar!`,
         functionCallsExecuted: []
       };
     }
@@ -814,13 +791,13 @@ ORIENTAÇÃO CRÍTICA DE RESPOSTA HUMANA:
     // 1. Agradecimento e Despedida
     if (lower.includes('obrigad') || lower.includes('valeu') || lower.includes('tmj') || lower.includes('muito obrigado') || lower.includes('flw')) {
       const name = session?.customerName ? `, ${session.customerName}` : '';
-      return { replyText: `Por nada${name}! Tamo junto!  Qualquer coisa só me chamar aqui.`, functionCallsExecuted: [] };
+      return { replyText: `Por nada${name}! Tamo junto! Qualquer coisa só me chamar aqui.`, functionCallsExecuted: [] };
     }
 
     // 2. Pergunta de Identidade ("como é seu nome?", "quem é você?", "quem fala?")
     if (lower.includes('seu nome') || lower.includes('como te chamo') || lower.includes('quem e voce') || lower.includes('quem é você') || lower.includes('com quem falo') || lower.includes('quem ta falando') || lower.includes('quem tá falando')) {
       return {
-        replyText: `Sou a Camila, assistente de atendimento e agendamentos!  E com quem eu tô falando?`,
+        replyText: `Sou a recepcionista aqui do estabelecimento! Como posso te ajudar hoje? 😊`,
         functionCallsExecuted: []
       };
     }
@@ -874,7 +851,7 @@ ORIENTAÇÃO CRÍTICA DE RESPOSTA HUMANA:
         const [y, m, d] = targetDateStr.split('-');
         if (availableSlots.length > 0) {
           return {
-            replyText: `Show de bola! Para o *${profName}*, temos estes horários livres para *${targetDateFormatted} (${d}/${m})*:\n\n${availableSlots.map((s: string) => `• *${s}*`).join('\n')}\n\nQual desses horários fica melhor para você?`,
+            replyText: `Show de bola! Para o *${profName}*, temos estes horários livres para *${targetDateFormatted} (${d}/${m})*:\n\n${formatHumanSlots(availableSlots)}\n\nQual desses horários fica melhor para você?`,
             functionCallsExecuted: ['get_available_slots']
           };
         } else {
@@ -886,38 +863,28 @@ ORIENTAÇÃO CRÍTICA DE RESPOSTA HUMANA:
       }
     }
 
-    // 3. SE EXISTE UM HORÁRIO EM NEGOCIAÇÃO E ESTAMOS COLETANDO NOME / TELEFONE
+    // 3. SE EXISTE UM HORÁRIO EM NEGOCIAÇÃO E O CLIENTE ENVIA O NOME OU DADOS
     if (session?.pendingBookingTime) {
       const targetDateStr = session.pendingBookingDateStr || dateStr;
       const targetTimeStr = session.pendingBookingTime;
       const targetProfId = session.pendingBookingProfId || defaultProfId;
       const targetServiceId = session.pendingBookingServiceId || defaultServiceId;
 
-      // Se a mensagem for afirmação ("sim", "pra mim", "isso", "mesmo", "sou eu") e temos o nome do perfil
+      // Se a mensagem contiver o nome (ex: "Iran Araujo", "Meu nome é Iran", "Pode colocar Iran Araujo", "Iran", etc.)
       const isSelfConfirm = lower.includes('sim') || lower.includes('mim') || lower.includes('isso') || lower.includes('mesmo') || lower.includes('sou eu') || lower.includes('meu nome') || lower.includes('pra mim');
       const isProfMention = Boolean(matchedProf) || lower.includes('com ') || lower.includes('com o ') || lower.includes('vai ser com');
 
       if (!session.customerName && !isProfMention) {
         if (isSelfConfirm && session.suggestedPushName) {
           session.customerName = session.suggestedPushName;
-        } else if (!phoneInText && !hasTimeSpecified) {
+        } else if (!hasTimeSpecified) {
           session.customerName = extractCleanCustomerName(userMessage);
         }
       }
 
-      // Se temos o nome mas não temos um número de telefone real válido (ex: simulador ou conta WhatsApp LID)
-      const hasRealPhone = isValidRealPhoneNumber(phoneInText || session.customerPhone || customerPhone);
-      if (session.customerName && !hasRealPhone) {
-        const profObj = profs.find(p => p.id === targetProfId) || profs[0];
-        const profLabel = profObj ? ` com o *${profObj.name}*` : '';
-        return {
-          replyText: `Prazer, *${session.customerName}*! Agendamento${profLabel} anotado aqui. Me manda por favor o seu número de telefone/WhatsApp com DDD para eu fechar seu horário das *${targetTimeStr}* e te mandar os lembretes? `,
-          functionCallsExecuted: []
-        };
-      }
+      const clientName = session.customerName || extractCleanCustomerName(userMessage) || session.suggestedPushName || 'Cliente';
+      session.customerName = clientName;
 
-      // Se temos Nome E Telefone Válido -> Cria o agendamento imediatamente!
-      const clientName = session.customerName || 'Cliente';
       const clientPhone = (phoneInText && isValidRealPhoneNumber(phoneInText)) 
         ? phoneInText 
         : (isValidRealPhoneNumber(session.customerPhone) ? session.customerPhone! : customerPhone);
@@ -939,7 +906,7 @@ ORIENTAÇÃO CRÍTICA DE RESPOSTA HUMANA:
       const profName = profObj ? ` com o *${profObj.name}*` : '';
       const [y, m, d] = targetDateStr.split('-');
       return {
-        replyText: `Show de bola, *${clientName}*! Seu horário${profName} para *${session.lastQueryDateLabel || 'o dia escolhido'} (${d}/${m}/${y})* às *${targetTimeStr}* está **confirmado com sucesso**! `,
+        replyText: `Show de bola, *${clientName}*! Seu horário${profName} para *${session.lastQueryDateLabel || 'o dia escolhido'} (${d}/${m}/${y})* às *${targetTimeStr}* está **confirmado com sucesso**! Te esperamos aqui!`,
         functionCallsExecuted: executedTools,
         appointmentCreated: exec.appointmentCreated
       };
@@ -1109,9 +1076,10 @@ ORIENTAÇÃO CRÍTICA DE RESPOSTA HUMANA:
       };
     }
 
-    // 7. Consulta de Dia / Período
+    // 7. Consulta de Dia / Período / Horários de Profissional
     const isPeriodOrDayQuery = 
       hasExplicitDateInMessage || 
+      Boolean(matchedProf) ||
       lower.includes('pela manhã') || 
       lower.includes('pela manha') || 
       lower.includes('pela tarde') || 
@@ -1126,7 +1094,12 @@ ORIENTAÇÃO CRÍTICA DE RESPOSTA HUMANA:
       lower.includes('vagas');
 
     if (isPeriodOrDayQuery) {
-      const slotsExec = await this.executeToolCall(tenantId, 'get_available_slots', { professionalId: defaultProfId, serviceId: defaultServiceId, dateStr });
+      const targetProfIdToQuery = matchedProf ? matchedProf.id : (session?.pendingBookingProfId || undefined);
+      const slotsExec = await this.executeToolCall(tenantId, 'get_available_slots', { 
+        professionalId: targetProfIdToQuery, 
+        serviceId: defaultServiceId, 
+        dateStr 
+      });
       executedTools.push('get_available_slots');
       let availableSlots: string[] = slotsExec.result.horariosDisponiveis || [];
       const profMap = slotsExec.result.profMap;
@@ -1137,11 +1110,20 @@ ORIENTAÇÃO CRÍTICA DE RESPOSTA HUMANA:
 
       const periodLabel = periodFilter === 'morning' ? ' pela manhã' : periodFilter === 'afternoon' ? ' pela tarde' : '';
       const [y, m, d] = dateStr.split('-');
+      const profLabel = matchedProf ? ` para o *${matchedProf.name}*` : '';
 
-      return {
-        replyText: `Para *${dateFormattedLabel} (${d}/${m})*${periodLabel}, temos estes horários livres na agenda:\n\n${formatHumanSlots(availableSlots, periodFilter, profMap)}\n\nQual desses fica melhor para você? `,
-        functionCallsExecuted: executedTools
-      };
+      if (availableSlots.length > 0) {
+        return {
+          replyText: `Show de bola! Para *${dateFormattedLabel} (${d}/${m})*${profLabel}${periodLabel}, temos estes horários livres:\n\n${formatHumanSlots(availableSlots, periodFilter, profMap)}\n\nQual desses horários fica melhor para você?`,
+          functionCallsExecuted: executedTools
+        };
+      } else {
+        const profNameStr = matchedProf ? `O *${matchedProf.name}*` : 'Nossa equipe';
+        return {
+          replyText: `${profNameStr} está com a agenda lotada para *${dateFormattedLabel} (${d}/${m})*! Deseja ver os horários para outro dia ou consultar outro profissional?`,
+          functionCallsExecuted: executedTools
+        };
+      }
     }
 
     // 7. Detecta se o cliente mencionou algum serviço específico do catálogo

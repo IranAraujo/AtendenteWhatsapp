@@ -383,6 +383,28 @@ class DbRepository {
     return false;
   }
 
+  async updateUserInTenant(tenantId: string, userId: string, updates: { name?: string; email?: string; role?: 'OWNER' | 'PROFESSIONAL' | 'RECEPTIONIST'; password?: string }): Promise<{ success: boolean; user?: DbTenantUser; message?: string }> {
+    const tenant = await this.getTenantById(tenantId);
+    if (!tenant) return { success: false, message: 'Estabelecimento não encontrado.' };
+
+    const user = tenant.users.find(u => u.id === userId);
+    if (!user) return { success: false, message: 'Usuário não encontrado.' };
+
+    if (updates.name) user.name = updates.name;
+    if (updates.email) user.email = updates.email;
+    if (updates.role) user.role = updates.role;
+    if (updates.password && updates.password.trim()) user.passwordHash = updates.password.trim();
+
+    // Atualiza também o nome no objeto Professional vinculado se existir
+    const prof = this.professionals.find(p => p.tenantId === tenantId && (p.userId === userId || p.id === user.professionalId));
+    if (prof && updates.name) {
+      prof.name = updates.name;
+    }
+
+    this.saveData();
+    return { success: true, user };
+  }
+
   // -------------------------------------------------------------
   // GESTÃO DE SERVIÇOS DO ESTABELECIMENTO
   // -------------------------------------------------------------

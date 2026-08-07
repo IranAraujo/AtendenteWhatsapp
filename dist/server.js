@@ -337,6 +337,24 @@ app.post('/api/tenants/:id/users', async (req, res) => {
         res.status(500).json({ success: false, error: error.message });
     }
 });
+app.put('/api/tenants/:id/users/:userId', async (req, res) => {
+    try {
+        const { name, email, role, password } = req.body;
+        const result = await dbRepository.updateUserInTenant(req.params.id, req.params.userId, {
+            name,
+            email,
+            role,
+            password
+        });
+        if (!result.success) {
+            return res.status(400).json({ success: false, error: result.message });
+        }
+        res.json({ success: true, user: result.user });
+    }
+    catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
 app.delete('/api/tenants/:id/users/:userId', async (req, res) => {
     try {
         const deleted = await dbRepository.deleteUserFromTenant(req.params.id, req.params.userId);
@@ -538,7 +556,9 @@ app.post('/api/chat/simulate', async (req, res) => {
             replyText: aiResult.replyText,
             functionCallsExecuted: aiResult.functionCallsExecuted,
             appointmentCreated: aiResult.appointmentCreated || null,
-            appointmentCancelledId: aiResult.appointmentCancelledId || null
+            appointmentCancelledId: aiResult.appointmentCancelledId || null,
+            engine: aiResult.engine || 'LOCAL_FALLBACK',
+            errorReason: aiResult.errorReason || null
         });
     }
     catch (error) {
