@@ -2085,6 +2085,11 @@
       </div>
 
       <div class="form-group">
+        <label>Profissional Responsável</label>
+        <select id="modal-appt-prof" class="form-control"></select>
+      </div>
+
+      <div class="form-group">
         <label>Status do Agendamento</label>
         <select id="modal-appt-status" class="form-control">
           <option value="CONFIRMED">Confirmado</option>
@@ -2942,6 +2947,13 @@
       document.getElementById('modal-appt-time').value = appt.timeStr || '';
       document.getElementById('modal-appt-status').value = appt.status || 'CONFIRMED';
 
+      const profSelect = document.getElementById('modal-appt-prof');
+      if (profSelect) {
+        profSelect.innerHTML = professionalsState.map(p => 
+          `<option value="${p.id}" ${p.id === appt.professionalId || p.name === appt.prof ? 'selected' : ''}>${p.name}</option>`
+        ).join('');
+      }
+
       const customMsgInput = document.getElementById('modal-custom-wa-msg');
       if (customMsgInput) customMsgInput.value = '';
       const feedbackEl = document.getElementById('modal-wa-status-feedback');
@@ -3014,11 +3026,13 @@
         return;
       }
 
+      const professionalId = document.getElementById('modal-appt-prof') ? document.getElementById('modal-appt-prof').value : undefined;
+
       try {
         const response = await fetch(`${baseUrl}/api/appointments/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ customerName, customerPhone, dateStr, timeStr, status })
+          body: JSON.stringify({ customerName, customerPhone, dateStr, timeStr, status, professionalId })
         });
         const data = await response.json();
         if (data.success) {
@@ -3227,20 +3241,35 @@
         renderDashboardRecentAppts(rawList);
         renderWeeklyChart(rawList);
 
+        function parseApptDate(dateInput) {
+          if (!dateInput) return new Date();
+          if (typeof dateInput === 'string') {
+            return new Date(dateInput.replace(/Z$/, ''));
+          }
+          return new Date(dateInput);
+        }
+
         appointmentsState = rawList.map(a => {
-          const startTime = new Date(a.startTime);
-          const endTime = new Date(a.endTime || startTime.getTime() + 45 * 60 * 1000);
+          const startTime = parseApptDate(a.startTime);
+          const endTime = parseApptDate(a.endTime || startTime.getTime() + 45 * 60 * 1000);
           const year = startTime.getFullYear();
           const month = String(startTime.getMonth() + 1).padStart(2, '0');
           const day = String(startTime.getDate()).padStart(2, '0');
           const dateStr = `${year}-${month}-${day}`;
           const timeStr = String(startTime.getHours()).padStart(2, '0') + ':' + String(startTime.getMinutes()).padStart(2, '0');
+          
+          const sObj = servicesState.find(s => s.id === a.serviceId);
+          const pObj = professionalsState.find(p => p.id === a.professionalId);
+
           return {
             id: a.id,
             client: a.customerName || 'Cliente WhatsApp',
             phone: a.customerPhone || '5511999998888',
-            service: 'Atendimento',
-            prof: 'Profissional',
+            serviceId: a.serviceId,
+            service: sObj ? sObj.name : (a.serviceId === 'srv-2' ? 'Corte e Modelagem' : 'Atendimento Estético'),
+            professionalId: a.professionalId,
+            prof: pObj ? pObj.name : 'Profissional',
+            professionalName: pObj ? pObj.name : 'Profissional',
             dateStr,
             timeStr,
             startTime,
@@ -3345,8 +3374,8 @@
       const colors = ['green', 'purple', 'amber'];
 
       displayAppts.slice(0, 4).forEach((a, idx) => {
-        const startTime = new Date(a.startTime);
-        const endTime = new Date(a.endTime || startTime.getTime() + 45 * 60 * 1000);
+        const startTime = parseApptDate(a.startTime);
+        const endTime = parseApptDate(a.endTime || startTime.getTime() + 45 * 60 * 1000);
         
         const timeStr = `${String(startTime.getHours()).padStart(2, '0')}:${String(startTime.getMinutes()).padStart(2, '0')} - ${String(endTime.getHours()).padStart(2, '0')}:${String(endTime.getMinutes()).padStart(2, '0')}`;
         
@@ -3358,6 +3387,11 @@
           dayLabel = `${String(startTime.getDate()).padStart(2, '0')}/${String(startTime.getMonth() + 1).padStart(2, '0')}`;
         }
 
+        const sObj = servicesState.find(s => s.id === a.serviceId);
+        const sName = sObj ? sObj.name : (a.serviceId === 'srv-2' ? 'Corte e Modelagem' : 'Atendimento Estético');
+        const pObj = professionalsState.find(p => p.id === a.professionalId);
+        const pName = pObj ? pObj.name : 'Profissional';
+
         const colorClass = colors[idx % colors.length];
 
         const item = document.createElement('div');
@@ -3367,8 +3401,11 @@
         item.innerHTML = `
           <div class="appt-accent-bar ${colorClass}"></div>
           <div class="appt-info">
-            <div class="appt-service-name">${a.serviceId === 'srv-2' ? 'Corte e Modelagem' : 'Atendimento Estético'}</div>
-            <div class="appt-customer-name">com ${a.customerName || 'Cliente'}</div>
+            <div class="appt-service-name">${sName}</div>
+            <div class="appt-customer-name">
+              <strong>${a.customerName || 'Cliente'}</strong>
+              <span style="font-size: 11px; color: var(--primary); font-weight: 600; margin-left: 6px;">✂️ com ${pName}</span>
+            </div>
           </div>
           <div class="appt-time-box">
             <div class="appt-time">${timeStr}</div>

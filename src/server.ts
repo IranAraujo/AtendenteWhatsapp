@@ -226,13 +226,16 @@ app.get('/api/appointments', async (req: Request, res: Response) => {
 
 app.put('/api/appointments/:id', async (req: Request, res: Response) => {
   try {
-    const { dateStr, timeStr, customerName, customerPhone, status } = req.body;
+    const { dateStr, timeStr, customerName, customerPhone, status, professionalId } = req.body;
     let updates: any = { customerName, customerPhone, status };
+    if (professionalId) updates.professionalId = professionalId;
 
     if (dateStr && timeStr) {
       const [year, month, day] = dateStr.split('-').map(Number);
       const [hours, minutes] = timeStr.split(':').map(Number);
-      const startTime = new Date(year, month - 1, day, hours, minutes);
+      const pad = (n: number) => String(n).padStart(2, '0');
+      const localIso = `${year}-${pad(month)}-${pad(day)}T${pad(hours)}:${pad(minutes)}:00`;
+      const startTime = new Date(localIso);
       const endTime = new Date(startTime.getTime() + 30 * 60 * 1000);
       updates.startTime = startTime;
       updates.endTime = endTime;
