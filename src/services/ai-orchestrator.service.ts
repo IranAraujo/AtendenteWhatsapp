@@ -8,7 +8,7 @@ export interface ProcessMessageResult {
   functionCallsExecuted: string[];
   appointmentCreated?: any;
   appointmentCancelledId?: string;
-  engine?: 'GLM_LIVE_LLM' | 'LOCAL_FALLBACK';
+  engine?: 'LLAMA_LIVE_LLM' | 'GLM_LIVE_LLM' | 'LOCAL_FALLBACK';
   errorReason?: string;
 }
 
@@ -547,7 +547,7 @@ export class AiOrchestratorService {
             'Authorization': `Bearer ${apiKey}`
           },
           body: JSON.stringify({
-            model: 'z-ai/glm-5.2',
+            model: 'meta/llama-3.1-70b-instruct',
             messages,
             tools,
             tool_choice: 'auto',
@@ -558,14 +558,14 @@ export class AiOrchestratorService {
 
         if (!resp.ok) {
           const errBody = await resp.text();
-          throw new Error(`GLM API ${resp.status}: ${errBody}`);
+          throw new Error(`LLM API ${resp.status}: ${errBody}`);
         }
 
         const data = await resp.json();
         const choice = data.choices?.[0];
         const msg = choice?.message;
 
-        if (!msg) throw new Error('GLM retornou resposta vazia.');
+        if (!msg) throw new Error('LLM retornou resposta vazia.');
 
         // Verifica se o modelo quer chamar ferramentas
         if (msg.tool_calls && msg.tool_calls.length > 0) {
@@ -599,7 +599,7 @@ export class AiOrchestratorService {
           functionCallsExecuted: executedTools,
           appointmentCreated,
           appointmentCancelledId,
-          engine: 'GLM_LIVE_LLM'
+          engine: 'LLAMA_LIVE_LLM'
         };
       }
 
