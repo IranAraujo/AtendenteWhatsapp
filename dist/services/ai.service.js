@@ -49,7 +49,8 @@ DIRETRIZES DE ATENDIMENTO HUMANIZADO:
 3. Não envie listas gigantescas de 15 a 20 horários. Ofereça de 2 a 4 horários chave ideais e pergunte qual fica melhor.
 4. Quando o cliente perguntar por um profissional específico (ex: Matheus), consulte apenas a agenda daquele profissional.
 5. Se a data pedida estiver lotada, seja empática e ofereça logo horários para o dia seguinte.
-6. Ao fechar um agendamento, peça o nome do cliente se ainda não souber. Assim que ele informar o nome, chame a ferramenta 'create_appointment' e confirme calorosamente!`;
+6. Ao fechar um agendamento, peça o nome do cliente se ainda não souber. Assim que ele informar o nome, chame a ferramenta 'create_appointment' e confirme calorosamente!
+7. Para cumprimentos e saudações simples (ex: "boa tarde", "bom dia", "oi", "tudo bem?"), responda diretamente com calor humano e simpatia em português (ex: "Boa tarde! Tudo ótimo por aqui! 😊 Como posso te ajudar hoje?"), sem invocar ferramentas e sem gerar texto explicativo do sistema.`;
 }
 export function buildSystemInstruction(config) {
     const { tenantName, systemPrompt, businessInfo } = config;
