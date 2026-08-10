@@ -10,8 +10,6 @@ export interface DynamicMemoryInput {
   tenantName: string;
   systemPrompt?: string;
   businessInfo?: string;
-  enablePixDeposit?: boolean;
-  pixDepositValue?: number;
   services: Array<{ id: string; name: string; price: number; durationMinutes: number; description?: string }>;
   products: Array<{ id: string; name: string; price: number; stock: number; description?: string }>;
   professionals: Array<{ 
@@ -33,8 +31,6 @@ export function buildDynamicBusinessMemory(data: DynamicMemoryInput): string {
     tenantName,
     systemPrompt,
     businessInfo,
-    enablePixDeposit,
-    pixDepositValue,
     services,
     products,
     professionals,
@@ -73,7 +69,7 @@ MEMÓRIA VIVA DA EMPRESA (BASE DE CONHECIMENTO):
 Estabelecimento: ${tenantName}
 Informações Gerais e Endereço: ${businessInfo || 'Atendimento comercial de Segunda a Sábado.'}
 Tom de Voz / Personalidade: ${systemPrompt || 'Acolhedora, educada, ágil e focada na satisfação do cliente.'}
-${enablePixDeposit ? `Política de Sinal/Sinal Pix: Exigido sinal de R$ ${pixDepositValue?.toFixed(2) || '10,00'} para confirmação de agendamentos.` : 'Política de Pagamento: Pagamento no local (Cartão, Dinheiro ou Pix).'}
+Política de Pagamento: Pagamento no local (Cartão, Dinheiro, ou transferência).
 
 CATÁLOGO COMPLETO DE SERVIÇOS:
 ${servicesListStr}

@@ -77,8 +77,6 @@ export interface DbTenantItem {
   planTier: 'SINGLE_USER' | 'MULTI_USER' | 'ENTERPRISE';
   maxUsers: number;
   status: 'ACTIVE' | 'SUSPENDED';
-  enablePixDeposit?: boolean;
-  pixDepositValue?: number;
   aiConfig: {
     systemPrompt: string;
     businessInfo: string;
@@ -161,8 +159,6 @@ class DbRepository {
         planTier: 'MULTI_USER',
         maxUsers: 5,
         status: 'ACTIVE',
-        enablePixDeposit: true,
-        pixDepositValue: 15.00,
         aiConfig: {
           systemPrompt: 'Somos um centro de estética e beleza moderno. Trate o cliente com cordialidade, simpatia e eficiência.',
           businessInfo: 'Endereço: Av. Central, 500 - Centro. Horário: Segunda a Sábado das 08h às 19h.'
@@ -180,8 +176,6 @@ class DbRepository {
         planTier: 'SINGLE_USER',
         maxUsers: 1,
         status: 'ACTIVE',
-        enablePixDeposit: false,
-        pixDepositValue: 0,
         aiConfig: {
           systemPrompt: 'Somos uma clínica de saúde e bem-estar. Trate os pacientes com empatia, respeito e clareza.',
           businessInfo: 'Endereço: Rua das Flores, 120 - Jardim América. Horário: Segunda a Sexta das 08h às 18h.'

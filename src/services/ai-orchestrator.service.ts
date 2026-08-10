@@ -502,8 +502,6 @@ export class AiOrchestratorService {
       tenantName: tenant.name,
       systemPrompt,
       businessInfo,
-      enablePixDeposit: tenant.enablePixDeposit,
-      pixDepositValue: tenant.pixDepositValue,
       services,
       products,
       professionals: profs,

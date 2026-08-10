@@ -1,6 +1,6 @@
 // ai.service.ts - Motor de IA e Memória Dinâmica do Negócio
 export function buildDynamicBusinessMemory(data) {
-    const { tenantName, systemPrompt, businessInfo, enablePixDeposit, pixDepositValue, services, products, professionals, customerPhone, customerName, pendingBookingTime, pendingBookingDateStr, pendingBookingProfId } = data;
+    const { tenantName, systemPrompt, businessInfo, services, products, professionals, customerPhone, customerName, pendingBookingTime, pendingBookingDateStr, pendingBookingProfId } = data;
     const servicesListStr = services.map(s => `- [ID: ${s.id}] *${s.name}*: R$ ${s.price.toFixed(2)} (Duração: ${s.durationMinutes} min)${s.description ? ` - ${s.description}` : ''}`).join('\n');
     const productsListStr = products.length > 0
         ? products.map(p => `- *${p.name}*: R$ ${p.price.toFixed(2)} (${p.stock} unidades em estoque)${p.description ? ` - ${p.description}` : ''}`).join('\n')
@@ -23,7 +23,7 @@ MEMÓRIA VIVA DA EMPRESA (BASE DE CONHECIMENTO):
 Estabelecimento: ${tenantName}
 Informações Gerais e Endereço: ${businessInfo || 'Atendimento comercial de Segunda a Sábado.'}
 Tom de Voz / Personalidade: ${systemPrompt || 'Acolhedora, educada, ágil e focada na satisfação do cliente.'}
-${enablePixDeposit ? `Política de Sinal/Sinal Pix: Exigido sinal de R$ ${pixDepositValue?.toFixed(2) || '10,00'} para confirmação de agendamentos.` : 'Política de Pagamento: Pagamento no local (Cartão, Dinheiro ou Pix).'}
+Política de Pagamento: Pagamento no local (Cartão, Dinheiro, ou transferência).
 
 CATÁLOGO COMPLETO DE SERVIÇOS:
 ${servicesListStr}
