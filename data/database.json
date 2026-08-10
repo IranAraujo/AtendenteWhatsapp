@@ -354,6 +354,17 @@
       "startTime": "2026-08-10T18:00:00.000Z",
       "endTime": "2026-08-10T18:45:00.000Z",
       "status": "CONFIRMED"
+    },
+    {
+      "id": "appt-1786370909229",
+      "tenantId": "tenant-demo-estilo",
+      "professionalId": "prof-1",
+      "serviceId": "srv-2",
+      "customerName": "Iran Araujo",
+      "customerPhone": "5511999998888",
+      "startTime": "2026-08-10T17:00:00.000Z",
+      "endTime": "2026-08-10T17:30:00.000Z",
+      "status": "CONFIRMED"
     }
   ]
 }
