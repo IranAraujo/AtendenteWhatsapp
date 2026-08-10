@@ -6,7 +6,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { calculateAvailableSlots } from './services/schedule.service.js';
-import { buildSystemInstruction, aiTools } from './services/ai.service.js';
+import { buildSystemInstruction } from './services/ai.service.js';
 import { aiOrchestrator } from './services/ai-orchestrator.service.js';
 import { whatsappService } from './services/whatsapp.service.js';
 import { adminService } from './services/admin.service.js';

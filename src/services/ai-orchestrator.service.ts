@@ -1,14 +1,14 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { dbRepository } from './db.service.js';
 import { calculateAvailableSlots, ScheduleTimeBlock } from './schedule.service.js';
-import { buildSystemInstruction, buildDynamicBusinessMemory, aiTools } from './ai.service.js';
+import { buildSystemInstruction, buildDynamicBusinessMemory, buildGlmTools } from './ai.service.js';
 
 export interface ProcessMessageResult {
   replyText: string;
   functionCallsExecuted: string[];
   appointmentCreated?: any;
   appointmentCancelledId?: string;
-  engine?: 'GEMINI_LIVE_LLM' | 'LOCAL_FALLBACK';
+  engine?: 'GLM_LIVE_LLM' | 'LOCAL_FALLBACK';
   errorReason?: string;
 }
 
@@ -509,85 +509,97 @@ export class AiOrchestratorService {
       pendingBookingProfId: session.pendingBookingProfId
     });
 
-    const apiKey = process.env.GEMINI_API_KEY || '';
+    const apiKey = process.env.NVIDIA_API_KEY || '';
 
-    const formattedHistory: any[] = [];
+    // Monta histórico no formato OpenAI (role: user/assistant)
+    const messages: any[] = [
+      { role: 'system', content: fullInstruction }
+    ];
     for (const h of session.history.slice(0, -1)) {
       if (h.text && typeof h.text === 'string' && h.text.trim()) {
-        formattedHistory.push({
-          role: h.role === 'user' ? 'user' : 'model',
-          parts: [{ text: h.text }]
+        messages.push({
+          role: h.role === 'user' ? 'user' : 'assistant',
+          content: h.text
         });
       }
     }
+    messages.push({ role: 'user', content: userMessage });
+
+    const tools = buildGlmTools();
 
     try {
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({
-        model: 'gemini-2.0-flash',
-        systemInstruction: fullInstruction,
-        tools: [{ functionDeclarations: aiTools }] as any
-      });
-
-      const chat = model.startChat({
-        history: formattedHistory
-      });
-
-      const result = await chat.sendMessage(userMessage);
-      const response = await result.response;
-
-      const functionCalls = response.functionCalls();
       const executedTools: string[] = [];
       let appointmentCreated: any = undefined;
       let appointmentCancelledId: string | undefined = undefined;
 
-      if (functionCalls && functionCalls.length > 0) {
-        for (const call of functionCalls) {
-          executedTools.push(call.name);
-          const toolExec = await this.executeToolCall(tenantId, call.name, call.args);
-          if (toolExec.appointmentCreated) {
-            appointmentCreated = toolExec.appointmentCreated;
-          }
-          if (toolExec.appointmentCancelledId) {
-            appointmentCancelledId = toolExec.appointmentCancelledId;
-          }
+      // Loop de function calling OpenAI-compatible
+      for (let round = 0; round < 5; round++) {
+        const resp = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({
+            model: 'z-ai/glm-5.2',
+            messages,
+            tools,
+            tool_choice: 'auto',
+            max_tokens: 1024,
+            temperature: 0.75
+          })
+        });
 
-          const secondResult = await chat.sendMessage([
-            {
-              functionResponse: {
-                name: call.name,
-                response: {
-                  name: call.name,
-                  content: toolExec.result
-                }
-              }
-            }
-          ]);
-
-          const secondResponse = await secondResult.response;
-          const finalReply = secondResponse.text();
-          session.history.push({ role: 'model', text: finalReply });
-          return {
-            replyText: finalReply,
-            functionCallsExecuted: executedTools,
-            appointmentCreated,
-            appointmentCancelledId,
-            engine: 'GEMINI_LIVE_LLM'
-          };
+        if (!resp.ok) {
+          const errBody = await resp.text();
+          throw new Error(`GLM API ${resp.status}: ${errBody}`);
         }
+
+        const data = await resp.json();
+        const choice = data.choices?.[0];
+        const msg = choice?.message;
+
+        if (!msg) throw new Error('GLM retornou resposta vazia.');
+
+        // Verifica se o modelo quer chamar ferramentas
+        if (msg.tool_calls && msg.tool_calls.length > 0) {
+          messages.push(msg); // adiciona a mensagem do assistant com tool_calls
+
+          for (const toolCall of msg.tool_calls) {
+            const toolName = toolCall.function.name;
+            let toolArgs: any = {};
+            try { toolArgs = JSON.parse(toolCall.function.arguments || '{}'); } catch {}
+
+            executedTools.push(toolName);
+            const toolExec = await this.executeToolCall(tenantId, toolName, toolArgs);
+            if (toolExec.appointmentCreated) appointmentCreated = toolExec.appointmentCreated;
+            if (toolExec.appointmentCancelledId) appointmentCancelledId = toolExec.appointmentCancelledId;
+
+            messages.push({
+              role: 'tool',
+              tool_call_id: toolCall.id,
+              content: JSON.stringify(toolExec.result)
+            });
+          }
+          // Continua o loop para o modelo gerar a resposta final
+          continue;
+        }
+
+        // Resposta de texto final
+        const finalReply = msg.content || '';
+        session.history.push({ role: 'model', text: finalReply });
+        return {
+          replyText: finalReply,
+          functionCallsExecuted: executedTools,
+          appointmentCreated,
+          appointmentCancelledId,
+          engine: 'GLM_LIVE_LLM'
+        };
       }
 
-      const finalReply = response.text();
-      session.history.push({ role: 'model', text: finalReply });
-      return {
-        replyText: finalReply,
-        functionCallsExecuted: executedTools,
-        appointmentCreated,
-        appointmentCancelledId,
-        engine: 'GEMINI_LIVE_LLM'
-      };
+      throw new Error('Número máximo de rounds de tool calling atingido.');
     } catch (error: any) {
-      console.warn('[Gemini Live LLM Engine Exception]:', error.message);
+      console.warn('[GLM-5.2 LLM Engine Exception]:', error.message);
       const simResult = await this.simulateHumanReceptionist(tenantId, customerPhone, userMessage, systemPrompt, session);
       simResult.engine = 'LOCAL_FALLBACK';
       simResult.errorReason = error.message;

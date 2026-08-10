@@ -1,4 +1,4 @@
-import { FunctionDeclaration, SchemaType } from '@google/generative-ai';
+// ai.service.ts - Motor de IA e Memória Dinâmica do Negócio
 
 export interface AiConfigInput {
   tenantName: string;
@@ -133,96 +133,106 @@ Informações do Estabelecimento:
 ${businessInfo || 'Horário de funcionamento comercial das 08:00 às 18:00.'}`;
 }
 
-export const aiTools: FunctionDeclaration[] = [
-  {
-    name: 'list_services',
-    description: 'Lista todos os serviços e preços disponíveis no estabelecimento.',
-    parameters: {
-      type: SchemaType.OBJECT,
-      properties: {}
-    }
-  },
-  {
-    name: 'list_products',
-    description: 'Lista todos os produtos à venda no estabelecimento (ex: pomadas, shampoos, óleos) com preços e estoque.',
-    parameters: {
-      type: SchemaType.OBJECT,
-      properties: {}
-    }
-  },
-  {
-    name: 'list_professionals',
-    description: 'Lista os profissionais disponíveis.',
-    parameters: {
-      type: SchemaType.OBJECT,
-      properties: {
-        serviceId: {
-          type: SchemaType.STRING,
-          description: 'ID do serviço opcional.'
+// (legado Gemini removido - usando buildGlmTools() para OpenAI-compatible API)
+
+// =========================================
+// FERRAMENTAS NO FORMATO OPENAI (GLM-5.2 / NVIDIA NIM)
+// =========================================
+export function buildGlmTools() {
+  return [
+    {
+      type: 'function',
+      function: {
+        name: 'list_services',
+        description: 'Lista todos os serviços e preços disponíveis no estabelecimento.',
+        parameters: { type: 'object', properties: {} }
+      }
+    },
+    {
+      type: 'function',
+      function: {
+        name: 'list_products',
+        description: 'Lista todos os produtos à venda no estabelecimento (ex: pomadas, shampoos, óleos) com preços e estoque.',
+        parameters: { type: 'object', properties: {} }
+      }
+    },
+    {
+      type: 'function',
+      function: {
+        name: 'list_professionals',
+        description: 'Lista os profissionais disponíveis.',
+        parameters: {
+          type: 'object',
+          properties: {
+            serviceId: { type: 'string', description: 'ID do serviço opcional.' }
+          }
+        }
+      }
+    },
+    {
+      type: 'function',
+      function: {
+        name: 'get_available_slots',
+        description: 'Busca os horários livres na agenda para um determinado dia e profissional.',
+        parameters: {
+          type: 'object',
+          properties: {
+            professionalId: { type: 'string', description: 'ID do profissional.' },
+            serviceId: { type: 'string', description: 'ID do serviço.' },
+            dateStr: { type: 'string', description: 'Data no formato YYYY-MM-DD (ex: 2026-08-11).' }
+          },
+          required: ['professionalId', 'serviceId', 'dateStr']
+        }
+      }
+    },
+    {
+      type: 'function',
+      function: {
+        name: 'create_appointment',
+        description: 'Cria ou altera o agendamento no sistema. Requer nome completo do cliente, telefone, data e horário.',
+        parameters: {
+          type: 'object',
+          properties: {
+            professionalId: { type: 'string' },
+            serviceId: { type: 'string' },
+            customerName: { type: 'string', description: 'Nome completo do cliente.' },
+            customerPhone: { type: 'string', description: 'Telefone/WhatsApp do cliente.' },
+            dateStr: { type: 'string', description: 'Data no formato YYYY-MM-DD.' },
+            timeStr: { type: 'string', description: 'Horário no formato HH:MM (ex: 14:00).' }
+          },
+          required: ['professionalId', 'serviceId', 'customerName', 'customerPhone', 'dateStr', 'timeStr']
+        }
+      }
+    },
+    {
+      type: 'function',
+      function: {
+        name: 'reschedule_appointment',
+        description: 'Altera a data e/ou horário de um agendamento já existente.',
+        parameters: {
+          type: 'object',
+          properties: {
+            customerPhone: { type: 'string', description: 'Telefone do cliente.' },
+            newDateStr: { type: 'string', description: 'Nova data no formato YYYY-MM-DD.' },
+            newTimeStr: { type: 'string', description: 'Novo horário HH:MM.' }
+          },
+          required: ['customerPhone', 'newDateStr', 'newTimeStr']
+        }
+      }
+    },
+    {
+      type: 'function',
+      function: {
+        name: 'cancel_appointment',
+        description: 'Cancela um agendamento do cliente pelo telefone.',
+        parameters: {
+          type: 'object',
+          properties: {
+            customerPhone: { type: 'string', description: 'Telefone do cliente.' }
+          },
+          required: ['customerPhone']
         }
       }
     }
-  },
-  {
-    name: 'get_available_slots',
-    description: 'Busca os horários livres na agenda para um determinado dia e profissional.',
-    parameters: {
-      type: SchemaType.OBJECT,
-      properties: {
-        professionalId: {
-          type: SchemaType.STRING,
-          description: 'ID do profissional.'
-        },
-        serviceId: {
-          type: SchemaType.STRING,
-          description: 'ID do serviço.'
-        },
-        dateStr: {
-          type: SchemaType.STRING,
-          description: 'Data no formato YYYY-MM-DD (ex: 2026-08-04).'
-        }
-      },
-      required: ['professionalId', 'serviceId', 'dateStr']
-    }
-  },
-  {
-    name: 'create_appointment',
-    description: 'Cria ou altera o agendamento no sistema. Requer nome completo do cliente, telefone, data e horário.',
-    parameters: {
-      type: SchemaType.OBJECT,
-      properties: {
-        professionalId: { type: SchemaType.STRING },
-        serviceId: { type: SchemaType.STRING },
-        customerName: { type: SchemaType.STRING, description: 'Nome completo do cliente.' },
-        customerPhone: { type: SchemaType.STRING, description: 'Telefone/WhatsApp do cliente.' },
-        dateStr: { type: SchemaType.STRING, description: 'Data no formato YYYY-MM-DD.' },
-        timeStr: { type: SchemaType.STRING, description: 'Horário no formato HH:MM (ex: 14:00).' }
-      },
-      required: ['professionalId', 'serviceId', 'customerName', 'customerPhone', 'dateStr', 'timeStr']
-    }
-  },
-  {
-    name: 'reschedule_appointment',
-    description: 'Altera a data e/ou horário de um agendamento já existente.',
-    parameters: {
-      type: SchemaType.OBJECT,
-      properties: {
-        customerPhone: { type: SchemaType.STRING, description: 'Telefone do cliente.' },
-        newDateStr: { type: SchemaType.STRING, description: 'Nova data no formato YYYY-MM-DD.' },
-        newTimeStr: { type: SchemaType.STRING, description: 'Novo horário HH:MM.' }
-      },
-      required: ['customerPhone', 'newDateStr', 'newTimeStr']
-    }
-  },
-  {
-    name: 'cancel_appointment',
-    description: 'Cancela um agendamento do cliente pelo telefone.',
-    parameters: {
-      type: SchemaType.OBJECT,
-      properties: {
-        customerPhone: { type: SchemaType.STRING, description: 'Telefone do cliente.' }
-      },
-      required: ['customerPhone']
-    }
-  }
-];
+  ];
+}
