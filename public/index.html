@@ -3914,45 +3914,69 @@
     let mediaRecorder = null;
     let audioChunks = [];
     let isRecordingAudio = false;
+    let speechRecognition = null;
 
-    async function toggleAudioRecording() {
+    function toggleAudioRecording() {
       const btn = document.getElementById('btn-voice-record');
       const icon = document.getElementById('mic-icon');
       const chatInput = document.getElementById('chat-input');
 
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
       if (!isRecordingAudio) {
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-          alert('Seu navegador não possui suporte para gravar áudio do microfone.');
-          return;
+        if (SpeechRecognition) {
+          try {
+            speechRecognition = new SpeechRecognition();
+            speechRecognition.lang = 'pt-BR';
+            speechRecognition.continuous = false;
+            speechRecognition.interimResults = true;
+
+            speechRecognition.onstart = () => {
+              isRecordingAudio = true;
+              btn.style.background = '#dc2626';
+              btn.style.color = 'white';
+              btn.style.borderColor = '#dc2626';
+              icon.className = 'fa-solid fa-square';
+              btn.title = 'Clique para enviar a mensagem falada';
+              chatInput.placeholder = '🔴 Fale agora... (transcrevendo voz)';
+              chatInput.value = '';
+            };
+
+            speechRecognition.onresult = (event) => {
+              let transcript = '';
+              for (let i = event.resultIndex; i < event.results.length; i++) {
+                transcript += event.results[i][0].transcript;
+              }
+              chatInput.value = transcript;
+            };
+
+            speechRecognition.onend = () => {
+              isRecordingAudio = false;
+              btn.style.background = 'rgba(37, 211, 102, 0.15)';
+              btn.style.color = '#25d366';
+              btn.style.borderColor = 'rgba(37, 211, 102, 0.3)';
+              icon.className = 'fa-solid fa-microphone';
+              btn.title = 'Gravar mensagem de voz';
+              chatInput.placeholder = 'Digite uma mensagem...';
+
+              const spokenText = chatInput.value.trim();
+              if (spokenText) {
+                sendSimulatedVoiceMessage(spokenText);
+              }
+            };
+
+            speechRecognition.onerror = (err) => {
+              console.warn('[SpeechRecognition warning]:', err);
+              startMediaRecorderFallback();
+            };
+
+            speechRecognition.start();
+            return;
+          } catch (e) {
+            console.warn('[SpeechRecognition init error]:', e);
+          }
         }
-
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          audioChunks = [];
-          mediaRecorder = new MediaRecorder(stream);
-
-          mediaRecorder.ondataavailable = (e) => {
-            if (e.data.size > 0) audioChunks.push(e.data);
-          };
-
-          mediaRecorder.onstop = async () => {
-            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-            stream.getTracks().forEach(track => track.stop());
-            await sendSimulatedAudio(audioBlob);
-          };
-
-          mediaRecorder.start();
-          isRecordingAudio = true;
-
-          btn.style.background = '#dc2626';
-          btn.style.color = 'white';
-          btn.style.borderColor = '#dc2626';
-          icon.className = 'fa-solid fa-square';
-          btn.title = 'Clique para parar e enviar o áudio';
-          chatInput.placeholder = '🔴 Gravando áudio de voz... Clique no quadrado para enviar';
-        } catch (err) {
-          alert('Permissão de microfone negada ou erro ao acessar o microfone.');
-        }
+        startMediaRecorderFallback();
       } else {
         isRecordingAudio = false;
         btn.style.background = 'rgba(37, 211, 102, 0.15)';
@@ -3962,13 +3986,115 @@
         btn.title = 'Gravar mensagem de voz';
         chatInput.placeholder = 'Digite uma mensagem...';
 
+        if (speechRecognition) {
+          try { speechRecognition.stop(); } catch (e) {}
+        }
         if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-          mediaRecorder.stop();
+          try { mediaRecorder.stop(); } catch (e) {}
         }
       }
     }
 
-    async function sendSimulatedAudio(audioBlob) {
+    async function startMediaRecorderFallback() {
+      const btn = document.getElementById('btn-voice-record');
+      const icon = document.getElementById('mic-icon');
+      const chatInput = document.getElementById('chat-input');
+
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert('Seu navegador não possui suporte para gravar áudio do microfone.');
+        return;
+      }
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        audioChunks = [];
+        mediaRecorder = new MediaRecorder(stream);
+
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data.size > 0) audioChunks.push(e.data);
+        };
+
+        mediaRecorder.onstop = async () => {
+          const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+          stream.getTracks().forEach(track => track.stop());
+          await sendSimulatedAudioBuffer(audioBlob);
+        };
+
+        mediaRecorder.start();
+        isRecordingAudio = true;
+
+        btn.style.background = '#dc2626';
+        btn.style.color = 'white';
+        btn.style.borderColor = '#dc2626';
+        icon.className = 'fa-solid fa-square';
+        btn.title = 'Clique para enviar o áudio';
+        chatInput.placeholder = '🔴 Gravando áudio de voz... Clique no quadrado para enviar';
+      } catch (err) {
+        alert('Permissão de microfone negada ou erro ao acessar microfone.');
+      }
+    }
+
+    async function sendSimulatedVoiceMessage(spokenText) {
+      const chatMessages = document.getElementById('chat-messages');
+
+      const userBubble = document.createElement('div');
+      userBubble.className = 'message-bubble msg-user';
+      userBubble.innerHTML = `<i class="fa-solid fa-microphone" style="color: #25d366; margin-right: 6px;"></i> 🎙️ <b>"${spokenText}"</b>`;
+      chatMessages.appendChild(userBubble);
+
+      const chatInput = document.getElementById('chat-input');
+      chatInput.value = '';
+
+      const typingBubble = document.createElement('div');
+      typingBubble.className = 'message-bubble msg-bot typing-bubble';
+      typingBubble.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
+      chatMessages.appendChild(typingBubble);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+
+      const systemPrompt = document.getElementById('ai-system-prompt').value;
+      const businessInfo = document.getElementById('ai-business-info').value;
+
+      try {
+        const response = await fetch(`${baseUrl}/api/chat/simulate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tenantId: currentTenantId,
+            customerPhone: simulatorSessionPhone,
+            message: spokenText,
+            systemPrompt: systemPrompt,
+            businessInfo: businessInfo,
+            pushName: currentUser ? currentUser.name : 'Cliente Teste'
+          })
+        });
+
+        const data = await response.json();
+        if (chatMessages.contains(typingBubble)) chatMessages.removeChild(typingBubble);
+
+        const botBubble = document.createElement('div');
+        botBubble.className = 'message-bubble msg-bot';
+        botBubble.textContent = data.replyText || 'Desculpe, não consegui processar a resposta.';
+
+        const engineTag = document.createElement('div');
+        const isLive = data.engine === 'LLAMA_LIVE_LLM' || data.engine === 'GLM_LIVE_LLM';
+        engineTag.style.cssText = `font-size: 9.5px; margin-top: 5px; opacity: 0.7; display: flex; align-items: center; gap: 4px; color: ${isLive ? '#22c55e' : '#f59e0b'};`;
+        engineTag.innerHTML = isLive
+          ? `<span style="width:5px;height:5px;background:#22c55e;border-radius:50%;display:inline-block;"></span> Llama 3.1 Voice STT`
+          : `<span style="width:5px;height:5px;background:#f59e0b;border-radius:50%;display:inline-block;"></span> Modo Offline`;
+        botBubble.appendChild(engineTag);
+        chatMessages.appendChild(botBubble);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        if (data.appointmentCreated) {
+          loadAppointmentsFromServer();
+        }
+      } catch (err) {
+        if (chatMessages.contains(typingBubble)) chatMessages.removeChild(typingBubble);
+        alert('Erro ao enviar mensagem simulada.');
+      }
+    }
+
+    async function sendSimulatedAudioBuffer(audioBlob) {
       const chatMessages = document.getElementById('chat-messages');
 
       const userBubble = document.createElement('div');
