@@ -8,8 +8,8 @@
       "planTier": "MULTI_USER",
       "maxUsers": 5,
       "status": "ACTIVE",
-      "enablePixDeposit": true,
-      "pixDepositValue": 15,
+      "enablePixDeposit": false,
+      "pixDepositValue": 0,
       "aiConfig": {
         "systemPrompt": "Somos um centro de estética e beleza moderno. Trate o cliente com cordialidade, simpatia e eficiência.",
         "businessInfo": "Endereço: Av. Central, 500 - Centro. Horário: Segunda a Sábado das 08h às 19h."

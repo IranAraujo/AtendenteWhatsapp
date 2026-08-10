@@ -390,7 +390,10 @@ export class AiOrchestratorService {
       const [year, month, day] = dateStr.split('-').map(Number);
       const [hours, minutes] = timeStr.split(':').map(Number);
 
-      const startTime = new Date(year, month - 1, day, hours, minutes);
+      // Usa string ISO local para evitar conversão de fuso (ex: 14:00 BRT não vira 11:00 UTC)
+      const pad = (n: number) => String(n).padStart(2, '0');
+      const localIso = `${year}-${pad(month)}-${pad(day)}T${pad(hours)}:${pad(minutes)}:00`;
+      const startTime = new Date(localIso);
       const endTime = new Date(startTime.getTime() + duration * 60 * 1000);
 
       const existingAppt = await dbRepository.findActiveAppointmentByPhone(tenantId, customerPhone);
@@ -440,7 +443,9 @@ export class AiOrchestratorService {
       const [year, month, day] = newDateStr.split('-').map(Number);
       const [hours, minutes] = newTimeStr.split(':').map(Number);
 
-      const startTime = new Date(year, month - 1, day, hours, minutes);
+      const pad = (n: number) => String(n).padStart(2, '0');
+      const localIso = `${year}-${pad(month)}-${pad(day)}T${pad(hours)}:${pad(minutes)}:00`;
+      const startTime = new Date(localIso);
       const endTime = new Date(startTime.getTime() + 30 * 60 * 1000);
 
       const updatedAppt = await dbRepository.updateAppointmentTime(existingAppt.id, startTime, endTime);
