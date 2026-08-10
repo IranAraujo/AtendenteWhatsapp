@@ -1677,6 +1677,9 @@
                     <i class="fa-solid fa-paperclip"></i>
                   </button>
                   <input type="text" id="chat-input" class="chat-input-pill" placeholder="Digite uma mensagem..." onkeypress="if(event.key === 'Enter') sendSimulatedMessage()">
+                  <button type="button" id="btn-voice-record" style="width: 38px; height: 38px; border-radius: 50%; padding: 0; display: flex; align-items: center; justify-content: center; background: rgba(37, 211, 102, 0.15); color: #25d366; border: 1px solid rgba(37, 211, 102, 0.3); cursor: pointer; transition: all 0.2s;" onclick="toggleAudioRecording()" title="Gravar mensagem de voz">
+                    <i class="fa-solid fa-microphone" id="mic-icon" style="font-size: 15px;"></i>
+                  </button>
                   <button type="button" class="btn-primary" style="width: 38px; height: 38px; border-radius: 50%; padding: 0; display: flex; align-items: center; justify-content: center;" onclick="sendSimulatedMessage()" title="Enviar mensagem">
                     <i class="fa-solid fa-paper-plane" style="font-size: 14px;"></i>
                   </button>

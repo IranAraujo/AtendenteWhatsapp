@@ -7,7 +7,7 @@ import { rateLimit } from 'express-rate-limit';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { calculateAvailableSlots } from './services/schedule.service.js';
-import { aiOrchestrator } from './services/ai-orchestrator.service.js';
+import { aiOrchestrator, transcribeAudioBuffer } from './services/ai-orchestrator.service.js';
 import { whatsappService } from './services/whatsapp.service.js';
 import { adminService } from './services/admin.service.js';
 import { dbRepository } from './services/db.service.js';
@@ -561,6 +561,32 @@ app.post('/api/chat/simulate', async (req, res) => {
             tenantId,
             customerPhone,
             message,
+            replyText: aiResult.replyText,
+            functionCallsExecuted: aiResult.functionCallsExecuted,
+            appointmentCreated: aiResult.appointmentCreated || null,
+            appointmentCancelledId: aiResult.appointmentCancelledId || null,
+            engine: aiResult.engine || 'LOCAL_FALLBACK',
+            errorReason: aiResult.errorReason || null
+        });
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+app.post('/api/chat/simulate-audio', async (req, res) => {
+    try {
+        const { tenantId = 'tenant-demo-estilo', customerPhone = '5511999998888', audioBase64, mimeType = 'audio/webm', systemPrompt, businessInfo, pushName } = req.body;
+        if (!audioBase64) {
+            return res.status(400).json({ error: 'Campo "audioBase64" é obrigatório.' });
+        }
+        const audioBuffer = Buffer.from(audioBase64, 'base64');
+        const transcribedText = await transcribeAudioBuffer(audioBuffer, mimeType);
+        const aiResult = await aiOrchestrator.processIncomingMessage(tenantId, customerPhone, transcribedText, { systemPrompt, businessInfo, pushName });
+        res.json({
+            success: true,
+            tenantId,
+            customerPhone,
+            transcribedText,
             replyText: aiResult.replyText,
             functionCallsExecuted: aiResult.functionCallsExecuted,
             appointmentCreated: aiResult.appointmentCreated || null,

@@ -13,30 +13,81 @@ export interface ProcessMessageResult {
 }
 
 export async function transcribeAudioBuffer(audioBuffer: Buffer, mimeType: string = 'audio/ogg'): Promise<string> {
-  const apiKey = process.env.GEMINI_API_KEY || '';
-  if (!apiKey) {
-    throw new Error('Chave GEMINI_API_KEY não configurada no servidor.');
-  }
-
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-lite' });
-
   const cleanMimeType = mimeType.split(';')[0].trim() || 'audio/ogg';
 
-  const audioPart = {
-    inlineData: {
-      data: audioBuffer.toString('base64'),
-      mimeType: cleanMimeType
+  // 1. Groq Whisper (Gratuito e ultraveloz ~300ms)
+  const groqKey = process.env.GROQ_API_KEY || process.env.NVIDIA_API_KEY;
+  if (groqKey && (groqKey.startsWith('gsk_') || process.env.GROQ_API_KEY)) {
+    try {
+      const blob = new Blob([new Uint8Array(audioBuffer)], { type: cleanMimeType });
+      const formData = new FormData();
+      formData.append('file', blob, 'audio.ogg');
+      formData.append('model', 'whisper-large-v3-turbo');
+      formData.append('language', 'pt');
+
+      const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${process.env.GROQ_API_KEY || groqKey}` },
+        body: formData
+      });
+      if (res.ok) {
+        const json: any = await res.json();
+        if (json.text && json.text.trim()) return json.text.trim();
+      }
+    } catch (e: any) {
+      console.warn('[Audio STT Groq Fallback]:', e.message);
     }
-  };
+  }
 
-  const result = await model.generateContent([
-    audioPart,
-    'Transcreva este áudio do WhatsApp exatamente como falado pelo cliente em português do Brasil. Retorne APENAS a transcrição textual exata do áudio, sem saudações, pontuações desnecessárias ou explicações.'
-  ]);
+  // 2. OpenAI Whisper
+  const openaiKey = process.env.OPENAI_API_KEY;
+  if (openaiKey) {
+    try {
+      const blob = new Blob([new Uint8Array(audioBuffer)], { type: cleanMimeType });
+      const formData = new FormData();
+      formData.append('file', blob, 'audio.ogg');
+      formData.append('model', 'whisper-1');
+      formData.append('language', 'pt');
 
-  const response = await result.response;
-  return response.text().trim();
+      const res = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${openaiKey}` },
+        body: formData
+      });
+      if (res.ok) {
+        const json: any = await res.json();
+        if (json.text && json.text.trim()) return json.text.trim();
+      }
+    } catch (e: any) {
+      console.warn('[Audio STT OpenAI Fallback]:', e.message);
+    }
+  }
+
+  // 3. Gemini Multimodal
+  const geminiKey = process.env.GEMINI_API_KEY;
+  if (geminiKey) {
+    try {
+      const genAI = new GoogleGenerativeAI(geminiKey);
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const audioPart = {
+        inlineData: {
+          data: audioBuffer.toString('base64'),
+          mimeType: cleanMimeType
+        }
+      };
+      const result = await model.generateContent([
+        audioPart,
+        'Transcreva este áudio do WhatsApp exatamente como falado pelo cliente em português do Brasil. Retorne APENAS a transcrição textual exata do áudio, sem saudações ou explicações.'
+      ]);
+      const text = (await result.response).text().trim();
+      if (text) return text;
+    } catch (e: any) {
+      console.warn('[Audio STT Gemini Fallback]:', e.message);
+    }
+  }
+
+  // Se nenhuma chave de áudio externa estiver definida, utiliza fallback gracioso
+  throw new Error('Serviço de transcrição de áudio não configurado. Adicione GROQ_API_KEY, OPENAI_API_KEY ou GEMINI_API_KEY nas variáveis de ambiente.');
 }
 
 export interface CustomerSession {
