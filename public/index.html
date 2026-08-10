@@ -3911,6 +3911,122 @@
       chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let isRecordingAudio = false;
+
+    async function toggleAudioRecording() {
+      const btn = document.getElementById('btn-voice-record');
+      const icon = document.getElementById('mic-icon');
+      const chatInput = document.getElementById('chat-input');
+
+      if (!isRecordingAudio) {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          alert('Seu navegador não possui suporte para gravar áudio do microfone.');
+          return;
+        }
+
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          audioChunks = [];
+          mediaRecorder = new MediaRecorder(stream);
+
+          mediaRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0) audioChunks.push(e.data);
+          };
+
+          mediaRecorder.onstop = async () => {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+            stream.getTracks().forEach(track => track.stop());
+            await sendSimulatedAudio(audioBlob);
+          };
+
+          mediaRecorder.start();
+          isRecordingAudio = true;
+
+          btn.style.background = '#dc2626';
+          btn.style.color = 'white';
+          btn.style.borderColor = '#dc2626';
+          icon.className = 'fa-solid fa-square';
+          btn.title = 'Clique para parar e enviar o áudio';
+          chatInput.placeholder = '🔴 Gravando áudio de voz... Clique no quadrado para enviar';
+        } catch (err) {
+          alert('Permissão de microfone negada ou erro ao acessar o microfone.');
+        }
+      } else {
+        isRecordingAudio = false;
+        btn.style.background = 'rgba(37, 211, 102, 0.15)';
+        btn.style.color = '#25d366';
+        btn.style.borderColor = 'rgba(37, 211, 102, 0.3)';
+        icon.className = 'fa-solid fa-microphone';
+        btn.title = 'Gravar mensagem de voz';
+        chatInput.placeholder = 'Digite uma mensagem...';
+
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+          mediaRecorder.stop();
+        }
+      }
+    }
+
+    async function sendSimulatedAudio(audioBlob) {
+      const chatMessages = document.getElementById('chat-messages');
+
+      const userBubble = document.createElement('div');
+      userBubble.className = 'message-bubble msg-user';
+      userBubble.innerHTML = `<i class="fa-solid fa-microphone" style="color: #25d366; margin-right: 6px;"></i> 🎙️ <i>Mensagem de Voz (transcrevendo...)</i>`;
+      chatMessages.appendChild(userBubble);
+
+      const typingBubble = document.createElement('div');
+      typingBubble.className = 'message-bubble msg-bot';
+      typingBubble.innerHTML = `<i class="fa-solid fa-headphones fa-spin" style="margin-right: 6px; color: var(--primary);"></i> Transcrevendo áudio...`;
+      chatMessages.appendChild(typingBubble);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+
+      try {
+        const reader = new FileReader();
+        reader.readAsDataURL(audioBlob);
+        reader.onloadend = async () => {
+          const base64Data = reader.result.split(',')[1];
+          const response = await fetch(`${baseUrl}/api/chat/simulate-audio`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              tenantId: currentTenantId,
+              customerPhone: simulatorSessionPhone,
+              audioBase64: base64Data,
+              mimeType: audioBlob.type || 'audio/webm'
+            })
+          });
+
+          const data = await response.json();
+          if (chatMessages.contains(typingBubble)) chatMessages.removeChild(typingBubble);
+
+          if (data.transcribedText) {
+            userBubble.innerHTML = `<i class="fa-solid fa-microphone" style="color: #25d366; margin-right: 6px;"></i> 🎙️ <b>"${data.transcribedText}"</b>`;
+          }
+
+          const botBubble = document.createElement('div');
+          botBubble.className = 'message-bubble msg-bot';
+          botBubble.textContent = data.replyText || 'Desculpe, não consegui processar a mensagem de voz.';
+
+          const engineTag = document.createElement('div');
+          engineTag.style.cssText = `font-size: 9.5px; margin-top: 5px; opacity: 0.7; display: flex; align-items: center; gap: 4px; color: #22c55e;`;
+          engineTag.innerHTML = `<span style="width:5px;height:5px;background:#22c55e;border-radius:50%;display:inline-block;"></span> Llama 3.1 Voice STT`;
+          botBubble.appendChild(engineTag);
+
+          chatMessages.appendChild(botBubble);
+          chatMessages.scrollTop = chatMessages.scrollHeight;
+
+          if (data.appointmentCreated) {
+            loadAppointmentsFromServer();
+          }
+        };
+      } catch (err) {
+        if (chatMessages.contains(typingBubble)) chatMessages.removeChild(typingBubble);
+        alert('Erro ao processar mensagem de áudio.');
+      }
+    }
+
     async function saveTenantReminderSettings() {
       const enable24h = document.getElementById('rem-24h-toggle').checked;
       const text24h = document.getElementById('rem-24h-text').value;
