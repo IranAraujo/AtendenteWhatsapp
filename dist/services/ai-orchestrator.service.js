@@ -462,7 +462,7 @@ export class AiOrchestratorService {
                         'Authorization': `Bearer ${apiKey}`
                     },
                     body: JSON.stringify({
-                        model: 'meta/llama-3.1-70b-instruct',
+                        model: 'meta/llama-3.1-8b-instruct',
                         messages,
                         tools,
                         tool_choice: 'auto',
