@@ -1,8 +1,9 @@
+import dotenv from 'dotenv';
+dotenv.config();
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import { rateLimit } from 'express-rate-limit';
-import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { calculateAvailableSlots } from './services/schedule.service.js';
@@ -11,7 +12,6 @@ import { whatsappService } from './services/whatsapp.service.js';
 import { adminService } from './services/admin.service.js';
 import { dbRepository } from './services/db.service.js';
 import { generateJwtToken, comparePassword, hashPassword } from './services/auth.service.js';
-dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
@@ -57,13 +57,17 @@ app.get('/dashboard', (req, res) => {
 app.use(express.static(path.join(__dirname, '../public'), { index: false }));
 // Healthcheck
 app.get('/api/health', (req, res) => {
+    const nvidiaKey = process.env.NVIDIA_API_KEY || '';
     res.json({
         status: 'OK',
         app: 'SaaS Atendente & Agendamento WhatsApp IA',
         version: '1.0.0',
-        phase: 'Fase 8 - Tela de Login como Entrada Padrão do Sistema',
         port: PORT,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        env: {
+            NODE_ENV: process.env.NODE_ENV || 'não definida',
+            NVIDIA_API_KEY: nvidiaKey ? `configurada (${nvidiaKey.slice(0, 10)}...)` : '❌ NÃO CONFIGURADA',
+        }
     });
 });
 // Rota dedicada para o Painel Super-Admin Master

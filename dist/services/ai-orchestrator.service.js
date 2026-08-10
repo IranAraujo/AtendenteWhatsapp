@@ -420,6 +420,9 @@ export class AiOrchestratorService {
             pendingBookingProfId: session.pendingBookingProfId
         });
         const apiKey = process.env.NVIDIA_API_KEY || '';
+        if (!apiKey) {
+            throw new Error('NVIDIA_API_KEY não configurada. Adicione a variável de ambiente no painel do Render/servidor.');
+        }
         // Monta histórico no formato OpenAI (role: user/assistant)
         const messages = [
             { role: 'system', content: fullInstruction }

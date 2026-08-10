@@ -1,8 +1,10 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import { rateLimit } from 'express-rate-limit';
-import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { calculateAvailableSlots } from './services/schedule.service.js';
@@ -14,7 +16,6 @@ import { dbRepository } from './services/db.service.js';
 import { generateJwtToken, comparePassword, hashPassword } from './services/auth.service.js';
 import { requireAuth } from './middleware/auth.middleware.js';
 
-dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -74,13 +75,17 @@ app.use(express.static(path.join(__dirname, '../public'), { index: false }));
 
 // Healthcheck
 app.get('/api/health', (req: Request, res: Response) => {
+  const nvidiaKey = process.env.NVIDIA_API_KEY || '';
   res.json({
     status: 'OK',
     app: 'SaaS Atendente & Agendamento WhatsApp IA',
     version: '1.0.0',
-    phase: 'Fase 8 - Tela de Login como Entrada Padrão do Sistema',
     port: PORT,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    env: {
+      NODE_ENV: process.env.NODE_ENV || 'não definida',
+      NVIDIA_API_KEY: nvidiaKey ? `configurada (${nvidiaKey.slice(0, 10)}...)` : '❌ NÃO CONFIGURADA',
+    }
   });
 });
 
