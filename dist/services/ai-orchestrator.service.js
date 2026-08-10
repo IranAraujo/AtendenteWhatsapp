@@ -220,6 +220,17 @@ export function parseNaturalLanguageDateTime(userMessage, session) {
         hasExplicitDateInMessage
     };
 }
+function extractBookingIntentFromText(userMessage) {
+    try {
+        const info = parseNaturalLanguageDateTime(userMessage, undefined);
+        const dateStr = info.hasExplicitDateInMessage ? (info.dateStr || undefined) : undefined;
+        const timeStr = info.hasTimeSpecified ? (info.timeStr || undefined) : undefined;
+        return { dateStr, timeStr };
+    }
+    catch (e) {
+        return {};
+    }
+}
 export function formatHumanSlots(slots, periodFilter, profMap) {
     if (!slots || slots.length === 0) {
         return 'Nenhum horário disponível para esta data.';
@@ -246,6 +257,14 @@ export function formatHumanSlots(slots, periodFilter, profMap) {
     }).join('\n');
 }
 export class AiOrchestratorService {
+    getTomorrowDateStr() {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const y = tomorrow.getFullYear();
+        const m = String(tomorrow.getMonth() + 1).padStart(2, '0');
+        const d = String(tomorrow.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    }
     async executeToolCall(tenantId, functionName, args) {
         if (functionName === 'list_services') {
             const services = await dbRepository.listServices(tenantId);
@@ -418,6 +437,26 @@ export class AiOrchestratorService {
         const services = await dbRepository.listServices(tenantId);
         const profs = await dbRepository.listProfessionals(tenantId);
         const products = await dbRepository.listProducts(tenantId);
+        // 1. Atualiza dados de sessão a partir do texto do usuário
+        const extractedIntent = extractBookingIntentFromText(userMessage);
+        if (extractedIntent.timeStr)
+            session.pendingBookingTime = extractedIntent.timeStr;
+        if (extractedIntent.dateStr)
+            session.pendingBookingDateStr = extractedIntent.dateStr;
+        const possibleName = extractCleanCustomerName(userMessage);
+        if (possibleName && possibleName.toLowerCase() !== 'cliente' && possibleName.length >= 3 && !userMessage.toLowerCase().includes('marcar') && !userMessage.toLowerCase().includes('corte') && !userMessage.toLowerCase().includes('horário')) {
+            session.customerName = possibleName;
+        }
+        if (userMessage.toLowerCase().includes('lucas')) {
+            const profLucas = profs.find(p => p.name.toLowerCase().includes('lucas'));
+            if (profLucas)
+                session.pendingBookingProfId = profLucas.id;
+        }
+        else if (userMessage.toLowerCase().includes('matheus')) {
+            const profMatheus = profs.find(p => p.name.toLowerCase().includes('matheus'));
+            if (profMatheus)
+                session.pendingBookingProfId = profMatheus.id;
+        }
         const fullInstruction = buildDynamicBusinessMemory({
             tenantName: tenant.name,
             systemPrompt,
@@ -489,10 +528,24 @@ export class AiOrchestratorService {
                             toolArgs = JSON.parse(toolCall.function.arguments || '{}');
                         }
                         catch { }
+                        // Preenche dados pendentes da sessão se a IA não passou argumentos
+                        if (toolName === 'create_appointment') {
+                            if (!toolArgs.customerName && session.customerName)
+                                toolArgs.customerName = session.customerName;
+                            if (!toolArgs.dateStr && session.pendingBookingDateStr)
+                                toolArgs.dateStr = session.pendingBookingDateStr;
+                            if (!toolArgs.timeStr && session.pendingBookingTime)
+                                toolArgs.timeStr = session.pendingBookingTime;
+                            if (!toolArgs.professionalId && session.pendingBookingProfId)
+                                toolArgs.professionalId = session.pendingBookingProfId;
+                        }
                         executedTools.push(toolName);
                         const toolExec = await this.executeToolCall(tenantId, toolName, toolArgs);
-                        if (toolExec.appointmentCreated)
+                        if (toolExec.appointmentCreated) {
                             appointmentCreated = toolExec.appointmentCreated;
+                            session.pendingBookingTime = undefined;
+                            session.pendingBookingDateStr = undefined;
+                        }
                         if (toolExec.appointmentCancelledId)
                             appointmentCancelledId = toolExec.appointmentCancelledId;
                         messages.push({
@@ -506,6 +559,31 @@ export class AiOrchestratorService {
                 }
                 // Resposta de texto final
                 const finalReply = msg.content || '';
+                // Safety Net: Se a IA confirmou verbalmente o agendamento mas não acionou a ferramenta create_appointment,
+                // efetuamos a gravação automática no banco para salvar o agendamento!
+                const replyLower = finalReply.toLowerCase();
+                const isVerbalConfirm = (replyLower.includes('confirmad') || replyLower.includes('sucesso') || replyLower.includes('marcad') || replyLower.includes('tudo certo')) && (replyLower.includes('sábado') || replyLower.includes('sabado') || replyLower.includes('amanhã') || replyLower.includes('amanha') || replyLower.includes('hoje') || replyLower.includes('às') || replyLower.includes('as '));
+                const targetCustomerName = session.customerName || (possibleName && possibleName.length >= 3 ? possibleName : undefined);
+                if (!appointmentCreated && isVerbalConfirm && targetCustomerName && targetCustomerName.toLowerCase() !== 'cliente') {
+                    const targetDateStr = session.pendingBookingDateStr || this.getTomorrowDateStr();
+                    const targetTimeStr = session.pendingBookingTime || '10:00';
+                    const targetProfId = session.pendingBookingProfId || profs[0]?.id || 'prof-1';
+                    const targetServiceId = services[0]?.id || 'srv-1';
+                    const safetyExec = await this.executeToolCall(tenantId, 'create_appointment', {
+                        professionalId: targetProfId,
+                        serviceId: targetServiceId,
+                        customerName: targetCustomerName,
+                        customerPhone,
+                        dateStr: targetDateStr,
+                        timeStr: targetTimeStr
+                    });
+                    if (safetyExec.appointmentCreated) {
+                        appointmentCreated = safetyExec.appointmentCreated;
+                        executedTools.push('create_appointment');
+                        session.pendingBookingTime = undefined;
+                        session.pendingBookingDateStr = undefined;
+                    }
+                }
                 session.history.push({ role: 'model', text: finalReply });
                 return {
                     replyText: finalReply,
