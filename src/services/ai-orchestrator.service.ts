@@ -377,12 +377,23 @@ export class AiOrchestratorService {
 
     if (functionName === 'create_appointment') {
       const { professionalId, serviceId, customerName, customerPhone, dateStr, timeStr } = args;
+
+      const cleanName = extractCleanCustomerName(customerName || '');
+      const isGenericName = !cleanName || cleanName.toLowerCase() === 'cliente' || cleanName.toLowerCase() === 'cliente whatsapp' || cleanName.length < 2;
+
+      if (isGenericName) {
+        return {
+          result: {
+            status: 'ERRO_NOME_AUSENTE',
+            mensagem: 'É OBRIGATÓRIO ter o nome do cliente para registrar o agendamento. Por favor, peça o nome do cliente agora e chame a função create_appointment novamente assim que ele responder com o nome.'
+          }
+        };
+      }
+
       const profs = await dbRepository.listProfessionals(tenantId);
       const services = await dbRepository.listServices(tenantId);
       const targetProfId = professionalId || profs[0]?.id || 'prof-1';
       const targetServiceId = serviceId || services[0]?.id || 'srv-1';
-      
-      const cleanName = extractCleanCustomerName(customerName || 'Cliente');
 
       const service = services.find(s => s.id === targetServiceId) || services[0];
       const duration = service ? service.durationMinutes : 30;

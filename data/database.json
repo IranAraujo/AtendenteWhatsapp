@@ -372,6 +372,17 @@
       "startTime": "2026-08-11T17:00:00.000Z",
       "endTime": "2026-08-11T17:30:00.000Z",
       "status": "CONFIRMED"
+    },
+    {
+      "id": "appt-1786380110022",
+      "tenantId": "tenant-demo-estilo",
+      "professionalId": "prof-1",
+      "serviceId": "srv-2",
+      "customerName": "N/A",
+      "customerPhone": "5584999990000",
+      "startTime": "2026-08-11T16:00:00.000Z",
+      "endTime": "2026-08-11T16:30:00.000Z",
+      "status": "CONFIRMED"
     }
   ]
 }
