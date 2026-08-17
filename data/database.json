@@ -231,10 +231,10 @@
       "tenantId": "tenant-demo-estilo",
       "professionalId": "prof-1",
       "serviceId": "srv-1",
-      "customerName": "Cliente",
+      "customerName": "Iran Araujo",
       "customerPhone": "5511955554444",
-      "startTime": "2026-08-08T16:00:00.000Z",
-      "endTime": "2026-08-08T16:45:00.000Z",
+      "startTime": "2026-08-18T17:00:00.000Z",
+      "endTime": "2026-08-18T17:45:00.000Z",
       "status": "CONFIRMED",
       "pixQrCode": "00020126580014br.gov.bcb.pix01361785867739232"
     },
@@ -243,10 +243,10 @@
       "tenantId": "tenant-demo-estilo",
       "professionalId": "prof-1",
       "serviceId": "srv-1",
-      "customerName": "Cliente Teste",
+      "customerName": "nome do cliente",
       "customerPhone": "5511933332222",
-      "startTime": "2026-08-08T17:00:00.000Z",
-      "endTime": "2026-08-08T17:45:00.000Z",
+      "startTime": "2026-08-18T17:00:00.000Z",
+      "endTime": "2026-08-18T17:45:00.000Z",
       "status": "CONFIRMED",
       "pixQrCode": "00020126580014br.gov.bcb.pix01361785867741001"
     },
@@ -404,6 +404,28 @@
       "customerPhone": "5584988112233",
       "startTime": "2026-08-14T13:00:00.000Z",
       "endTime": "2026-08-14T13:30:00.000Z",
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "appt-1786984710261",
+      "tenantId": "tenant-demo-estilo",
+      "professionalId": "prof-1",
+      "serviceId": "srv-1",
+      "customerName": "Iran Araujo",
+      "customerPhone": "551195709158",
+      "startTime": "2026-08-18T16:00:00.000Z",
+      "endTime": "2026-08-18T16:45:00.000Z",
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "appt-1786984714629",
+      "tenantId": "tenant-demo-estilo",
+      "professionalId": "prof-1",
+      "serviceId": "srv-1",
+      "customerName": "Quero agendar amanhão às 14h com o Lucas",
+      "customerPhone": "551193713851",
+      "startTime": "2026-08-18T17:00:00.000Z",
+      "endTime": "2026-08-18T17:45:00.000Z",
       "status": "CONFIRMED"
     }
   ]

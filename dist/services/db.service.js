@@ -167,7 +167,8 @@ class DbRepository {
                     endTime: a.endTime.toISOString()
                 }))
             };
-            fs.writeFileSync(this.dataFilePath, JSON.stringify(dataToSave, null, 2), 'utf-8');
+            const jsonContent = JSON.stringify(dataToSave, null, 2);
+            fs.writeFileSync(this.dataFilePath, jsonContent, 'utf-8');
         }
         catch (err) {
             console.error('[DB Persistence] Erro ao salvar dados no disco:', err.message);
@@ -384,6 +385,9 @@ class DbRepository {
         if (!tenantId)
             return this.inMemoryAppointments;
         return this.inMemoryAppointments.filter(a => a.tenantId === tenantId && a.status !== 'CANCELLED');
+    }
+    async listAppointments(tenantId) {
+        return this.getAllAppointments(tenantId);
     }
     async getAppointmentsForProfessional(professionalId, dateStr) {
         return this.inMemoryAppointments.filter(a => {

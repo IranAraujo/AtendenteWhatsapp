@@ -80,16 +80,33 @@ export async function transcribeAudioBuffer(audioBuffer, mimeType = 'audio/ogg')
     throw new Error('Serviço de transcrição de áudio não configurado. Adicione GROQ_API_KEY, OPENAI_API_KEY ou GEMINI_API_KEY nas variáveis de ambiente.');
 }
 const customerSessions = new Map();
+const SESSION_TTL_MS = 2 * 60 * 60 * 1000; // 2 horas de inatividade
 export function getOrCreateSession(customerPhone) {
     const cleanPhone = customerPhone.split('@')[0].split(':')[0].replace(/\D/g, '') || customerPhone;
-    if (!customerSessions.has(cleanPhone)) {
-        customerSessions.set(cleanPhone, { history: [] });
+    const now = Date.now();
+    if (customerSessions.has(cleanPhone)) {
+        const existing = customerSessions.get(cleanPhone);
+        if (existing.lastInteractionTimestamp && (now - existing.lastInteractionTimestamp > SESSION_TTL_MS)) {
+            const savedName = existing.customerName;
+            existing.history = [];
+            existing.pendingBookingTime = undefined;
+            existing.pendingBookingDateStr = undefined;
+            existing.pendingBookingProfId = undefined;
+            existing.pendingBookingServiceId = undefined;
+            existing.pendingExistingApptChoice = undefined;
+            existing.customerName = savedName;
+            existing.hasGreeted = false;
+        }
+        existing.lastInteractionTimestamp = now;
+        return existing;
     }
-    const session = customerSessions.get(cleanPhone);
-    if (!session.customerPhone) {
-        session.customerPhone = cleanPhone;
-    }
-    return session;
+    const newSession = {
+        customerPhone: cleanPhone,
+        history: [],
+        lastInteractionTimestamp: now
+    };
+    customerSessions.set(cleanPhone, newSession);
+    return newSession;
 }
 export function sanitizeUserTimeInput(text) {
     let cleaned = text.toLowerCase();

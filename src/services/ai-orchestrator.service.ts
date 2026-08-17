@@ -102,21 +102,41 @@ export interface CustomerSession {
   pendingBookingProfId?: string;
   pendingBookingServiceId?: string;
   pendingExistingApptChoice?: { newDateStr: string; newTimeStr: string; dateFormattedLabel: string };
+  lastInteractionTimestamp?: number;
   history: Array<{ role: 'user' | 'model'; text: string }>;
 }
 
 const customerSessions = new Map<string, CustomerSession>();
+const SESSION_TTL_MS = 2 * 60 * 60 * 1000; // 2 horas de inatividade
 
 export function getOrCreateSession(customerPhone: string): CustomerSession {
   const cleanPhone = customerPhone.split('@')[0].split(':')[0].replace(/\D/g, '') || customerPhone;
-  if (!customerSessions.has(cleanPhone)) {
-    customerSessions.set(cleanPhone, { history: [] });
+  const now = Date.now();
+
+  if (customerSessions.has(cleanPhone)) {
+    const existing = customerSessions.get(cleanPhone)!;
+    if (existing.lastInteractionTimestamp && (now - existing.lastInteractionTimestamp > SESSION_TTL_MS)) {
+      const savedName = existing.customerName;
+      existing.history = [];
+      existing.pendingBookingTime = undefined;
+      existing.pendingBookingDateStr = undefined;
+      existing.pendingBookingProfId = undefined;
+      existing.pendingBookingServiceId = undefined;
+      existing.pendingExistingApptChoice = undefined;
+      existing.customerName = savedName;
+      existing.hasGreeted = false;
+    }
+    existing.lastInteractionTimestamp = now;
+    return existing;
   }
-  const session = customerSessions.get(cleanPhone)!;
-  if (!session.customerPhone) {
-    session.customerPhone = cleanPhone;
-  }
-  return session;
+
+  const newSession: CustomerSession = { 
+    customerPhone: cleanPhone, 
+    history: [], 
+    lastInteractionTimestamp: now 
+  };
+  customerSessions.set(cleanPhone, newSession);
+  return newSession;
 }
 
 export function sanitizeUserTimeInput(text: string): string {

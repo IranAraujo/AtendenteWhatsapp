@@ -76,15 +76,25 @@ app.use(express.static(path.join(__dirname, '../public'), { index: false }));
 // Healthcheck
 app.get('/api/health', (req: Request, res: Response) => {
   const nvidiaKey = process.env.NVIDIA_API_KEY || '';
+  const mem = process.memoryUsage();
   res.json({
     status: 'OK',
     app: 'SaaS Atendente & Agendamento WhatsApp IA',
     version: '1.0.0',
     port: PORT,
+    uptimeSeconds: Math.floor(process.uptime()),
+    memory: {
+      rssMb: Math.round(mem.rss / 1024 / 1024),
+      heapUsedMb: Math.round(mem.heapUsed / 1024 / 1024),
+      heapTotalMb: Math.round(mem.heapTotal / 1024 / 1024)
+    },
     timestamp: new Date().toISOString(),
     env: {
-      NODE_ENV: process.env.NODE_ENV || 'não definida',
-      NVIDIA_API_KEY: nvidiaKey ? `configurada (${nvidiaKey.slice(0, 10)}...)` : '❌ NÃO CONFIGURADA',
+      hasNvidiaKey: !!nvidiaKey,
+      nvidiaKeyPrefix: nvidiaKey ? nvidiaKey.substring(0, 8) + '...' : 'NOT_CONFIGURED',
+      hasGroqKey: !!process.env.GROQ_API_KEY,
+      hasGeminiKey: !!process.env.GEMINI_API_KEY,
+      nodeEnv: process.env.NODE_ENV || 'development'
     }
   });
 });
@@ -766,13 +776,25 @@ app.get('*', (req: Request, res: Response) => {
 });
 
 if (!process.env.VERCEL) {
-  app.listen(PORT, () => {
+  const server = app.listen(PORT, () => {
     console.log(` Servidor SaaS Backend & WhatsApp Real Baileys rodando em http://localhost:${PORT}`);
     reminderService.startScheduler();
     whatsappService.autoReconnectSavedSessions().catch(err => {
       console.warn('[WhatsApp AutoReconnect Warning]:', err.message);
     });
   });
+
+  const handleGracefulShutdown = async (signal: string) => {
+    console.log(`\n[Server] Recebido sinal ${signal}. Encerrando conexões com segurança...`);
+    try {
+      server.close();
+      console.log('[Server] Servidor HTTP finalizado com sucesso.');
+    } catch (e) {}
+    process.exit(0);
+  };
+
+  process.on('SIGTERM', () => handleGracefulShutdown('SIGTERM'));
+  process.on('SIGINT', () => handleGracefulShutdown('SIGINT'));
 }
 
 export default app;
