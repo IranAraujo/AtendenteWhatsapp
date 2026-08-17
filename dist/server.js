@@ -195,7 +195,7 @@ app.get('/api/appointments', async (req, res) => {
         const tenantId = req.query.tenantId || 'tenant-demo-estilo';
         const professionalId = req.query.professionalId;
         let appointments = await dbRepository.getAllAppointments(tenantId);
-        if (professionalId && professionalId !== 'ALL') {
+        if (professionalId && professionalId !== 'ALL' && professionalId !== 'undefined' && professionalId !== 'null' && professionalId.trim() !== '') {
             appointments = appointments.filter(a => a.professionalId === professionalId);
         }
         res.json({ success: true, appointments });

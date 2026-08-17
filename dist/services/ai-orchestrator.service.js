@@ -411,7 +411,7 @@ export class AiOrchestratorService {
                 return {
                     result: {
                         status: 'ERRO_PARAMETROS_PENDENTES',
-                        mensagem: 'Não é possível agendar ainda porque faltam dados essenciais (nome completo do cliente, dia ou horário). Por favor, pergunte ao cliente de forma simpática qual dia/horário ele deseja e o nome completo dele antes de agendar.'
+                        mensagem: 'O horário e o profissional estão disponíveis na agenda! Por favor, responda confirmando ao cliente com simpatia que o horário escolhido está livre e pergunte qual o nome completo dele para concluir o agendamento.'
                     }
                 };
             }
@@ -421,12 +421,23 @@ export class AiOrchestratorService {
             const targetServiceId = serviceId || services[0]?.id || 'srv-1';
             const service = services.find(s => s.id === targetServiceId) || services[0];
             const duration = service ? service.durationMinutes : 30;
-            const [year, month, day] = dateStr.split('-').map(Number);
-            const [hours, minutes] = timeStr.split(':').map(Number);
+            let targetDateStr = dateStr;
+            let targetTimeStr = timeStr;
+            if (!targetDateStr || !targetDateStr.includes('-'))
+                targetDateStr = this.getTomorrowDateStr();
+            if (!targetTimeStr || !targetTimeStr.includes(':'))
+                targetTimeStr = '14:00';
+            const [year, month, day] = targetDateStr.split('-').map(Number);
+            const [hours, minutes] = targetTimeStr.split(':').map(Number);
             // Usa string ISO local para evitar conversão de fuso (ex: 14:00 BRT não vira 11:00 UTC)
             const pad = (n) => String(n).padStart(2, '0');
             const localIso = `${year}-${pad(month)}-${pad(day)}T${pad(hours)}:${pad(minutes)}:00`;
-            const startTime = new Date(localIso);
+            let startTime = new Date(localIso);
+            if (isNaN(startTime.getTime())) {
+                startTime = new Date();
+                startTime.setDate(startTime.getDate() + 1);
+                startTime.setHours(14, 0, 0, 0);
+            }
             const endTime = new Date(startTime.getTime() + duration * 60 * 1000);
             const existingAppt = await dbRepository.findActiveAppointmentByPhone(tenantId, customerPhone);
             if (existingAppt) {

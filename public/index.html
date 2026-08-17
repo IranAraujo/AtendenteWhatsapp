@@ -3256,8 +3256,9 @@
 
     async function loadAppointmentsFromServer() {
       try {
-        const profFilter = document.getElementById('calendar-professional-filter').value;
-        const response = await fetch(`${baseUrl}/api/appointments?tenantId=${currentTenantId}&professionalId=${profFilter}`);
+        const profFilterEl = document.getElementById('calendar-professional-filter');
+        const profFilter = (profFilterEl && profFilterEl.value) ? profFilterEl.value : 'ALL';
+        const response = await fetch(`${baseUrl}/api/appointments?tenantId=${currentTenantId}&professionalId=${encodeURIComponent(profFilter)}`);
         const data = await response.json();
         if (!data.success || !data.appointments) return;
 

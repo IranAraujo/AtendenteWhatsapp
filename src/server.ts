@@ -224,7 +224,7 @@ app.get('/api/appointments', async (req: Request, res: Response) => {
     const professionalId = req.query.professionalId as string;
     let appointments = await dbRepository.getAllAppointments(tenantId);
 
-    if (professionalId && professionalId !== 'ALL') {
+    if (professionalId && professionalId !== 'ALL' && professionalId !== 'undefined' && professionalId !== 'null' && professionalId.trim() !== '') {
       appointments = appointments.filter(a => a.professionalId === professionalId);
     }
 
