@@ -427,6 +427,61 @@
       "startTime": "2026-08-18T17:00:00.000Z",
       "endTime": "2026-08-18T17:45:00.000Z",
       "status": "CONFIRMED"
+    },
+    {
+      "id": "appt-1786985198219",
+      "tenantId": "tenant-demo-estilo",
+      "professionalId": "Lucas Silva",
+      "serviceId": "Atendimento Estético Completo",
+      "customerName": "nome do cliente",
+      "customerPhone": "5584911223388",
+      "startTime": "2000-01-01T02:00:00.000Z",
+      "endTime": "2000-01-01T02:45:00.000Z",
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "appt-1786985238806",
+      "tenantId": "tenant-demo-estilo",
+      "professionalId": "prof-1",
+      "serviceId": "srv-1",
+      "customerName": "Iran Araujo",
+      "customerPhone": "551195237567",
+      "startTime": "2026-08-18T16:00:00.000Z",
+      "endTime": "2026-08-18T16:45:00.000Z",
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "appt-1786985247506",
+      "tenantId": "tenant-demo-estilo",
+      "professionalId": "prof-1",
+      "serviceId": "srv-1",
+      "customerName": "Cliente Teste",
+      "customerPhone": "551193245057",
+      "startTime": "2026-08-18T17:00:00.000Z",
+      "endTime": "2026-08-18T17:45:00.000Z",
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "appt-1786985274408",
+      "tenantId": "tenant-demo-estilo",
+      "professionalId": "prof-1",
+      "serviceId": "srv-1",
+      "customerName": "Iran Araujo",
+      "customerPhone": "551195273302",
+      "startTime": "2026-08-18T16:00:00.000Z",
+      "endTime": "2026-08-18T16:45:00.000Z",
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "appt-1786985280039",
+      "tenantId": "tenant-demo-estilo",
+      "professionalId": "prof-1",
+      "serviceId": "srv-1",
+      "customerName": "Cliente Teste",
+      "customerPhone": "551193278714",
+      "startTime": "2026-08-18T16:00:00.000Z",
+      "endTime": "2026-08-18T16:45:00.000Z",
+      "status": "CONFIRMED"
     }
   ]
 }

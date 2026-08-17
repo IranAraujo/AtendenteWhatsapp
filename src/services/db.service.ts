@@ -605,10 +605,13 @@ class DbRepository {
   }
 
   async createAppointment(data: Omit<DbAppointmentItem, 'id'>): Promise<DbAppointmentItem> {
+    const validStart = (data.startTime instanceof Date && !isNaN(data.startTime.getTime())) ? data.startTime : new Date();
+    const validEnd = (data.endTime instanceof Date && !isNaN(data.endTime.getTime())) ? data.endTime : new Date(validStart.getTime() + 30 * 60000);
+
     const existingAppt = await this.findActiveAppointmentByPhone(data.tenantId, data.customerPhone);
     if (existingAppt) {
-      existingAppt.startTime = data.startTime;
-      existingAppt.endTime = data.endTime;
+      existingAppt.startTime = validStart;
+      existingAppt.endTime = validEnd;
       if (data.customerName) existingAppt.customerName = data.customerName;
       existingAppt.status = 'CONFIRMED';
       this.saveData();
@@ -617,7 +620,9 @@ class DbRepository {
 
     const newAppointment: DbAppointmentItem = {
       id: `appt-${Date.now()}`,
-      ...data
+      ...data,
+      startTime: validStart,
+      endTime: validEnd
     };
     this.inMemoryAppointments.push(newAppointment);
     this.saveData();

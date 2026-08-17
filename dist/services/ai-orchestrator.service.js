@@ -406,12 +406,12 @@ export class AiOrchestratorService {
         if (functionName === 'create_appointment') {
             const { professionalId, serviceId, customerName, customerPhone, dateStr, timeStr } = args;
             const cleanName = extractCleanCustomerName(customerName || '');
-            const isGenericName = !cleanName || cleanName.toLowerCase() === 'cliente' || cleanName.toLowerCase() === 'cliente whatsapp' || cleanName.length < 2;
-            if (isGenericName) {
+            const isGenericName = !cleanName || cleanName.toLowerCase() === 'cliente' || cleanName.toLowerCase() === 'cliente whatsapp' || cleanName.length < 2 || cleanName.toLowerCase().includes('nome completo');
+            if (!dateStr || !timeStr || isGenericName) {
                 return {
                     result: {
-                        status: 'ERRO_NOME_AUSENTE',
-                        mensagem: 'É OBRIGATÓRIO ter o nome do cliente para registrar o agendamento. Por favor, peça o nome do cliente agora e chame a função create_appointment novamente assim que ele responder com o nome.'
+                        status: 'ERRO_PARAMETROS_PENDENTES',
+                        mensagem: 'Não é possível agendar ainda porque faltam dados essenciais (nome completo do cliente, dia ou horário). Por favor, pergunte ao cliente de forma simpática qual dia/horário ele deseja e o nome completo dele antes de agendar.'
                     }
                 };
             }
