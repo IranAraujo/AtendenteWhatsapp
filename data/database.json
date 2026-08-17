@@ -493,6 +493,28 @@
       "startTime": "2026-08-18T17:00:00.000Z",
       "endTime": "2026-08-18T17:45:00.000Z",
       "status": "CONFIRMED"
+    },
+    {
+      "id": "appt-1786986505893",
+      "tenantId": "tenant-demo-estilo",
+      "professionalId": "prof-1",
+      "serviceId": "srv-1",
+      "customerName": "Iran Araujo",
+      "customerPhone": "551195504719",
+      "startTime": "2026-08-18T16:00:00.000Z",
+      "endTime": "2026-08-18T16:45:00.000Z",
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "appt-1786986512109",
+      "tenantId": "tenant-demo-estilo",
+      "professionalId": "prof-1",
+      "serviceId": "srv-1",
+      "customerName": "Cliente Teste",
+      "customerPhone": "551193511371",
+      "startTime": "2026-08-18T16:00:00.000Z",
+      "endTime": "2026-08-18T16:45:00.000Z",
+      "status": "CONFIRMED"
     }
   ]
 }

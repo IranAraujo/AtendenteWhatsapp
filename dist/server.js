@@ -192,7 +192,10 @@ app.put('/api/tenants/:id/billing', async (req, res) => {
 // -------------------------------------------------------------
 app.get('/api/appointments', async (req, res) => {
     try {
-        const tenantId = req.query.tenantId || 'tenant-demo-estilo';
+        let tenantId = req.query.tenantId;
+        if (!tenantId || tenantId === 'null' || tenantId === 'undefined' || tenantId.trim() === '') {
+            tenantId = 'tenant-demo-estilo';
+        }
         const professionalId = req.query.professionalId;
         let appointments = await dbRepository.getAllAppointments(tenantId);
         if (professionalId && professionalId !== 'ALL' && professionalId !== 'undefined' && professionalId !== 'null' && professionalId.trim() !== '') {

@@ -2618,6 +2618,8 @@
 
     function populateProfessionalFilter(professionals) {
       const filter = document.getElementById('calendar-professional-filter');
+      if (!filter) return;
+      const prev = filter.value;
       filter.innerHTML = '<option value="ALL"> Todos os Profissionais</option>';
 
       professionals.forEach(p => {
@@ -2627,8 +2629,10 @@
         filter.appendChild(opt);
       });
 
-      if (currentUser && currentUser.role === 'PROFESSIONAL' && currentUser.professionalId) {
-        filter.value = currentUser.professionalId;
+      if (prev && prev !== 'undefined' && prev !== 'null' && prev !== '') {
+        filter.value = prev;
+      } else {
+        filter.value = 'ALL';
       }
     }
 
@@ -3256,9 +3260,10 @@
 
     async function loadAppointmentsFromServer() {
       try {
+        const tenantToUse = (currentTenantId && currentTenantId !== 'null' && currentTenantId !== 'undefined') ? currentTenantId : 'tenant-demo-estilo';
         const profFilterEl = document.getElementById('calendar-professional-filter');
-        const profFilter = (profFilterEl && profFilterEl.value) ? profFilterEl.value : 'ALL';
-        const response = await fetch(`${baseUrl}/api/appointments?tenantId=${currentTenantId}&professionalId=${encodeURIComponent(profFilter)}`);
+        const profFilter = (profFilterEl && profFilterEl.value && profFilterEl.value !== 'undefined' && profFilterEl.value !== 'null') ? profFilterEl.value : 'ALL';
+        const response = await fetch(`${baseUrl}/api/appointments?tenantId=${encodeURIComponent(tenantToUse)}&professionalId=${encodeURIComponent(profFilter)}`);
         const data = await response.json();
         if (!data.success || !data.appointments) return;
 
@@ -3302,15 +3307,20 @@
 
         function parseApptDate(dateInput) {
           if (!dateInput) return new Date();
+          const d = new Date(dateInput);
+          if (!isNaN(d.getTime())) return d;
           if (typeof dateInput === 'string') {
-            return new Date(dateInput.replace(/Z$/, ''));
+            return new Date(dateInput.replace(' ', 'T'));
           }
-          return new Date(dateInput);
+          return new Date();
         }
 
         appointmentsState = rawList.map(a => {
-          const startTime = parseApptDate(a.startTime);
-          const endTime = parseApptDate(a.endTime || startTime.getTime() + 45 * 60 * 1000);
+          let startTime = parseApptDate(a.startTime);
+          if (isNaN(startTime.getTime())) startTime = new Date();
+          let endTime = parseApptDate(a.endTime || (startTime.getTime() + 45 * 60 * 1000));
+          if (isNaN(endTime.getTime())) endTime = new Date(startTime.getTime() + 45 * 60 * 1000);
+
           const year = startTime.getFullYear();
           const month = String(startTime.getMonth() + 1).padStart(2, '0');
           const day = String(startTime.getDate()).padStart(2, '0');

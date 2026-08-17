@@ -220,7 +220,10 @@ app.put('/api/tenants/:id/billing', async (req: Request, res: Response) => {
 
 app.get('/api/appointments', async (req: Request, res: Response) => {
   try {
-    const tenantId = (req.query.tenantId as string) || 'tenant-demo-estilo';
+    let tenantId = req.query.tenantId as string;
+    if (!tenantId || tenantId === 'null' || tenantId === 'undefined' || tenantId.trim() === '') {
+      tenantId = 'tenant-demo-estilo';
+    }
     const professionalId = req.query.professionalId as string;
     let appointments = await dbRepository.getAllAppointments(tenantId);
 
