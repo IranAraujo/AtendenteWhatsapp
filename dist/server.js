@@ -869,7 +869,7 @@ app.post('/api/tenants/:id/reminders/test', async (req, res) => {
     }
 });
 // -------------------------------------------------------------
-// PÁGINA PÚBLICA DE AUTO-AGENDAMENTO (CAL.COM EXPERIENCE)
+// PÁGINA PÚBLICA DE AUTO-AGENDAMENTO
 // -------------------------------------------------------------
 app.get('/agendar/:slug', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/booking.html'));
@@ -1087,7 +1087,7 @@ app.post('/api/public/tenants/:slug/book', async (req, res) => {
     }
 });
 // -------------------------------------------------------------
-// REGRAS DE AGENDAMENTO & WEBHOOK CONFIGS (CAL.COM ADMIN)
+// REGRAS DE AGENDAMENTO & WEBHOOK CONFIGS
 // -------------------------------------------------------------
 app.put('/api/tenants/:id/booking-rules', async (req, res) => {
     try {

@@ -1382,7 +1382,7 @@
             <i class="fa-solid fa-bell"></i> Lembretes Automáticos
           </li>
           <li class="nav-subitem" data-subtab="calcom" onclick="selectConfigOption('calcom', this)">
-            <i class="fa-solid fa-calendar-check" style="color: #3b82f6;"></i> Regras & Portal Web (Cal.diy)
+            <i class="fa-solid fa-calendar-check" style="color: #3b82f6;"></i> Regras & Portal Web
           </li>
         </ul>
       </li>
@@ -1862,13 +1862,13 @@
           </div>
         </div>
 
-        <!-- CONFIG SUBTAB 4: REGRAS DE AGENDAMENTO (CAL.DIY) & PORTAL PÚBLICO -->
+        <!-- CONFIG SUBTAB 4: REGRAS DE AGENDAMENTO & PORTAL PÚBLICO -->
         <div id="cfg-section-calcom" class="config-section" style="display: none;">
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
             <!-- Painel Esquerdo: Regras Avançadas de Agendamento -->
             <div class="panel-box">
               <div class="panel-box-header">
-                <div class="panel-box-title"><i class="fa-solid fa-stopwatch" style="color: var(--primary);"></i> Regras de Agendamento (Estilo Cal.com)</div>
+                <div class="panel-box-title"><i class="fa-solid fa-stopwatch" style="color: var(--primary);"></i> Regras Avançadas de Agendamento</div>
               </div>
 
               <!-- Card de Link Público de Agendamento -->
@@ -2855,7 +2855,7 @@
           document.getElementById('profile-quota-text').textContent = `Cota de Uso: ${(data.professionals || []).length} / ${tenant.maxUsers || 1} Profissionais Cadastrados`;
         }
 
-        // Popula Regras de Agendamento Cal.com
+        // Popula Regras de Agendamento
         const rules = tenant.bookingRules || {};
         if (document.getElementById('cfg-buffer-time')) {
           document.getElementById('cfg-buffer-time').value = rules.bufferTimeMinutes !== undefined ? String(rules.bufferTimeMinutes) : '10';

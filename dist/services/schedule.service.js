@@ -24,7 +24,7 @@ export function calculateAvailableSlots(params) {
     if (isExceptionUnavailable || !schedule) {
         return [];
     }
-    // 2. Janela Máxima de Agendamento no Futuro (Cal.com Future Booking Limit)
+    // 2. Janela Máxima de Agendamento no Futuro
     if (maxFutureDays !== undefined && maxFutureDays > 0) {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -47,7 +47,7 @@ export function calculateAvailableSlots(params) {
     const availableSlots = [];
     let currentSlotStart = new Date(workStart.getTime());
     const bufferMs = bufferTimeMinutes * 60 * 1000;
-    // Antecedência Mínima para atendimentos no dia de hoje (Cal.com Minimum Notice)
+    // Antecedência Mínima para atendimentos no dia de hoje
     const now = new Date();
     const [curYear, curMonth, curDay] = [now.getFullYear(), now.getMonth() + 1, now.getDate()];
     const todayStr = `${curYear}-${String(curMonth).padStart(2, '0')}-${String(curDay).padStart(2, '0')}`;

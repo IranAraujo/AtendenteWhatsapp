@@ -37,7 +37,7 @@ export class WebhookService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'User-Agent': 'WhatsApp-SaaS-CalCom-Webhook/1.0',
+          'User-Agent': 'WhatsApp-SaaS-Webhook/1.0',
           'X-Webhook-Event': event
         },
         body: JSON.stringify(payload)
@@ -70,7 +70,7 @@ export class WebhookService {
         tenantName: tenantName || 'Teste Estabelecimento',
         data: {
           message: 'Webhook de teste configurado com sucesso! 🎉',
-          calComFeatures: ['bufferTimes', 'minimumNotice', 'roundRobin', 'publicBooking']
+          features: ['bufferTimes', 'minimumNotice', 'roundRobin', 'publicBooking']
         }
       };
 
@@ -78,7 +78,7 @@ export class WebhookService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'User-Agent': 'WhatsApp-SaaS-CalCom-Webhook/1.0',
+          'User-Agent': 'WhatsApp-SaaS-Webhook/1.0',
           'X-Webhook-Event': 'ping'
         },
         body: JSON.stringify(payload)

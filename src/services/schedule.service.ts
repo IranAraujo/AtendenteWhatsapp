@@ -20,9 +20,9 @@ export interface CalculateAvailableSlotsParams {
   scheduleBlocks?: Array<{ startTime?: string; endTime?: string }>; // blocks for that day
   maxAppointmentsPerDay?: number;    // if set and currentCount >= max, return []
   currentDayAppointmentCount?: number; // current count for that day
-  bufferTimeMinutes?: number;         // Cal.com: folga/intervalo pós-atendimento (ex: 10 min)
-  minimumNoticeMinutes?: number;      // Cal.com: antecedência mínima a partir de agora (ex: 60 min)
-  maxFutureDays?: number;             // Cal.com: janela máxima de agendamento no futuro (ex: 30 dias)
+  bufferTimeMinutes?: number;         // Folga/intervalo pós-atendimento (ex: 10 min)
+  minimumNoticeMinutes?: number;      // Antecedência mínima a partir de agora (ex: 60 min)
+  maxFutureDays?: number;             // Janela máxima de agendamento no futuro (ex: 30 dias)
 }
 
 /**
@@ -65,7 +65,7 @@ export function calculateAvailableSlots(params: CalculateAvailableSlotsParams): 
     return [];
   }
 
-  // 2. Janela Máxima de Agendamento no Futuro (Cal.com Future Booking Limit)
+  // 2. Janela Máxima de Agendamento no Futuro
   if (maxFutureDays !== undefined && maxFutureDays > 0) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -93,7 +93,7 @@ export function calculateAvailableSlots(params: CalculateAvailableSlotsParams): 
   let currentSlotStart = new Date(workStart.getTime());
   const bufferMs = bufferTimeMinutes * 60 * 1000;
 
-  // Antecedência Mínima para atendimentos no dia de hoje (Cal.com Minimum Notice)
+  // Antecedência Mínima para atendimentos no dia de hoje
   const now = new Date();
   const [curYear, curMonth, curDay] = [now.getFullYear(), now.getMonth() + 1, now.getDate()];
   const todayStr = `${curYear}-${String(curMonth).padStart(2, '0')}-${String(curDay).padStart(2, '0')}`;
@@ -161,7 +161,7 @@ export function calculateAvailableSlots(params: CalculateAvailableSlotsParams): 
 }
 
 /**
- * Algoritmo Round-Robin (Cal.com Workload Balance):
+ * Algoritmo Round-Robin (Workload Balance):
  * Seleciona o profissional mais adequado para receber o agendamento com base na menor carga de trabalho do dia.
  */
 export interface RoundRobinProfessionalCandidate {

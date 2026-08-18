@@ -9,7 +9,7 @@ export interface DbServiceItem {
   price: number;
   durationMinutes: number;
   description?: string;
-  bufferTimeMinutes?: number; // Folga/Intervalo após o serviço (estilo Cal.com)
+  bufferTimeMinutes?: number; // Folga/Intervalo após o serviço
 }
 
 export interface DbProductItem {
@@ -895,7 +895,7 @@ class DbRepository {
   }
 
   // -------------------------------------------------------
-  // CAL.COM BOOKING RULES & PUBLIC ACCESS
+  // REGRAS DE AGENDAMENTO & ACESSO PÚBLICO
   // -------------------------------------------------------
   async getTenantBySlug(slug: string): Promise<DbTenantItem | undefined> {
     return this.tenants.find(t => t.slug === slug || t.slug.toLowerCase() === slug.toLowerCase());

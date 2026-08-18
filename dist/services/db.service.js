@@ -728,7 +728,7 @@ class DbRepository {
         return appts.filter(a => a.status !== 'CANCELLED').length;
     }
     // -------------------------------------------------------
-    // CAL.COM BOOKING RULES & PUBLIC ACCESS
+    // REGRAS DE AGENDAMENTO & ACESSO PÚBLICO
     // -------------------------------------------------------
     async getTenantBySlug(slug) {
         return this.tenants.find(t => t.slug === slug || t.slug.toLowerCase() === slug.toLowerCase());
