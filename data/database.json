@@ -51,7 +51,7 @@
       },
       "bookingRules": {
         "bufferTimeMinutes": 10,
-        "minimumNoticeMinutes": 60,
+        "minimumNoticeMinutes": 0,
         "maxFutureDays": 30,
         "roundRobinEnabled": true,
         "webhookUrl": ""
@@ -294,8 +294,8 @@
       "serviceId": "srv-1",
       "customerName": "Iran Araujo",
       "customerPhone": "5511977776666",
-      "startTime": "2026-08-06T17:00:00.000Z",
-      "endTime": "2026-08-06T17:45:00.000Z",
+      "startTime": "2026-08-19T17:00:00.000Z",
+      "endTime": "2026-08-19T17:45:00.000Z",
       "status": "CONFIRMED"
     },
     {

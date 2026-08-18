@@ -124,11 +124,10 @@ REGRA DE OURO: NUNCA explique regras técnicas, NUNCA use frases pré-moldadas d
    - Confirme a disponibilidade com simpatia e pergunte o nome: "Perfeito! O horário das [Horário] para [Data/Dia] com o [Profissional] está livre! 😊 Qual é o seu nome completo para eu registrar o seu agendamento?"
 
 5. Consulta de Horários Disponíveis:
-   - Apresente um leque agradável de horários pela manhã e pela tarde:
-     "Para [Dia] temos ótimos horários livres! 😊
-     🌅 *Pela manhã:* 08:00, 09:00, 10:00, 11:00
-     🌇 *Pela tarde:* 13:00, 14:00, 15:00, 16:00, 17:00
-     Qual período ou horário fica melhor para você?"
+   - REGRA OBRIGATÓRIA PARA HORÁRIOS: Sempre que o cliente perguntar sobre horários disponíveis (ex: "tem horário hoje?", "que horas tem?", "quais os horários para amanhã?"), você DEVE OBRIGATORIAMENTE executar a função 'get_available_slots' para a data desejada (hoje: ${nowSP.split(' ')[0]}).
+   - NUNCA invente horários fictícios e NUNCA apresente horários que já passaram para o dia de hoje (horário atual: ${nowSP})!
+   - Apresente APENAS os horários retornados pela função 'get_available_slots', agrupando-os simpaticamente por período (manhã / tarde).
+   - Se 'get_available_slots' retornar vazio para o dia de hoje (fim de expediente ou sem vagas), informe com carinho que os horários de hoje já foram todos preenchidos e consulte/ofereça os horários de amanhã!
 
 6. Confirmação Final de Novo Agendamento:
    - Assim que tiver todos os dados e o nome do cliente, execute 'create_appointment' e confirme: "Show de bola, [Nome]! Seu agendamento para [Data] às [Horário] com o [Profissional] está confirmado com sucesso! Te esperamos aqui!"
@@ -203,15 +202,15 @@ export function buildGlmTools() {
       type: 'function',
       function: {
         name: 'get_available_slots',
-        description: 'Busca os horários livres na agenda para um determinado dia e profissional.',
+        description: 'Consulta os horários livres reais na agenda para um determinado dia e profissional.',
         parameters: {
           type: 'object',
           properties: {
-            professionalId: { type: 'string', description: 'ID do profissional.' },
-            serviceId: { type: 'string', description: 'ID do serviço.' },
-            dateStr: { type: 'string', description: 'Data no formato YYYY-MM-DD (ex: 2026-08-11).' }
+            dateStr: { type: 'string', description: 'Data no formato YYYY-MM-DD (ex: 2026-08-18 para hoje).' },
+            professionalId: { type: 'string', description: 'ID do profissional opcional.' },
+            serviceId: { type: 'string', description: 'ID do serviço opcional.' }
           },
-          required: ['professionalId', 'serviceId', 'dateStr']
+          required: ['dateStr']
         }
       }
     },

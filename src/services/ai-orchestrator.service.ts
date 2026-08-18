@@ -16,29 +16,55 @@ export interface ProcessMessageResult {
 }
 
 export async function transcribeAudioBuffer(audioBuffer: Buffer, mimeType: string = 'audio/ogg'): Promise<string> {
+  if (!audioBuffer || audioBuffer.length === 0) return '';
   const cleanMimeType = mimeType.split(';')[0].trim() || 'audio/ogg';
+
+  let filename = 'audio.ogg';
+  let cleanType = 'audio/ogg';
+  if (mimeType.includes('mp4') || mimeType.includes('m4a')) {
+    filename = 'audio.m4a';
+    cleanType = 'audio/mp4';
+  } else if (mimeType.includes('wav')) {
+    filename = 'audio.wav';
+    cleanType = 'audio/wav';
+  } else if (mimeType.includes('webm')) {
+    filename = 'audio.webm';
+    cleanType = 'audio/webm';
+  } else if (mimeType.includes('mpeg') || mimeType.includes('mp3')) {
+    filename = 'audio.mp3';
+    cleanType = 'audio/mp3';
+  }
 
   // 1. Groq Whisper (Gratuito e ultraveloz ~300ms)
   const groqKey = process.env.GROQ_API_KEY || process.env.NVIDIA_API_KEY;
   if (groqKey && (groqKey.startsWith('gsk_') || process.env.GROQ_API_KEY)) {
-    try {
-      const blob = new Blob([new Uint8Array(audioBuffer)], { type: cleanMimeType });
-      const formData = new FormData();
-      formData.append('file', blob, 'audio.ogg');
-      formData.append('model', 'whisper-large-v3-turbo');
-      formData.append('language', 'pt');
+    const modelsToTry = ['whisper-large-v3-turbo', 'whisper-large-v3'];
+    for (const model of modelsToTry) {
+      try {
+        const blob = new Blob([new Uint8Array(audioBuffer)], { type: cleanType });
+        const formData = new FormData();
+        formData.append('file', blob, filename);
+        formData.append('model', model);
+        formData.append('language', 'pt');
 
-      const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${process.env.GROQ_API_KEY || groqKey}` },
-        body: formData
-      });
-      if (res.ok) {
-        const json: any = await res.json();
-        if (json.text && json.text.trim()) return json.text.trim();
+        const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${process.env.GROQ_API_KEY || groqKey}` },
+          body: formData
+        });
+
+        if (res.ok) {
+          const json: any = await res.json();
+          if (json.text && json.text.trim()) {
+            return json.text.trim();
+          }
+        } else {
+          const errText = await res.text();
+          console.warn(`[Audio STT Groq ${model}]: status ${res.status} - ${errText}`);
+        }
+      } catch (e: any) {
+        console.warn(`[Audio STT Groq ${model} Error]:`, e.message);
       }
-    } catch (e: any) {
-      console.warn('[Audio STT Groq Fallback]:', e.message);
     }
   }
 
@@ -553,14 +579,21 @@ export class AiOrchestratorService {
     if (functionName === 'create_appointment') {
       const { professionalId, serviceId, customerName, customerPhone, dateStr, timeStr } = args;
 
+      let targetDateStr = dateStr || this.getTomorrowDateStr();
+      let targetTimeStr = timeStr || '14:00';
+      if (!targetDateStr.includes('-')) targetDateStr = this.getTomorrowDateStr();
+      if (!targetTimeStr.includes(':')) targetTimeStr = '14:00';
+
       const cleanName = extractCleanCustomerName(customerName || '');
       const isGenericName = !cleanName || cleanName.toLowerCase() === 'cliente' || cleanName.toLowerCase() === 'cliente whatsapp' || cleanName.length < 2 || cleanName.toLowerCase().includes('nome completo') || cleanName.toLowerCase().includes('informado') || cleanName.toLowerCase().includes('desconhecido') || cleanName.toLowerCase().includes('ainda não');
 
       if (!dateStr || !timeStr || isGenericName) {
         return {
           result: {
-            status: 'ERRO_PARAMETROS_PENDENTES',
-            mensagem: 'O horário e o profissional estão disponíveis na agenda! Por favor, responda confirmando ao cliente com simpatia que o horário escolhido está livre e pergunte qual o nome completo dele para concluir o agendamento.'
+            status: 'NOME_CLIENTE_PENDENTE',
+            horarioDisponivel: true,
+            data: targetDateStr,
+            horario: targetTimeStr
           }
         };
       }
@@ -572,9 +605,6 @@ export class AiOrchestratorService {
 
       const service = services.find(s => s.id === targetServiceId) || services[0];
       const duration = service ? service.durationMinutes : 30;
-
-      let targetDateStr = dateStr;
-      let targetTimeStr = timeStr;
 
       if (!targetDateStr || !targetDateStr.includes('-')) targetDateStr = this.getTomorrowDateStr();
       if (!targetTimeStr || !targetTimeStr.includes(':')) targetTimeStr = '14:00';
@@ -611,8 +641,11 @@ export class AiOrchestratorService {
       if (!availableSlots.includes(targetTimeStr)) {
         return {
           result: {
-            status: 'ERRO_HORARIO_INDISPONIVEL',
-            mensagem: `O horário das ${targetTimeStr} não está livre na agenda do ${targetProf.name} para ${targetDateStr}. Horários próximos disponíveis: ${availableSlots.slice(0, 5).join(', ')}. Por favor, informe com simpatia ao cliente que esse horário específico está indisponível e sugira os horários livres mais próximos!`
+            status: 'HORARIO_INDISPONIVEL',
+            horarioSolicitado: targetTimeStr,
+            data: targetDateStr,
+            profissional: targetProf.name,
+            horariosLivresMaisProximos: availableSlots.slice(0, 5)
           }
         };
       }
