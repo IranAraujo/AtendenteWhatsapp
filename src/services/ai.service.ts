@@ -50,11 +50,11 @@ export function buildDynamicBusinessMemory(data: DynamicMemoryInput): string {
   } = data;
 
   const servicesListStr = services.map(s => 
-    `- [ID: ${s.id}] *${s.name}*: R$ ${s.price.toFixed(2)} (Duração: ${s.durationMinutes} min)${s.description ? ` - ${s.description}` : ''}`
+    `- ${s.name}: R$ ${s.price.toFixed(2)} (${s.durationMinutes} min)${s.description ? ` - ${s.description}` : ''}`
   ).join('\n');
 
   const productsListStr = products.length > 0
-    ? products.map(p => `- *${p.name}*: R$ ${p.price.toFixed(2)} (${p.stock} unidades em estoque)${p.description ? ` - ${p.description}` : ''}`).join('\n')
+    ? products.map(p => `- ${p.name}: R$ ${p.price.toFixed(2)} (${p.stock} unidades em estoque)${p.description ? ` - ${p.description}` : ''}`).join('\n')
     : 'Nenhum produto cadastrado no momento.';
 
   const dayNames = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
@@ -63,8 +63,8 @@ export function buildDynamicBusinessMemory(data: DynamicMemoryInput): string {
     const srvs = p.servicesHandled && p.servicesHandled.length > 0
       ? services.filter(s => p.servicesHandled!.includes(s.id)).map(s => s.name).join(', ')
       : 'Todos os serviços do catálogo';
-    const scheduleStr = `⏰ Horário: ${p.workSchedule?.startTime || '08:00'} às ${p.workSchedule?.endTime || '18:00'}${p.workSchedule?.lunchStartTime ? ` (Almoço: ${p.workSchedule.lunchStartTime} às ${p.workSchedule.lunchEndTime})` : ''}`;
-    return `• [ID: ${p.id}] *${p.name}*:\n  - Serviços que realiza: ${srvs}\n  - Dias de trabalho: ${days}\n  - ${scheduleStr}`;
+    const scheduleStr = `Horário: ${p.workSchedule?.startTime || '08:00'} às ${p.workSchedule?.endTime || '18:00'}${p.workSchedule?.lunchStartTime ? ` (Almoço: ${p.workSchedule.lunchStartTime} às ${p.workSchedule.lunchEndTime})` : ''}`;
+    return `• ${p.name}:\n  - Especialidades: ${srvs}\n  - Dias: ${days}\n  - ${scheduleStr}`;
   }).join('\n\n');
 
   const nowSP = new Intl.DateTimeFormat('pt-BR', {
@@ -73,26 +73,25 @@ export function buildDynamicBusinessMemory(data: DynamicMemoryInput): string {
     timeStyle: 'short'
   }).format(new Date());
 
-  return `Você é a atendente e recepcionista humana da "${tenantName}".
-Você conversa com os clientes pelo WhatsApp de forma 100% natural, acolhedora, brasileira e espontânea.
+  return `Você é a atendente e recepcionista da "${tenantName}".
+Você conversa com os clientes pelo WhatsApp de forma profissional, ágil, educada e direta.
 
 =========================================
-DIRETRIZES DE ATENDIMENTO E ESPONTANEIDADE:
+DIRETRIZES FUNDAMENTAIS DE ATENDIMENTO:
 =========================================
-1. TOTAL ESPONTANEIDADE: NUNCA use scripts decorados, respostas pré-moldadas ou frases repetitivas de robô. Em cada mensagem, converse livremente e de forma personalizada com suas próprias palavras, variando seu vocabulário e estilo como uma pessoa real no WhatsApp!
-2. CONSULTA PRECISA DE HORÁRIOS: Sempre que o cliente quiser saber sobre horários ou perguntar a disponibilidade (hoje, amanhã ou outro dia), você DEVE executar a função 'get_available_slots'. NUNCA invente horários e NUNCA ofereça horários passados para o dia de hoje (horário atual: ${nowSP}).
-3. AGENDAMENTO E ATENDIMENTO:
-   - Para agendar: Ajude o cliente a escolher o serviço, o profissional e o horário. Peça o nome completo antes de confirmar e chame 'create_appointment'.
-   - Se o cliente já tiver agendamento: Trate com carinho, esclareça dúvidas sobre o horário marcado e, se ele desejar remarcar ou cancelar, execute 'reschedule_appointment' ou 'cancel_appointment'.
-   - Dúvidas gerais: Esclareça dúvidas sobre endereço, formas de pagamento, serviços e produtos com cordialidade e precisão.
-4. CALOR HUMANO: Use primeira pessoa ("eu", "aqui na nossa equipe"), seja simpática, educada e ágil.
+1. SEM EMOJIS: NUNCA use emojis ou emoticons nas suas respostas. Envie mensagens limpas em texto puro.
+2. FIDELIDADE AOS FATOS: NUNCA invente informações, datas passadas, anos incorretos ou serviços fora do catálogo. Use rigorosamente as informações cadastradas.
+3. LINGUAGEM NATURAL AO CLIENTE: NUNCA mencione termos técnicos como 'ID do serviço', 'código', 'parâmetros' ou 'banco de dados'. Trate os serviços e produtos sempre pelos seus nomes normais.
+4. CONSULTA DE HORÁRIOS: Sempre que o cliente perguntar sobre horários disponíveis, execute a ferramenta 'get_available_slots'. Apresente apenas os horários livres retornados.
+5. AGENDAMENTO: Ajude o cliente a definir o serviço, profissional e horário. Peça o nome completo antes de confirmar e execute a ferramenta 'create_appointment'.
+6. RESPOSTAS DIRETAS E CONCISAS: Seja clara, objetiva e simpática, sem repetições de frases decoradas e sem textos longos desnecessários.
 
 =========================================
 DADOS DO ESTABELECIMENTO:
 =========================================
 Nome: ${tenantName}
 Informações Gerais e Endereço: ${businessInfo || 'Atendimento comercial de Segunda a Sábado.'}
-Estilo de Atendimento: ${systemPrompt || 'Acolhedor, prestativo e dinâmico.'}
+Estilo de Atendimento: ${systemPrompt || 'Profissional, direto, educado e ágil.'}
 
 CATÁLOGO DE SERVIÇOS:
 ${servicesListStr}
@@ -107,15 +106,15 @@ DATA E HORA ATUAL EM BRASÍLIA: ${nowSP}
 
 CONTEXTO ATUAL DO CLIENTE:
 - Telefone: ${customerPhone}
-- Nome: ${customerName ? customerName : 'Ainda não informado (peça com simpatia antes de confirmar o agendamento final)'}
-- Agendamento Ativo: ${activeAppointment ? `Possui agendamento marcado para ${activeAppointment.dateStr} às ${activeAppointment.timeStr} com ${activeAppointment.profName} (${activeAppointment.serviceName}).` : 'Nenhum agendamento ativo.'}
-- Horário em negociação na conversa: ${pendingBookingTime ? `${pendingBookingDateStr || 'Hoje/Amanhã'} às ${pendingBookingTime}` : 'Nenhum'}`;
+- Nome: ${customerName ? customerName : 'Ainda não informado (solicite educadamente antes de finalizar)'}
+- Agendamento Ativo: ${activeAppointment ? `Possui agendamento para ${activeAppointment.dateStr} às ${activeAppointment.timeStr} com ${activeAppointment.profName} (${activeAppointment.serviceName}).` : 'Nenhum agendamento ativo.'}
+- Horário em negociação: ${pendingBookingTime ? `${pendingBookingDateStr || 'Hoje/Amanhã'} às ${pendingBookingTime}` : 'Nenhum'}`;
 }
 
 export function buildSystemInstruction(config: AiConfigInput): string {
   const { tenantName, systemPrompt, businessInfo } = config;
 
-  return `Você é a atendente humana da "${tenantName}". Converse com os clientes no WhatsApp de forma natural, espontânea, educada e resolutiva. NUNCA use frases prontas de robô.`;
+  return `Você é a atendente da "${tenantName}". Responda de forma direta, educada, sem inventar dados e sem utilizar emojis.`;
 }
 
 // (legado Gemini removido - usando buildGlmTools() para OpenAI-compatible API)

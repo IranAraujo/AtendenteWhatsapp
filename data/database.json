@@ -248,6 +248,14 @@
       "preferredProfId": "prof-1",
       "preferredServiceId": "srv-1785951284149",
       "lastVisitDate": "2026-08-18"
+    },
+    {
+      "phone": "5511999990001",
+      "tenantId": "tenant-demo-estilo",
+      "visitCount": 1,
+      "preferredProfId": "prof-1",
+      "preferredServiceId": "srv-1",
+      "lastVisitDate": "2026-08-18"
     }
   ],
   "waitlist": [],
@@ -528,6 +536,17 @@
       "customerPhone": "84988234441",
       "startTime": "2026-08-19T13:30:00.000Z",
       "endTime": "2026-08-19T14:00:00.000Z",
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "appt-1787076989293",
+      "tenantId": "tenant-demo-estilo",
+      "professionalId": "prof-1",
+      "serviceId": "srv-1",
+      "customerName": "Iran Araujo",
+      "customerPhone": "5511999990001",
+      "startTime": "2026-08-19T12:00:00.000Z",
+      "endTime": "2026-08-19T12:45:00.000Z",
       "status": "CONFIRMED"
     }
   ]

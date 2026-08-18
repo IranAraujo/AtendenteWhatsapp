@@ -975,9 +975,9 @@ export class AiOrchestratorService {
       for (let round = 0; round < 5; round++) {
         let resp: Response | null = null;
 
-        // 1. Tenta Groq com modelos em cascata (gpt-oss-120b -> gpt-oss-20b -> qwen3.6-27b)
+        // 1. Tenta Groq com modelos estáveis (gpt-oss-20b -> qwen3.6-27b)
         if (groqKey) {
-          const groqModels = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'qwen/qwen3.6-27b'];
+          const groqModels = ['openai/gpt-oss-20b', 'qwen/qwen3.6-27b'];
           for (const gModel of groqModels) {
             try {
               const abortCtrl = new AbortController();
@@ -994,8 +994,8 @@ export class AiOrchestratorService {
                   messages,
                   tools,
                   tool_choice: 'auto',
-                  max_tokens: 4096,
-                  temperature: 0.75
+                  max_tokens: 450,
+                  temperature: 0.35
                 })
               });
               clearTimeout(timeoutId);
@@ -1011,7 +1011,7 @@ export class AiOrchestratorService {
           }
         }
 
-        // 2. Se Groq falhar ou atingir rate limit, tenta NVIDIA NIM
+        // 2. Se Groq falhar, tenta NVIDIA NIM (meta/llama-3.3-70b-instruct -> meta/llama-3.1-8b-instruct)
         if (!resp && nvidiaKey) {
           const nvidiaModels = ['meta/llama-3.3-70b-instruct', 'meta/llama-3.1-8b-instruct'];
           for (const nModel of nvidiaModels) {
@@ -1030,8 +1030,8 @@ export class AiOrchestratorService {
                   messages,
                   tools,
                   tool_choice: 'auto',
-                  max_tokens: 4096,
-                  temperature: 0.75
+                  max_tokens: 450,
+                  temperature: 0.35
                 })
               });
               clearTimeout(timeoutId);
@@ -1077,10 +1077,8 @@ export class AiOrchestratorService {
               if (!toolArgs.dateStr && session.pendingBookingDateStr) toolArgs.dateStr = session.pendingBookingDateStr;
               if (!toolArgs.timeStr && session.pendingBookingTime) toolArgs.timeStr = session.pendingBookingTime;
               if (!toolArgs.professionalId && session.pendingBookingProfId) toolArgs.professionalId = session.pendingBookingProfId;
-              // M5 FIX: propagar serviceId salvo na sessão
               if (!toolArgs.serviceId && session.pendingBookingServiceId) toolArgs.serviceId = session.pendingBookingServiceId;
             }
-
 
             if (toolName === 'reschedule_appointment') {
               if (!toolArgs.customerPhone) toolArgs.customerPhone = customerPhone;
@@ -1107,19 +1105,38 @@ export class AiOrchestratorService {
           continue;
         }
 
-        // Resposta de texto final gerada espontaneamente pela IA
-        let finalReply = msg.content || '';
+        // Resposta de texto final
+        let rawReply = msg.content || '';
+
+        // 1. Remove tags <think>...</think>
+        rawReply = rawReply.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+
+        // 2. Remove todos os emojis (solicitação estrita do usuário)
+        let finalReply = rawReply.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{FE0F}\u{200D}\u{1FA70}-\u{1FAFF}]/gu, '').trim();
+
+        // 3. Higieniza colapso/repetições de pontuação
+        if (finalReply.includes('...') || finalReply.includes('…')) {
+          const lines = finalReply.split('\n').filter((l: string) => {
+            const trimmed = l.trim();
+            if (!trimmed) return false;
+            const dotCount = (trimmed.match(/\./g) || []).length + (trimmed.match(/…/g) || []).length;
+            return dotCount < 5 && trimmed.length > 2;
+          });
+          if (lines.length > 0) {
+            finalReply = lines.join('\n');
+          }
+        }
 
         // Safety Net silencioso: Se o agendamento foi confirmado na conversa e temos o nome do cliente, assegura persistência no banco
         const replyLower = finalReply.toLowerCase();
-        const isVerbalConfirm = (replyLower.includes('confirmad') || replyLower.includes('marcad') || replyLower.includes('agendad')) && (replyLower.includes('às') || replyLower.includes('as ') || replyLower.includes('horário'));
+        const isVerbalConfirm = (replyLower.includes('confirmad') || replyLower.includes('marcad') || replyLower.includes('agendad') || replyLower.includes('sucesso')) && (replyLower.includes('às') || replyLower.includes('as ') || replyLower.includes('horário') || replyLower.includes('09:00') || replyLower.includes('amanhã') || replyLower.includes('amanha') || replyLower.includes('hoje'));
         const targetCustomerName = session.customerName || (possibleName && possibleName.length >= 3 ? possibleName : undefined);
 
-        if (!appointmentCreated && isVerbalConfirm && targetCustomerName && targetCustomerName.toLowerCase() !== 'cliente') {
+        if (!appointmentCreated && (isVerbalConfirm || (session.pendingBookingTime && targetCustomerName && targetCustomerName.toLowerCase() !== 'cliente')) && targetCustomerName && targetCustomerName.toLowerCase() !== 'cliente') {
           const targetDateStr = session.pendingBookingDateStr || this.getTomorrowDateStr();
-          const targetTimeStr = session.pendingBookingTime || '14:00';
+          const targetTimeStr = session.pendingBookingTime || '09:00';
           const targetProfId = session.pendingBookingProfId || profs[0]?.id || 'prof-1';
-          const targetServiceId = services[0]?.id || 'srv-1';
+          const targetServiceId = session.pendingBookingServiceId || services[0]?.id || 'srv-1';
 
           const safetyExec = await this.executeToolCall(tenantId, 'create_appointment', {
             professionalId: targetProfId,
@@ -1135,6 +1152,16 @@ export class AiOrchestratorService {
             executedTools.push('create_appointment');
             session.pendingBookingTime = undefined;
             session.pendingBookingDateStr = undefined;
+          }
+        }
+
+        // Se a resposta estiver vazia ou for muito curta após filtragem, monta confirmação limpa
+        if (!finalReply || finalReply.length < 5) {
+          if (appointmentCreated) {
+            const profObj = profs.find(p => p.id === appointmentCreated.professionalId) || profs[0];
+            finalReply = `Agendamento confirmado para ${targetCustomerName || 'você'} com ${profObj?.name || 'nosso profissional'} para ${session.pendingBookingDateStr || 'amanhã'} às ${session.pendingBookingTime || '09:00'}.`;
+          } else {
+            finalReply = `Como posso te ajudar hoje? Se desejar agendar um horário ou tiver dúvidas, estou à disposição.`;
           }
         }
 
