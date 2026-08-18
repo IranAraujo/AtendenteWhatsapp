@@ -1,7 +1,10 @@
+import dotenv from 'dotenv';
+dotenv.config();
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { dbRepository } from './db.service.js';
-import { calculateAvailableSlots, ScheduleTimeBlock } from './schedule.service.js';
+import { calculateAvailableSlots, ScheduleTimeBlock, selectRoundRobinProfessional } from './schedule.service.js';
 import { buildSystemInstruction, buildDynamicBusinessMemory, buildGlmTools } from './ai.service.js';
+import { webhookService } from './webhook.service.js';
 
 export interface ProcessMessageResult {
   replyText: string;
@@ -102,12 +105,38 @@ export interface CustomerSession {
   pendingBookingProfId?: string;
   pendingBookingServiceId?: string;
   pendingExistingApptChoice?: { newDateStr: string; newTimeStr: string; dateFormattedLabel: string };
+  pendingActionConfirmation?: {
+    type: 'CANCEL' | 'RESCHEDULE';
+    appointmentId: string;
+    newDateStr?: string;
+    newTimeStr?: string;
+    currentDateStr?: string;
+    currentTimeStr?: string;
+    profName?: string;
+  };
   lastInteractionTimestamp?: number;
   history: Array<{ role: 'user' | 'model'; text: string }>;
+  pendingWaitlist?: { dateStr: string; professionalId?: string; serviceId?: string; };
+  isRecurringClient?: boolean;
 }
 
 const customerSessions = new Map<string, CustomerSession>();
 const SESSION_TTL_MS = 2 * 60 * 60 * 1000; // 2 horas de inatividade
+
+// M6: Limpeza proativa de sessões inativas a cada 30 min para evitar memory leak em produção
+setInterval(() => {
+  const now = Date.now();
+  let cleaned = 0;
+  for (const [phone, session] of customerSessions.entries()) {
+    if (session.lastInteractionTimestamp && (now - session.lastInteractionTimestamp > SESSION_TTL_MS)) {
+      customerSessions.delete(phone);
+      cleaned++;
+    }
+  }
+  if (cleaned > 0) {
+    console.log(`[Session GC] ${cleaned} sessões inativas removidas. Sessões ativas: ${customerSessions.size}`);
+  }
+}, 30 * 60 * 1000);
 
 export function getOrCreateSession(customerPhone: string): CustomerSession {
   const cleanPhone = customerPhone.split('@')[0].split(':')[0].replace(/\D/g, '') || customerPhone;
@@ -123,6 +152,7 @@ export function getOrCreateSession(customerPhone: string): CustomerSession {
       existing.pendingBookingProfId = undefined;
       existing.pendingBookingServiceId = undefined;
       existing.pendingExistingApptChoice = undefined;
+      existing.pendingActionConfirmation = undefined;
       existing.customerName = savedName;
       existing.hasGreeted = false;
     }
@@ -138,6 +168,7 @@ export function getOrCreateSession(customerPhone: string): CustomerSession {
   customerSessions.set(cleanPhone, newSession);
   return newSession;
 }
+
 
 export function sanitizeUserTimeInput(text: string): string {
   let cleaned = text.toLowerCase();
@@ -176,28 +207,68 @@ export function extractPhoneNumberFromText(text: string): string | null {
 }
 
 export function extractCleanCustomerName(input: string): string {
-  let name = input.trim();
-  const prefixes = [
-    /^meu\s+nome\s+é\s+/i,
-    /^meu\s+nome\s+e\s+/i,
-    /^sou\s+o\s+/i,
-    /^sou\s+a\s+/i,
-    /^pode\s+colocar\s+/i,
+  if (!input) return '';
+  let text = input.trim();
+
+  const explicitPrefixes = [
+    /^meu\s+nome\s+(é|e)\s+/i,
     /^me\s+chamo\s+/i,
     /^me\s+chama\s+/i,
     /^chamo\s+/i,
+    /^sou\s+(o|a)\s+/i,
+    /^pode\s+colocar\s+(o\s+nome\s+(de\s+)?)?/i,
+    /^pode\s+anotar\s+(o\s+nome\s+(de\s+)?)?/i,
+    /^anota\s+(aí\s+|ai\s+)?(o\s+nome\s+(de\s+)?)?/i,
+    /^nome\s*:\s*/i,
     /^não,?\s*(é|e)?\s*(para|pra|pro|o|a)?\s+/i,
-    /^(é|e)\s*(para|pra|pro|o|a)\s+/i,
-    /^para\s+/i,
-    /^pro\s+/i,
-    /^pra\s+/i
+    /^(é|e)\s*(para|pra|pro|o|a)\s+/i
   ];
 
-  for (const prefix of prefixes) {
-    name = name.replace(prefix, '');
+  let hasExplicitIntro = false;
+  for (const prefix of explicitPrefixes) {
+    if (prefix.test(text)) {
+      text = text.replace(prefix, '').trim();
+      hasExplicitIntro = true;
+      break;
+    }
   }
 
-  return name.trim() || input.trim();
+  const cleaned = text.replace(/[.,!?;:()\[\]{}—–\-_]/g, ' ').replace(/\s+/g, ' ').trim();
+  const lower = cleaned.toLowerCase();
+
+  const forbiddenWords = [
+    'quero', 'queria', 'queira', 'gostaria', 'posso', 'podemos', 'pode', 'vamos', 'vou', 'vai',
+    'marcar', 'agendar', 'ver', 'trocar', 'mudar', 'reagendar', 'cancelar', 'desmarcar',
+    'corte', 'cote', 'cortar', 'fazer', 'barba', 'cabelo', 'sobrancelha', 'escova', 'unha', 'massagem',
+    'serviço', 'servico', 'atendimento', 'produto', 'pomada', 'shampoo',
+    'hoje', 'amanhã', 'amanha', 'ontem', 'segunda', 'terça', 'terca', 'quarta', 'quinta', 'sexta', 'sábado', 'sabado', 'domingo',
+    'manhã', 'manha', 'tarde', 'noite', 'horário', 'horario', 'hora', 'horas', 'vaga', 'livre',
+    'sim', 'não', 'nao', 'ok', 'beleza', 'valeu', 'obrigado', 'obrigada', 'por favor', 'pfv', 'show',
+    'lucas', 'matheus', 'atendente', 'recepcionista', 'salão', 'salao', 'barbearia', 'estilo', 'beleza',
+    'cliente', 'whatsapp', 'informado', 'desconhecido', 'completo', 'nome',
+    'para', 'pra', 'pro', 'com', 'sem', 'tem', 'teria', 'ter', 'estar', 'está', 'esta', 'ser', 'simples'
+  ];
+
+  const words = lower.split(/\s+/).filter(Boolean);
+
+  if (/\d/.test(cleaned)) return '';
+  if (!hasExplicitIntro && (words.length > 4 || cleaned.length > 35)) return '';
+
+  if (!hasExplicitIntro) {
+    if (words.some(w => forbiddenWords.includes(w))) return '';
+  } else {
+    const validWords: string[] = [];
+    for (const w of text.split(/\s+/)) {
+      if (forbiddenWords.includes(w.toLowerCase()) && !['da', 'de', 'do', 'dos', 'das', 'e'].includes(w.toLowerCase())) break;
+      validWords.push(w);
+    }
+    const result = validWords.join(' ').trim();
+    if (result.length < 2) return '';
+    return result;
+  }
+
+  if (cleaned.length < 2) return '';
+  return cleaned;
 }
 
 export function parseNaturalLanguageDateTime(
@@ -441,11 +512,24 @@ export class AiOrchestratorService {
         }
 
         const existingAppointments = await dbRepository.getAppointmentsForProfessional(prof.id, dateStr);
+        const blocks = await dbRepository.getScheduleBlocks(tenantId, prof.id, dateStr);
+        const dayCount = await dbRepository.getDailyAppointmentCount(prof.id, dateStr);
+        const tenantItem = await dbRepository.getTenantById(tenantId);
+        const bufferMinutes = service?.bufferTimeMinutes ?? tenantItem?.bookingRules?.bufferTimeMinutes ?? 10;
+        const minNotice = tenantItem?.bookingRules?.minimumNoticeMinutes ?? 60;
+        const maxFutureDays = tenantItem?.bookingRules?.maxFutureDays ?? 30;
+
         const slots = calculateAvailableSlots({
           dateStr,
           serviceDurationMinutes: serviceDuration,
           schedule: scheduleToUse,
           existingAppointments: existingAppointments.map(a => ({ startTime: a.startTime, endTime: a.endTime })),
+          scheduleBlocks: blocks.map(b => ({ startTime: b.startTime, endTime: b.endTime })),
+          maxAppointmentsPerDay: (prof as any).maxAppointmentsPerDay,
+          currentDayAppointmentCount: dayCount,
+          bufferTimeMinutes: bufferMinutes,
+          minimumNoticeMinutes: minNotice,
+          maxFutureDays: maxFutureDays,
           slotIntervalMinutes: 30
         });
 
@@ -470,7 +554,7 @@ export class AiOrchestratorService {
       const { professionalId, serviceId, customerName, customerPhone, dateStr, timeStr } = args;
 
       const cleanName = extractCleanCustomerName(customerName || '');
-      const isGenericName = !cleanName || cleanName.toLowerCase() === 'cliente' || cleanName.toLowerCase() === 'cliente whatsapp' || cleanName.length < 2 || cleanName.toLowerCase().includes('nome completo');
+      const isGenericName = !cleanName || cleanName.toLowerCase() === 'cliente' || cleanName.toLowerCase() === 'cliente whatsapp' || cleanName.length < 2 || cleanName.toLowerCase().includes('nome completo') || cleanName.toLowerCase().includes('informado') || cleanName.toLowerCase().includes('desconhecido') || cleanName.toLowerCase().includes('ainda não');
 
       if (!dateStr || !timeStr || isGenericName) {
         return {
@@ -498,9 +582,44 @@ export class AiOrchestratorService {
       const [year, month, day] = targetDateStr.split('-').map(Number);
       const [hours, minutes] = targetTimeStr.split(':').map(Number);
 
-      // Usa string ISO local para evitar conversão de fuso (ex: 14:00 BRT não vira 11:00 UTC)
+      // Validação de disponibilidade real da agenda antes de confirmar
+      const targetProf = profs.find(p => p.id === targetProfId) || profs[0];
+      let scheduleToUse: ScheduleTimeBlock = { startTime: '08:00', endTime: '18:00', lunchStartTime: '12:00', lunchEndTime: '13:00' };
+      if (targetProf?.workSchedule) {
+        scheduleToUse = {
+          startTime: targetProf.workSchedule.startTime || '08:00',
+          endTime: targetProf.workSchedule.endTime || '18:00',
+          lunchStartTime: targetProf.workSchedule.lunchStartTime || null,
+          lunchEndTime: targetProf.workSchedule.lunchEndTime || null
+        };
+      }
+      const existingAppointments = await dbRepository.getAppointmentsForProfessional(targetProf.id, targetDateStr);
+      const otherAppointments = existingAppointments.filter(a => a.customerPhone !== customerPhone);
+      const blocks = await dbRepository.getScheduleBlocks(tenantId, targetProf.id, targetDateStr);
+      const dayCount = otherAppointments.length;
+      const availableSlots = calculateAvailableSlots({
+        dateStr: targetDateStr,
+        serviceDurationMinutes: duration,
+        schedule: scheduleToUse,
+        existingAppointments: otherAppointments.map(a => ({ startTime: a.startTime, endTime: a.endTime })),
+        scheduleBlocks: blocks.map(b => ({ startTime: b.startTime, endTime: b.endTime })),
+        maxAppointmentsPerDay: targetProf.maxAppointmentsPerDay,
+        currentDayAppointmentCount: dayCount,
+        slotIntervalMinutes: 30
+      });
+
+      if (!availableSlots.includes(targetTimeStr)) {
+        return {
+          result: {
+            status: 'ERRO_HORARIO_INDISPONIVEL',
+            mensagem: `O horário das ${targetTimeStr} não está livre na agenda do ${targetProf.name} para ${targetDateStr}. Horários próximos disponíveis: ${availableSlots.slice(0, 5).join(', ')}. Por favor, informe com simpatia ao cliente que esse horário específico está indisponível e sugira os horários livres mais próximos!`
+          }
+        };
+      }
+
+      // Usa string ISO local com offset explícito de Brasília (UTC-3)
       const pad = (n: number) => String(n).padStart(2, '0');
-      const localIso = `${year}-${pad(month)}-${pad(day)}T${pad(hours)}:${pad(minutes)}:00`;
+      const localIso = `${year}-${pad(month)}-${pad(day)}T${pad(hours)}:${pad(minutes)}:00-03:00`;
       let startTime = new Date(localIso);
       if (isNaN(startTime.getTime())) {
         startTime = new Date();
@@ -536,6 +655,28 @@ export class AiOrchestratorService {
         status: 'CONFIRMED'
       });
 
+      // #3/#16: Atualiza perfil do cliente com preferências aprendidas
+      await dbRepository.incrementVisitCount(tenantId, customerPhone, professionalId, serviceId);
+
+      // Webhook dispatch: booking.created
+      await webhookService.dispatch(tenantId, 'booking.created', newAppt);
+
+      // #20: Notifica o profissional no WhatsApp
+      const notifProf = profs.find((p: any) => p.id === newAppt.professionalId) || profs[0];
+      if (notifProf && (notifProf as any).phone) {
+        const apptStartForNotif = newAppt.startTime instanceof Date ? newAppt.startTime : new Date(newAppt.startTime);
+        const apptDateForNotif = `${String(apptStartForNotif.getDate()).padStart(2,'0')}/${String(apptStartForNotif.getMonth()+1).padStart(2,'0')}`;
+        const apptTimeForNotif = `${String(apptStartForNotif.getHours()).padStart(2,'0')}:${String(apptStartForNotif.getMinutes()).padStart(2,'0')}`;
+        const srvForNotif = services.find((s: any) => s.id === newAppt.serviceId);
+        const notifMsg = `🔔 *Novo agendamento!*\n\nCliente: *${cleanName}*\nServiço: *${srvForNotif?.name || 'Atendimento'}*\nData: *${apptDateForNotif}*\nHorário: *${apptTimeForNotif}*\n\nBoa sorte! 😊`;
+        try {
+          const { whatsappService } = await import('./whatsapp.service.js');
+          await whatsappService.sendMessage(tenantId, (notifProf as any).phone, notifMsg);
+        } catch(e: any) {
+          console.warn('[Notif Profissional] Falha ao enviar notificação:', e.message);
+        }
+      }
+
       return {
         result: {
           status: 'SUCESSO',
@@ -553,13 +694,54 @@ export class AiOrchestratorService {
         return { result: { status: 'ERRO', mensagem: 'Nenhum agendamento ativo foi encontrado para este telefone.' } };
       }
 
+      // BUG 1 FIX: buscar duração real do serviço em vez de hardcode de 30 min
+      const allServices = await dbRepository.listServices(tenantId);
+      const apptService = allServices.find(s => s.id === existingAppt.serviceId) || allServices[0];
+      const apptDuration = apptService?.durationMinutes ?? 30;
+
+      // BUG 2 FIX: validar disponibilidade do novo horário antes de confirmar reagendamento
+      const allProfs = await dbRepository.listProfessionals(tenantId);
+      const apptProf = allProfs.find(p => p.id === existingAppt.professionalId) || allProfs[0];
+      if (apptProf) {
+        const profSchedule: ScheduleTimeBlock = {
+          startTime: apptProf.workSchedule?.startTime || '08:00',
+          endTime: apptProf.workSchedule?.endTime || '18:00',
+          lunchStartTime: apptProf.workSchedule?.lunchStartTime || null,
+          lunchEndTime: apptProf.workSchedule?.lunchEndTime || null
+        };
+        const existingAppts = await dbRepository.getAppointmentsForProfessional(apptProf.id, newDateStr);
+        // Exclui o próprio agendamento atual da verificação de conflito
+        const otherAppts = existingAppts.filter(a => a.id !== existingAppt.id);
+        const blocks = await dbRepository.getScheduleBlocks(tenantId, apptProf.id, newDateStr);
+        const dayCount = otherAppts.length;
+        const availableSlots = calculateAvailableSlots({
+          dateStr: newDateStr,
+          serviceDurationMinutes: apptDuration,
+          schedule: profSchedule,
+          existingAppointments: otherAppts.map(a => ({ startTime: a.startTime, endTime: a.endTime })),
+          scheduleBlocks: blocks.map(b => ({ startTime: b.startTime, endTime: b.endTime })),
+          maxAppointmentsPerDay: apptProf.maxAppointmentsPerDay,
+          currentDayAppointmentCount: dayCount,
+          slotIntervalMinutes: 30
+        });
+
+        if (!availableSlots.includes(newTimeStr)) {
+          return {
+            result: {
+              status: 'ERRO_HORARIO_INDISPONIVEL',
+              mensagem: `O horário das ${newTimeStr} não está livre para reagendamento. Horários próximos disponíveis: ${availableSlots.slice(0, 5).join(', ')}. Informe o cliente com simpatia e sugira esses horários!`
+            }
+          };
+        }
+      }
+
       const [year, month, day] = newDateStr.split('-').map(Number);
       const [hours, minutes] = newTimeStr.split(':').map(Number);
 
       const pad = (n: number) => String(n).padStart(2, '0');
-      const localIso = `${year}-${pad(month)}-${pad(day)}T${pad(hours)}:${pad(minutes)}:00`;
+      const localIso = `${year}-${pad(month)}-${pad(day)}T${pad(hours)}:${pad(minutes)}:00-03:00`;
       const startTime = new Date(localIso);
-      const endTime = new Date(startTime.getTime() + 30 * 60 * 1000);
+      const endTime = new Date(startTime.getTime() + apptDuration * 60 * 1000);
 
       const updatedAppt = await dbRepository.updateAppointmentTime(existingAppt.id, startTime, endTime);
 
@@ -573,9 +755,37 @@ export class AiOrchestratorService {
       };
     }
 
+
     if (functionName === 'cancel_appointment') {
       const { customerPhone } = args;
       const cancelled = await dbRepository.cancelAppointmentByPhone(tenantId, customerPhone || '5511999998888');
+      
+      // Webhook dispatch: booking.cancelled
+      if (cancelled) {
+        await webhookService.dispatch(tenantId, 'booking.cancelled', cancelled);
+      }
+
+      // #1: Notifica primeiro da lista de espera
+      if (cancelled) {
+        try {
+          const cancelledDateStr = (() => {
+            const st = cancelled.startTime;
+            const p = new Intl.DateTimeFormat('en-CA', {timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(st instanceof Date ? st : new Date(st));
+            return `${p.find(x=>x.type==='year')?.value}-${p.find(x=>x.type==='month')?.value}-${p.find(x=>x.type==='day')?.value}`;
+          })();
+          const waitlistForDay = await dbRepository.getWaitlistForDate(tenantId, cancelledDateStr, cancelled.professionalId);
+          if (waitlistForDay.length > 0) {
+            const nextInLine = waitlistForDay[0];
+            const { whatsappService } = await import('./whatsapp.service.js');
+            const [wy, wm, wd] = nextInLine.dateStr.split('-');
+            await whatsappService.sendMessage(tenantId, nextInLine.customerPhone, `🎉 Boa notícia, ${nextInLine.customerName}! Abriu um horário para o dia *${wd}/${wm}*! Quer confirmar seu agendamento? Responda aqui para garantir sua vaga!`);
+            await dbRepository.removeFromWaitlist(nextInLine.id);
+          }
+        } catch(e: any) {
+          console.warn('[Waitlist Notify]:', e.message);
+        }
+      }
+
       const apptId = cancelled ? cancelled.id : undefined;
       return { 
         result: { status: 'SUCESSO', mensagem: 'Agendamento cancelado com sucesso no banco de dados. Horário liberado!' },
@@ -611,14 +821,52 @@ export class AiOrchestratorService {
     const profs = await dbRepository.listProfessionals(tenantId);
     const products = await dbRepository.listProducts(tenantId);
 
+    // Busca agendamento ativo existente do cliente
+    const existingAppt = await dbRepository.findActiveAppointmentByPhone(tenantId, customerPhone);
+    if (existingAppt && !session.customerName && existingAppt.customerName) {
+      session.customerName = existingAppt.customerName;
+    }
+
+    // #3/#16: Carrega perfil do cliente para personalização
+    const customerProfile = await dbRepository.getCustomerProfile(tenantId, customerPhone);
+    if (customerProfile) {
+      if (!session.customerName && customerProfile.name) session.customerName = customerProfile.name;
+      if (!session.pendingBookingProfId && customerProfile.preferredProfId) session.pendingBookingProfId = customerProfile.preferredProfId;
+      if (!session.pendingBookingServiceId && customerProfile.preferredServiceId) session.pendingBookingServiceId = customerProfile.preferredServiceId;
+      session.isRecurringClient = customerProfile.visitCount > 0;
+    }
+
+
+    let activeAppointmentInfo = undefined;
+    if (existingAppt) {
+      const profObj = profs.find(p => p.id === existingAppt.professionalId);
+      const srvObj = services.find(s => s.id === existingAppt.serviceId);
+      const st = (existingAppt.startTime instanceof Date) ? existingAppt.startTime : new Date(existingAppt.startTime);
+      const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(st);
+      const y = parts.find(p => p.type === 'year')?.value;
+      const m = parts.find(p => p.type === 'month')?.value;
+      const d = parts.find(p => p.type === 'day')?.value;
+      const h = parts.find(p => p.type === 'hour')?.value;
+      const min = parts.find(p => p.type === 'minute')?.value;
+      activeAppointmentInfo = {
+        customerName: existingAppt.customerName,
+        dateStr: `${d}/${m}/${y}`,
+        timeStr: `${h}:${min}`,
+        profName: profObj ? profObj.name : 'Lucas',
+        serviceName: srvObj ? srvObj.name : 'Serviço'
+      };
+    }
+
     // 1. Atualiza dados de sessão a partir do texto do usuário
     const extractedIntent = extractBookingIntentFromText(userMessage);
     if (extractedIntent.timeStr) session.pendingBookingTime = extractedIntent.timeStr;
     if (extractedIntent.dateStr) session.pendingBookingDateStr = extractedIntent.dateStr;
 
     const possibleName = extractCleanCustomerName(userMessage);
-    if (possibleName && possibleName.toLowerCase() !== 'cliente' && possibleName.length >= 3 && !userMessage.toLowerCase().includes('marcar') && !userMessage.toLowerCase().includes('corte') && !userMessage.toLowerCase().includes('horário')) {
-      session.customerName = possibleName;
+    if (possibleName && possibleName.length >= 2) {
+      if (!session.customerName || userMessage.toLowerCase().includes('meu nome') || userMessage.toLowerCase().includes('me chamo') || userMessage.toLowerCase().includes('sou o')) {
+        session.customerName = possibleName;
+      }
     }
 
     if (userMessage.toLowerCase().includes('lucas')) {
@@ -629,6 +877,314 @@ export class AiOrchestratorService {
       if (profMatheus) session.pendingBookingProfId = profMatheus.id;
     }
 
+    // M5: Persistência do serviço selecionado na sessão ao mencionar um serviço do catálogo
+    const lowerMsg = userMessage.toLowerCase();
+    const matchedServiceInMsg = services.find(s => {
+      const sLow = s.name.toLowerCase();
+      return lowerMsg.includes(sLow) || sLow.split(' ').filter(w => w.length > 3).some(w => lowerMsg.includes(w));
+    });
+    if (matchedServiceInMsg && !session.pendingBookingServiceId) {
+      session.pendingBookingServiceId = matchedServiceInMsg.id;
+    }
+
+
+    const lowerTrim = userMessage.toLowerCase().trim();
+    const isAffirmative = lowerTrim === 'sim' || lowerTrim === 'confirmo' || lowerTrim === 'pode' || lowerTrim === 'pode cancelar' || lowerTrim === 'pode ser' || lowerTrim === 'pode mudar' || lowerTrim === 'reagendar' || lowerTrim === 'mudar' || lowerTrim === 'isso' || lowerTrim === 'por favor' || lowerTrim.startsWith('sim,') || lowerTrim.startsWith('sim ') || lowerTrim.startsWith('pode ');
+    const isNegative = lowerTrim === 'não' || lowerTrim === 'nao' || lowerTrim === 'deixa quieto' || lowerTrim === 'vou manter' || lowerTrim === 'manter' || lowerTrim === 'manter os dois' || lowerTrim === 'quero os dois' || lowerTrim === 'outro' || lowerTrim === 'segundo';
+
+    const getDisplayName = (n?: string) => {
+      if (!n) return '';
+      const c = n.trim();
+      if (c.toLowerCase() === 'cliente' || c.toLowerCase().includes('informado') || c.toLowerCase().includes('desconhecido')) return '';
+      return c.split(' ')[0] || c;
+    };
+    const friendlyName = getDisplayName(session.customerName) || getDisplayName(existingAppt?.customerName);
+    const namePrefix = friendlyName ? `, ${friendlyName}` : '';
+    const nameGreeting = friendlyName ? `Oi, ${friendlyName}!` : 'Oi!';
+
+    // -------------------------------------------------------------
+    // ETAPA A: Resposta de Confirmação Pendente (Cancelamento ou Reagendamento)
+    // -------------------------------------------------------------
+    if (session.pendingActionConfirmation) {
+      const pending = session.pendingActionConfirmation;
+
+      // 1. Confirmação de Cancelamento
+      if (pending.type === 'CANCEL') {
+        if (isAffirmative) {
+          await dbRepository.cancelAppointment(pending.appointmentId);
+          session.pendingActionConfirmation = undefined;
+          const replyText = `Tudo bem${namePrefix}! Seu agendamento para ${pending.currentDateStr || 'amanhã'} às ${pending.currentTimeStr || ''} foi cancelado com sucesso. Quando quiser agendar novamente em outro dia, é só me chamar por aqui! Tenha um ótimo dia! 😊`;
+          session.history.push({ role: 'model', text: replyText });
+          return {
+            replyText,
+            functionCallsExecuted: ['cancel_appointment'],
+            appointmentCancelledId: pending.appointmentId,
+            engine: 'LLAMA_LIVE_LLM'
+          };
+        } else if (isNegative || lowerTrim.includes('manter') || lowerTrim.includes('vou')) {
+          session.pendingActionConfirmation = undefined;
+          const replyText = `Perfeito${namePrefix}! Mantive seu horário confirmado para ${pending.currentDateStr || 'amanhã'} às ${pending.currentTimeStr || ''} com o ${pending.profName || 'Lucas'}! Te esperamos aqui! ✨`;
+          session.history.push({ role: 'model', text: replyText });
+          return {
+            replyText,
+            functionCallsExecuted: [],
+            engine: 'LLAMA_LIVE_LLM'
+          };
+        }
+      }
+
+      // 2. Confirmação de Reagendamento
+      if (pending.type === 'RESCHEDULE') {
+        if (isAffirmative || lowerTrim.includes('reagendar') || lowerTrim.includes('mudar')) {
+          const [year, month, day] = (pending.newDateStr || this.getTomorrowDateStr()).split('-').map(Number);
+          const [hours, minutes] = (pending.newTimeStr || '15:00').split(':').map(Number);
+          const pad = (n: number) => String(n).padStart(2, '0');
+          const localIso = `${year}-${pad(month)}-${pad(day)}T${pad(hours)}:${pad(minutes)}:00-03:00`;
+          const startTime = new Date(localIso);
+          // BUG 1 FIX: buscar duração real do serviço do agendamento original
+          const existingApptForDuration = await dbRepository.findActiveAppointmentByPhone(tenantId, customerPhone);
+          const srvForDuration = services.find(s => s.id === existingApptForDuration?.serviceId) || services[0];
+          const durationForReschedule = srvForDuration?.durationMinutes ?? 30;
+          const endTime = new Date(startTime.getTime() + durationForReschedule * 60 * 1000);
+
+          const updated = await dbRepository.updateAppointmentTime(pending.appointmentId, startTime, endTime, session.customerName);
+          session.pendingActionConfirmation = undefined;
+          session.pendingBookingTime = undefined;
+          session.pendingBookingDateStr = undefined;
+          // BUG 10 FIX: usar data real em vez de "amanhã" hardcoded
+          const newDateLabel = pending.currentDateStr 
+            ? `${day}/${String(month).padStart(2,'0')}/${year}` 
+            : `${day}/${String(month).padStart(2,'0')}`;
+          const replyText = `Prontinho${namePrefix}! Seu agendamento foi reagendado com sucesso para ${newDateLabel} às ${pending.newTimeStr} com o ${pending.profName || 'Lucas'}! O horário anterior das ${pending.currentTimeStr} foi liberado. Te esperamos aqui! 🙏`;
+          session.history.push({ role: 'model', text: replyText });
+          return {
+            replyText,
+            functionCallsExecuted: ['reschedule_appointment'],
+            appointmentCreated: updated,
+            engine: 'LLAMA_LIVE_LLM'
+          };
+        } else if (isNegative || lowerTrim.includes('manter os dois') || lowerTrim.includes('dois') || lowerTrim.includes('outro')) {
+          const [year, month, day] = (pending.newDateStr || this.getTomorrowDateStr()).split('-').map(Number);
+          const [hours, minutes] = (pending.newTimeStr || '15:00').split(':').map(Number);
+          const pad = (n: number) => String(n).padStart(2, '0');
+          const localIso = `${year}-${pad(month)}-${pad(day)}T${pad(hours)}:${pad(minutes)}:00-03:00`;
+          const startTime = new Date(localIso);
+          // BUG 1 FIX: duração real do serviço
+          const srvForSecond = services.find(s => s.id === existingAppt?.serviceId) || services[0];
+          const durationForSecond = srvForSecond?.durationMinutes ?? 30;
+          const endTime = new Date(startTime.getTime() + durationForSecond * 60 * 1000);
+
+          const newAppt = await dbRepository.createAdditionalAppointment({
+            tenantId,
+            professionalId: session.pendingBookingProfId || profs[0]?.id || 'prof-1',
+            serviceId: services[0]?.id || 'srv-1',
+            customerName: session.customerName || 'Cliente',
+            customerPhone,
+            startTime,
+            endTime,
+            status: 'CONFIRMED'
+          });
+          session.pendingActionConfirmation = undefined;
+          session.pendingBookingTime = undefined;
+          session.pendingBookingDateStr = undefined;
+          // BUG 10 FIX: usar data real em vez de "amanhã" hardcoded
+          const secondDateLabel = `${day}/${String(month).padStart(2,'0')}`;
+          const replyText = `Combinado${namePrefix}! Criei o seu segundo agendamento para ${secondDateLabel} às ${pending.newTimeStr} com o ${pending.profName || 'Lucas'}. Seus dois horários estão confirmados com sucesso! 🎉`;
+          session.history.push({ role: 'model', text: replyText });
+          return {
+            replyText,
+            functionCallsExecuted: ['create_appointment'],
+            appointmentCreated: newAppt,
+            engine: 'LLAMA_LIVE_LLM'
+          };
+        }
+      }
+    }
+
+    // -------------------------------------------------------------
+    // ETAPA B: Detecção de Intenção de Cancelamento
+    // -------------------------------------------------------------
+    const isCancelIntent = lowerTrim.includes('cancelar') || lowerTrim.includes('desmarcar') || lowerTrim.includes('não posso ir') || lowerTrim.includes('nao posso ir') || lowerTrim.includes('não vou poder') || lowerTrim.includes('nao vou poder') || lowerTrim.includes('não poderei') || lowerTrim.includes('cancela');
+
+    if (isCancelIntent && existingAppt) {
+      const profObj = profs.find(p => p.id === existingAppt.professionalId);
+      const st = (existingAppt.startTime instanceof Date) ? existingAppt.startTime : new Date(existingAppt.startTime);
+      const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(st);
+      const y = parts.find(p => p.type === 'year')?.value;
+      const m = parts.find(p => p.type === 'month')?.value;
+      const d = parts.find(p => p.type === 'day')?.value;
+      const h = parts.find(p => p.type === 'hour')?.value;
+      const min = parts.find(p => p.type === 'minute')?.value;
+
+      session.pendingActionConfirmation = {
+        type: 'CANCEL',
+        appointmentId: existingAppt.id,
+        currentDateStr: `${d}/${m}/${y}`,
+        currentTimeStr: `${h}:${min}`,
+        profName: profObj ? profObj.name : 'Lucas'
+      };
+
+      // BUG 9 FIX: usar dia da semana + data real em vez de "amanhã" hardcoded
+      const cancelDayName = ['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'][(existingAppt.startTime instanceof Date ? existingAppt.startTime : new Date(existingAppt.startTime)).getDay()];
+      const replyText = `Poxa, que pena que você não vai poder vir${namePrefix}! 🥺 Você confirma o cancelamento do seu atendimento de ${cancelDayName} (${d}/${m}) às ${h}:${min} com o ${profObj ? profObj.name : 'Lucas'}?`;
+      session.history.push({ role: 'model', text: replyText });
+      return {
+        replyText,
+        functionCallsExecuted: [],
+        engine: 'LLAMA_LIVE_LLM'
+      };
+    }
+
+    // -------------------------------------------------------------
+    // ETAPA C: Detecção de Agendamento Existente no mesmo dia ao pedir Novo Horário
+    // -------------------------------------------------------------
+    const isExplicitReschedule = lowerTrim.includes('mudar') || lowerTrim.includes('trocar') || lowerTrim.includes('remarcar') || lowerTrim.includes('alterar') || lowerTrim.includes('passar para');
+
+    if (existingAppt && extractedIntent.timeStr && !isExplicitReschedule) {
+      const profObj = profs.find(p => p.id === existingAppt.professionalId);
+      const st = (existingAppt.startTime instanceof Date) ? existingAppt.startTime : new Date(existingAppt.startTime);
+      const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(st);
+      const y = parts.find(p => p.type === 'year')?.value;
+      const m = parts.find(p => p.type === 'month')?.value;
+      const d = parts.find(p => p.type === 'day')?.value;
+      const h = parts.find(p => p.type === 'hour')?.value;
+      const min = parts.find(p => p.type === 'minute')?.value;
+      const targetDateStr = extractedIntent.dateStr || session.pendingBookingDateStr || this.getTomorrowDateStr();
+      const targetTimeStr = extractedIntent.timeStr;
+
+      session.pendingActionConfirmation = {
+        type: 'RESCHEDULE',
+        appointmentId: existingAppt.id,
+        newDateStr: targetDateStr,
+        newTimeStr: targetTimeStr,
+        currentDateStr: `${d}/${m}/${y}`,
+        currentTimeStr: `${h}:${min}`,
+        profName: profObj ? profObj.name : 'Lucas'
+      };
+
+      // BUG 9 FIX: usar dia da semana + data real do agendamento em vez de "amanhã" hardcoded
+      const existApptDate = (existingAppt.startTime instanceof Date) ? existingAppt.startTime : new Date(existingAppt.startTime);
+      const existApptDayName = ['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'][existApptDate.getDay()];
+      const replyText = `${nameGreeting} Vi aqui que você já tem um agendamento marcado para ${existApptDayName} (${d}/${m}) às ${h}:${min} com o ${profObj ? profObj.name : 'Lucas'}. Você gostaria de **reagendar** esse seu horário para as ${targetTimeStr} ou deseja marcar um segundo atendimento?`;
+      session.history.push({ role: 'model', text: replyText });
+      return {
+        replyText,
+        functionCallsExecuted: [],
+        engine: 'LLAMA_LIVE_LLM'
+      };
+    }
+
+    // -------------------------------------------------------------
+    // ETAPA D: Consulta de Agendamento Ativo do Cliente (Qual meu horário? Estou agendado?)
+    // -------------------------------------------------------------
+    const isQueryMyBooking = lowerTrim.includes('estou agendad') || 
+      lowerTrim.includes('qual horário estou') || lowerTrim.includes('qual horario estou') || 
+      lowerTrim.includes('que horas estou') || lowerTrim.includes('que horas é meu') || lowerTrim.includes('que horas e meu') ||
+      lowerTrim.includes('de que horas') || lowerTrim.includes('de que hora') ||
+      lowerTrim.includes('tenho agendamento') || lowerTrim.includes('meu agendamento') || 
+      lowerTrim.includes('minha reserva') || lowerTrim.includes('meu horário') || lowerTrim.includes('meu horario') ||
+      lowerTrim.includes('quando é meu') || lowerTrim.includes('quando e meu') ||
+      (lowerTrim.includes('agendad') && (lowerTrim.includes('que horas') || lowerTrim.includes('qual dia') || lowerTrim.includes('quando')));
+
+    if (isQueryMyBooking) {
+      if (existingAppt) {
+        const profObj = profs.find(p => p.id === existingAppt.professionalId);
+        const srvObj = services.find(s => s.id === existingAppt.serviceId);
+        const st = (existingAppt.startTime instanceof Date) ? existingAppt.startTime : new Date(existingAppt.startTime);
+        
+        const dateFormatted = new Intl.DateTimeFormat('pt-BR', {
+          timeZone: 'America/Sao_Paulo',
+          weekday: 'long',
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric'
+        }).format(st);
+
+        const timeFormatted = new Intl.DateTimeFormat('pt-BR', {
+          timeZone: 'America/Sao_Paulo',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        }).format(st);
+
+        const profName = profObj ? profObj.name : 'Lucas';
+        const srvName = srvObj ? srvObj.name : 'Atendimento';
+
+        const replyText = `${nameGreeting} Você tem um horário confirmado para **${dateFormatted} às ${timeFormatted}** com o profissional **${profName}** (${srvName}). 😊 Se precisar remarcar ou cancelar, só me avisar!`;
+        session.history.push({ role: 'model', text: replyText });
+        return {
+          replyText,
+          functionCallsExecuted: [],
+          engine: 'LLAMA_LIVE_LLM'
+        };
+      } else {
+        const replyText = `${nameGreeting} Você não possui nenhum agendamento ativo no momento. 😊 Gostaria de agendar um horário com a gente?`;
+        session.history.push({ role: 'model', text: replyText });
+        return {
+          replyText,
+          functionCallsExecuted: [],
+          engine: 'LLAMA_LIVE_LLM'
+        };
+      }
+    }
+
+    // #2: Detectar resposta a lembrete de agendamento (1=confirmar, 2=cancelar, 3=reagendar)
+    const isReminderResponse = lowerTrim === '1' || lowerTrim === '2' || lowerTrim === '3' || lowerTrim === 'confirmar' || lowerTrim === 'cancelar' || lowerTrim === 'reagendar';
+    const lastBotMsg = session.history.filter(h => h.role === 'model').slice(-1)[0]?.text || '';
+    const lastMsgWasReminder = lastBotMsg.includes('CONFIRMAR') || lastBotMsg.includes('CANCELAR') || session.history.length <= 1;
+    
+    if (isReminderResponse && lastMsgWasReminder && existingAppt) {
+      if (lowerTrim === '1' || lowerTrim === 'confirmar') {
+        const replyText = `Confirmado! ✅ Te esperamos então. Até lá! 😊`;
+        session.history.push({ role: 'model', text: replyText });
+        return { replyText, functionCallsExecuted: [], engine: 'LLAMA_LIVE_LLM' };
+      } else if (lowerTrim === '2' || lowerTrim === 'cancelar') {
+        const st = existingAppt.startTime instanceof Date ? existingAppt.startTime : new Date(existingAppt.startTime);
+        const parts = new Intl.DateTimeFormat('en-CA', {timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(st);
+        const d = parts.find(p=>p.type==='day')?.value;
+        const m = parts.find(p=>p.type==='month')?.value;
+        const h = parts.find(p=>p.type==='hour')?.value;
+        const min = parts.find(p=>p.type==='minute')?.value;
+        const profObj = profs.find(p => p.id === existingAppt.professionalId);
+        session.pendingActionConfirmation = { type: 'CANCEL', appointmentId: existingAppt.id, currentDateStr: `${d}/${m}`, currentTimeStr: `${h}:${min}`, profName: profObj?.name };
+        const replyText = `Que pena! 😔 Você confirma o cancelamento do seu agendamento de ${d}/${m} às ${h}:${min} com o ${profObj?.name || 'profissional'}?`;
+        session.history.push({ role: 'model', text: replyText });
+        return { replyText, functionCallsExecuted: [], engine: 'LLAMA_LIVE_LLM' };
+      } else if (lowerTrim === '3' || lowerTrim === 'reagendar') {
+        const replyText = `Claro! 🔄 Para qual dia e horário você prefere remarcar?`;
+        session.history.push({ role: 'model', text: replyText });
+        return { replyText, functionCallsExecuted: [], engine: 'LLAMA_LIVE_LLM' };
+      }
+    }
+
+    // #17: FAQ Inteligente e Dúvidas Frequentes do Negócio (Respostas Instantâneas de alta precisão)
+    const faqItems = (tenant as any).aiConfig?.faqItems || [];
+    const lowerForFaq = lowerTrim;
+    let directFaqAnswer: string | null = null;
+    if (faqItems.length > 0) {
+      const faqMatch = faqItems.find((item: any) => {
+        const qWords = item.question.toLowerCase().split(/\s+/).filter((w: string) => w.length > 3);
+        return qWords.some((w: string) => lowerForFaq.includes(w));
+      });
+      if (faqMatch) directFaqAnswer = faqMatch.answer;
+    }
+    if (!directFaqAnswer) {
+      const isAddressQuestion = lowerForFaq.includes('endereço') || lowerForFaq.includes('endereco') || lowerForFaq.includes('fica') || lowerForFaq.includes('onde') || lowerForFaq.includes('localização') || lowerForFaq.includes('localizacao');
+      const isPaymentQuestion = lowerForFaq.includes('pagamento') || lowerForFaq.includes('pix') || lowerForFaq.includes('cartão') || lowerForFaq.includes('cartao') || lowerForFaq.includes('aceita') || lowerForFaq.includes('dinheiro');
+      const isHoursQuestion = lowerForFaq.includes('funciona') || lowerForFaq.includes('abre') || lowerForFaq.includes('fecha') || lowerForFaq.includes('horário de atendimento') || lowerForFaq.includes('horario de atendimento');
+      if (isAddressQuestion || isPaymentQuestion || isHoursQuestion) {
+        const info = businessInfo || tenant.aiConfig.businessInfo;
+        if (info && info.length > 10) {
+          directFaqAnswer = `📍 Olha só as informações sobre a gente:\n\n${info}\n\nPrecisa de mais alguma coisa? 😊`;
+        }
+      }
+    }
+    if (directFaqAnswer) {
+      session.history.push({ role: 'model', text: directFaqAnswer });
+      return { replyText: directFaqAnswer, functionCallsExecuted: [], engine: 'LLAMA_LIVE_LLM' };
+    }
+
+
     const fullInstruction = buildDynamicBusinessMemory({
       tenantName: tenant.name,
       systemPrompt,
@@ -638,14 +1194,25 @@ export class AiOrchestratorService {
       professionals: profs,
       customerPhone,
       customerName: session.customerName,
+      activeAppointment: activeAppointmentInfo,
       pendingBookingTime: session.pendingBookingTime,
       pendingBookingDateStr: session.pendingBookingDateStr,
       pendingBookingProfId: session.pendingBookingProfId
     });
 
-    const apiKey = process.env.NVIDIA_API_KEY || '';
-    if (!apiKey) {
-      throw new Error('NVIDIA_API_KEY não configurada. Adicione a variável de ambiente no painel do Render/servidor.');
+    const groqKey = process.env.GROQ_API_KEY || '';
+    const nvidiaKey = process.env.NVIDIA_API_KEY || '';
+
+    const useGroq = Boolean(groqKey);
+    const llmEndpoint = useGroq 
+      ? 'https://api.groq.com/openai/v1/chat/completions' 
+      : 'https://integrate.api.nvidia.com/v1/chat/completions';
+    const llmKey = useGroq ? groqKey : nvidiaKey;
+    // BUG 5 FIX: modelo válido no Groq com suporte a function calling (gpt-oss-120b inclui raciocínio interno)
+    const llmModel = useGroq ? 'openai/gpt-oss-120b' : 'meta/llama-3.1-8b-instruct';
+
+    if (!llmKey) {
+      throw new Error('Nenhuma chave de IA configurada (GROQ_API_KEY ou NVIDIA_API_KEY). Adicione no .env ou no painel do servidor.');
     }
 
     // Monta histórico no formato OpenAI (role: user/assistant)
@@ -671,21 +1238,51 @@ export class AiOrchestratorService {
 
       // Loop de function calling OpenAI-compatible
       for (let round = 0; round < 5; round++) {
-        const resp = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
+      // M7: Timeout de 30s para evitar travar o servidor em respostas lentas da LLM
+        const llmAbortController = new AbortController();
+        const llmTimeoutId = setTimeout(() => llmAbortController.abort(), 30000);
+
+        let resp = await fetch(llmEndpoint, {
           method: 'POST',
+          signal: llmAbortController.signal,
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
+            'Authorization': `Bearer ${llmKey}`
           },
           body: JSON.stringify({
-            model: 'meta/llama-3.1-8b-instruct',
+            model: llmModel,
             messages,
             tools,
             tool_choice: 'auto',
-            max_tokens: 1024,
-            temperature: 0.75
+            max_tokens: 4096,
+            temperature: 0.7
           })
         });
+        clearTimeout(llmTimeoutId);
+
+        // Fallback automático para NVIDIA NIM caso Groq atinja 429 (rate limit) ou falhe
+        if (!resp.ok && useGroq && nvidiaKey) {
+          console.warn(`[Groq Failover -> NVIDIA NIM]: status ${resp.status}`);
+          const nimAbortController = new AbortController();
+          const nimTimeoutId = setTimeout(() => nimAbortController.abort(), 30000);
+          resp = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
+            method: 'POST',
+            signal: nimAbortController.signal,
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${nvidiaKey}`
+            },
+            body: JSON.stringify({
+              model: 'meta/llama-3.1-8b-instruct',
+              messages,
+              tools,
+              tool_choice: 'auto',
+              max_tokens: 4096,
+              temperature: 0.75
+            })
+          });
+          clearTimeout(nimTimeoutId);
+        }
 
         if (!resp.ok) {
           const errBody = await resp.text();
@@ -700,7 +1297,11 @@ export class AiOrchestratorService {
 
         // Verifica se o modelo quer chamar ferramentas
         if (msg.tool_calls && msg.tool_calls.length > 0) {
-          messages.push(msg); // adiciona a mensagem do assistant com tool_calls
+          messages.push({
+            role: 'assistant',
+            content: msg.content || null,
+            tool_calls: msg.tool_calls
+          });
 
           for (const toolCall of msg.tool_calls) {
             const toolName = toolCall.function.name;
@@ -713,6 +1314,15 @@ export class AiOrchestratorService {
               if (!toolArgs.dateStr && session.pendingBookingDateStr) toolArgs.dateStr = session.pendingBookingDateStr;
               if (!toolArgs.timeStr && session.pendingBookingTime) toolArgs.timeStr = session.pendingBookingTime;
               if (!toolArgs.professionalId && session.pendingBookingProfId) toolArgs.professionalId = session.pendingBookingProfId;
+              // M5 FIX: propagar serviceId salvo na sessão
+              if (!toolArgs.serviceId && session.pendingBookingServiceId) toolArgs.serviceId = session.pendingBookingServiceId;
+            }
+
+
+            if (toolName === 'reschedule_appointment') {
+              if (!toolArgs.customerPhone) toolArgs.customerPhone = customerPhone;
+              if (!toolArgs.newDateStr && session.pendingBookingDateStr) toolArgs.newDateStr = session.pendingBookingDateStr;
+              if (!toolArgs.newTimeStr && session.pendingBookingTime) toolArgs.newTimeStr = session.pendingBookingTime;
             }
 
             executedTools.push(toolName);
@@ -735,18 +1345,52 @@ export class AiOrchestratorService {
         }
 
         // Resposta de texto final
-        const finalReply = msg.content || '';
+        let finalReply = msg.content || '';
 
-        // Safety Net: Se a IA confirmou verbalmente o agendamento mas não acionou a ferramenta create_appointment,
-        // efetuamos a gravação automática no banco para salvar o agendamento!
+        const lowerMsg = userMessage.toLowerCase();
+        const isRescheduleIntent = lowerMsg.includes('mudar') || lowerMsg.includes('trocar') || lowerMsg.includes('remarcar') || lowerMsg.includes('alterar') || lowerMsg.includes('passar para') || lowerMsg.includes('outro horário') || lowerMsg.includes('outra hora');
+
+        // Se o cliente tem agendamento e pediu para remarcar/mudar de horário:
+        if (!appointmentCreated && isRescheduleIntent && existingAppt && extractedIntent.timeStr) {
+          const newDateStr = extractedIntent.dateStr || session.pendingBookingDateStr || this.getTomorrowDateStr();
+          const newTimeStr = extractedIntent.timeStr;
+          const [year, month, day] = newDateStr.split('-').map(Number);
+          const [hours, minutes] = newTimeStr.split(':').map(Number);
+          const pad = (n: number) => String(n).padStart(2, '0');
+          const localIso = `${year}-${pad(month)}-${pad(day)}T${pad(hours)}:${pad(minutes)}:00-03:00`;
+          const startTime = new Date(localIso);
+          const endTime = new Date(startTime.getTime() + 30 * 60 * 1000);
+
+          const updated = await dbRepository.updateAppointmentTime(existingAppt.id, startTime, endTime, session.customerName || existingAppt.customerName);
+          if (updated) {
+            appointmentCreated = updated;
+            executedTools.push('reschedule_appointment');
+            session.pendingBookingTime = undefined;
+            session.pendingBookingDateStr = undefined;
+            const profObj = profs.find(p => p.id === updated.professionalId) || profs[0];
+            finalReply = `Prontinho, ${session.customerName || existingAppt.customerName}! Seu agendamento foi alterado para amanhã às ${newTimeStr} com o ${profObj ? profObj.name : 'Lucas'}! Te esperamos aqui! 🙏`;
+          }
+        }
+
+        // Safety Net & Guardrail de Agendamento
         const replyLower = finalReply.toLowerCase();
-        const isVerbalConfirm = (replyLower.includes('confirmad') || replyLower.includes('sucesso') || replyLower.includes('marcad') || replyLower.includes('tudo certo')) && (replyLower.includes('sábado') || replyLower.includes('sabado') || replyLower.includes('amanhã') || replyLower.includes('amanha') || replyLower.includes('hoje') || replyLower.includes('às') || replyLower.includes('as '));
+        const isVerbalConfirm = (replyLower.includes('confirmad') || replyLower.includes('sucesso') || replyLower.includes('marcad') || replyLower.includes('tudo certo') || replyLower.includes('agendado') || replyLower.includes('agendamento para')) && (replyLower.includes('sábado') || replyLower.includes('sabado') || replyLower.includes('amanhã') || replyLower.includes('amanha') || replyLower.includes('hoje') || replyLower.includes('às') || replyLower.includes('as ') || replyLower.includes('2026-'));
 
-        const targetCustomerName = session.customerName || (possibleName && possibleName.length >= 3 ? possibleName : undefined);
+        const isNotAName = userMessage.toLowerCase().includes('marcar') || userMessage.toLowerCase().includes('corte') || userMessage.toLowerCase().includes('horário') || userMessage.toLowerCase().includes('horario') || userMessage.toLowerCase().includes('amanhã') || userMessage.toLowerCase().includes('amanha') || userMessage.toLowerCase().includes('hoje') || userMessage.toLowerCase().includes('quero') || userMessage.toLowerCase().includes('gostaria') || userMessage.toLowerCase().includes('agendar') || userMessage.toLowerCase().includes('boa tarde') || userMessage.toLowerCase().includes('bom dia') || userMessage.toLowerCase().includes('tudo bem') || isRescheduleIntent;
 
-        if (!appointmentCreated && isVerbalConfirm && targetCustomerName && targetCustomerName.toLowerCase() !== 'cliente') {
+        const targetCustomerName = session.customerName || (possibleName && possibleName.length >= 3 && !isNotAName ? possibleName : undefined);
+
+        // GUARDRAIL INFALÍVEL: Se a IA tentou confirmar o agendamento mas AINDA NÃO TEMOS o nome do cliente:
+        if (!appointmentCreated && isVerbalConfirm && (!targetCustomerName || targetCustomerName.toLowerCase() === 'cliente' || targetCustomerName.length < 2)) {
+          const profObj = profs.find(p => p.id === session.pendingBookingProfId) || profs[0];
+          const profName = profObj ? profObj.name : 'nosso profissional';
+          const timeLabel = session.pendingBookingTime || '14:00';
+          const dateLabel = session.lastQueryDateLabel || 'amanhã';
+          finalReply = `Perfeito! O horário das ${timeLabel} para ${dateLabel} com o ${profName} está disponível! 😊 Qual é o seu nome completo para eu registrar o seu agendamento?`;
+        } else if (!appointmentCreated && isVerbalConfirm && targetCustomerName && targetCustomerName.toLowerCase() !== 'cliente') {
+          // SAFETY NET: O cliente já informou o nome real e houve confirmação verbal -> Grava diretamente no banco!
           const targetDateStr = session.pendingBookingDateStr || this.getTomorrowDateStr();
-          const targetTimeStr = session.pendingBookingTime || '10:00';
+          const targetTimeStr = session.pendingBookingTime || '14:00';
           const targetProfId = session.pendingBookingProfId || profs[0]?.id || 'prof-1';
           const targetServiceId = services[0]?.id || 'srv-1';
 
@@ -803,6 +1447,26 @@ export class AiOrchestratorService {
 
     const defaultProfId = session?.pendingBookingProfId || profs[0]?.id || 'prof-1';
     const defaultServiceId = session?.pendingBookingServiceId || services[0]?.id || 'srv-1';
+
+    // 0.0 Waitlist confirmation (#1)
+    if (session?.pendingWaitlist && (lower === 'sim' || lower === 'quero' || lower === 'pode' || lower === 'ok')) {
+      const wl = session.pendingWaitlist;
+      session.pendingWaitlist = undefined;
+      const clientName = session.customerName || session.suggestedPushName || 'Cliente';
+      await dbRepository.addToWaitlist({
+        tenantId,
+        customerPhone,
+        customerName: clientName,
+        professionalId: wl.professionalId,
+        serviceId: wl.serviceId,
+        dateStr: wl.dateStr
+      });
+      const [y, m, d] = wl.dateStr.split('-');
+      return {
+        replyText: `Anotado${session.customerName ? ', ' + session.customerName : ''}! Você entrou na lista de espera para *${d}/${m}*. Assim que um horário abrir, eu te aviso aqui pelo WhatsApp! 🔔`,
+        functionCallsExecuted: []
+      };
+    }
 
     // Extrai data e horário contextuais logo no início da função
     const { dateStr, timeStr, dateFormattedLabel, hasTimeSpecified, hasExplicitDateInMessage } = parseNaturalLanguageDateTime(userMessage, session);
@@ -963,9 +1627,36 @@ export class AiOrchestratorService {
       };
     }
 
+    // 0.1 Perguntas do negócio (endereço, pagamento, horário de funcionamento, etc.) - Feature #17
+    const tenant = await dbRepository.getTenantById(tenantId);
+    const businessInfo = customPrompt || tenant?.aiConfig?.businessInfo;
+    const faqItems = (tenant as any)?.aiConfig?.faqItems || [];
+    const lowerForFaq = lower.trim();
+    if (faqItems.length > 0) {
+      const faqMatch = faqItems.find((item: any) => {
+        const qWords = item.question.toLowerCase().split(/\s+/).filter((w: string) => w.length > 3);
+        return qWords.some((w: string) => lowerForFaq.includes(w));
+      });
+      if (faqMatch) {
+        return { replyText: faqMatch.answer, functionCallsExecuted: [] };
+      }
+    }
+    // Fallback keyword-based FAQ
+    const isAddressQuestion = lowerForFaq.includes('endereço') || lowerForFaq.includes('endereco') || lowerForFaq.includes('fica') || lowerForFaq.includes('onde') || lowerForFaq.includes('localização') || lowerForFaq.includes('localizacao');
+    const isPaymentQuestion = lowerForFaq.includes('pagamento') || lowerForFaq.includes('pix') || lowerForFaq.includes('cartão') || lowerForFaq.includes('cartao') || lowerForFaq.includes('aceita') || lowerForFaq.includes('dinheiro');
+    const isHoursQuestion = lowerForFaq.includes('funciona') || lowerForFaq.includes('abre') || lowerForFaq.includes('fecha') || lowerForFaq.includes('horário de atendimento') || lowerForFaq.includes('horario de atendimento');
+    
+    if (isAddressQuestion || isPaymentQuestion || isHoursQuestion) {
+      const info = businessInfo || tenant?.aiConfig?.businessInfo;
+      if (info && info.length > 10) {
+        return { replyText: `📍 Olha só as informações sobre a gente:\n\n${info}\n\nPrecisa de mais alguma coisa? 😊`, functionCallsExecuted: [] };
+      }
+    }
+
     // 0.5 Saudação Pura / Cumprimento ("boa tarde", "bom dia", "boa noite", "oi", "olá", "tudo bem?")
     const isPureGreeting = 
       /^(bom\s*dia|boa\s*tarde|boa\s*noite|olá|ola|oi|opa|tudo\s*bem|fala|e\s*ai|e\s*aí)[!.\s]*$/i.test(lower.trim());
+
 
     if (isPureGreeting) {
       const nowHour = new Date().getHours();
@@ -1047,8 +1738,11 @@ export class AiOrchestratorService {
             functionCallsExecuted: ['get_available_slots']
           };
         } else {
+          if (session) {
+            session.pendingWaitlist = { dateStr: targetDateStr, professionalId: matchedProf?.id || profs[0]?.id, serviceId: defaultServiceId };
+          }
           return {
-            replyText: `O *${profName}* está com a agenda lotada para hoje! Deseja ver os horários dele para amanhã ou consultar outro dia?`,
+            replyText: `O *${profName}* está com a agenda cheia para *hoje (${d}/${m})*! 😔\n\nQuer entrar na *lista de espera*? Se abrir um horário, você será avisado automaticamente! Responda *sim* para entrar na lista ou me diga outro dia que prefere.`,
             functionCallsExecuted: []
           };
         }
@@ -1311,8 +2005,11 @@ export class AiOrchestratorService {
         };
       } else {
         const profNameStr = matchedProf ? `O *${matchedProf.name}*` : 'Nossa equipe';
+        if (session) {
+          session.pendingWaitlist = { dateStr, professionalId: matchedProf?.id || profs[0]?.id, serviceId: defaultServiceId };
+        }
         return {
-          replyText: `${profNameStr} está com a agenda lotada para *${dateFormattedLabel} (${d}/${m})*! Deseja ver os horários para outro dia ou consultar outro profissional?`,
+          replyText: `${profNameStr} está com a agenda cheia para *${dateFormattedLabel} (${d}/${m})*! 😔\n\nQuer entrar na *lista de espera*? Se abrir um horário, você será avisado automaticamente! Responda *sim* para entrar na lista ou me diga outro dia que prefere.`,
           functionCallsExecuted: executedTools
         };
       }
@@ -1420,16 +2117,34 @@ export class AiOrchestratorService {
       };
     }
 
-    // 11. Cancelamento
+    // 11. Cancelamento — BUG 7 FIX: pedir confirmação antes de cancelar (igual ao fluxo principal via LLM)
     if (lower.includes('cancelar') || lower.includes('desistir')) {
-      const exec = await this.executeToolCall(tenantId, 'cancel_appointment', { customerPhone });
-      executedTools.push('cancel_appointment');
+      const activeApptForCancel = await dbRepository.findActiveAppointmentByPhone(tenantId, customerPhone);
+      if (activeApptForCancel) {
+        const apptStartForCancel = (activeApptForCancel.startTime instanceof Date) ? activeApptForCancel.startTime : new Date(activeApptForCancel.startTime);
+        const cancelDateStr = `${String(apptStartForCancel.getDate()).padStart(2,'0')}/${String(apptStartForCancel.getMonth()+1).padStart(2,'0')}`;
+        const cancelTimeStr = `${String(apptStartForCancel.getHours()).padStart(2,'0')}:${String(apptStartForCancel.getMinutes()).padStart(2,'0')}`;
+        const cancelProfObj = profs.find(p => p.id === activeApptForCancel.professionalId);
+        if (session) {
+          session.pendingActionConfirmation = {
+            type: 'CANCEL',
+            appointmentId: activeApptForCancel.id,
+            currentDateStr: cancelDateStr,
+            currentTimeStr: cancelTimeStr,
+            profName: cancelProfObj?.name || 'Lucas'
+          };
+        }
+        return {
+          replyText: `Poxa, que pena que você não vai poder vir! 🥺 Você confirma o cancelamento do seu atendimento de ${cancelDateStr} às ${cancelTimeStr} com o ${cancelProfObj?.name || 'Lucas'}?`,
+          functionCallsExecuted: []
+        };
+      }
       return {
-        replyText: `Sem problemas! Seu agendamento foi cancelado. Se precisar de outro horário depois, só me chamar! `,
-        functionCallsExecuted: executedTools,
-        appointmentCancelledId: exec.appointmentCancelledId
+        replyText: `Não encontrei nenhum agendamento ativo para cancelar. Gostaria de fazer um novo agendamento?`,
+        functionCallsExecuted: []
       };
     }
+
 
     // Resposta Humana Aberta
     const nameStr = session?.customerName ? ` ${session.customerName}` : '';

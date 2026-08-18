@@ -939,6 +939,8 @@
 
     .cell-event.confirmed { border-left-color: var(--wa-green); background: #d9fdd3; }
     .cell-event.past { border-left-color: #94a3b8; background: #f1f5f9; color: #64748b; opacity: 0.8; }
+    .cell-event.blocked { border-left-color: #ef4444; background: #fee2e2; color: #991b1b; font-weight: 600; }
+    .cell-event.waitlist { border-left-color: #f59e0b; background: #fef3c7; color: #92400e; font-weight: 600; }
 
     /* ========================================================= */
     /* WHATSAPP CHAT BOX & SIMULATOR EXPERIENCE (LIGHT MODE)     */
@@ -1379,6 +1381,9 @@
           <li class="nav-subitem" data-subtab="reminders" onclick="selectConfigOption('reminders', this)">
             <i class="fa-solid fa-bell"></i> Lembretes Automáticos
           </li>
+          <li class="nav-subitem" data-subtab="calcom" onclick="selectConfigOption('calcom', this)">
+            <i class="fa-solid fa-calendar-check" style="color: #3b82f6;"></i> Regras & Portal Web (Cal.diy)
+          </li>
         </ul>
       </li>
     </ul>
@@ -1543,6 +1548,9 @@
               <select id="calendar-professional-filter" class="form-control" style="width: auto; padding: 6px 12px; font-size: 13px;" onchange="loadAppointmentsFromServer()">
                 <option value="ALL"> Todos os Profissionais</option>
               </select>
+              <button class="btn-secondary" onclick="openScheduleBlockModal()" style="padding: 8px 14px; font-weight: 600; background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;">
+                <i class="fa-solid fa-ban"></i> Bloquear Horário / Folga
+              </button>
               <button class="btn-primary" onclick="openNewAppointmentModal()" style="padding: 8px 16px; font-weight: 600;">
                 <i class="fa-solid fa-plus"></i> Novo Agendamento
               </button>
@@ -1566,6 +1574,35 @@
 
           <div class="calendar-grid-wrapper">
             <div id="calendar-cells-container"></div>
+          </div>
+
+          <!-- SEÇÕES ADICIONAIS: BLOQUEIOS DE AGENDA E LISTA DE ESPERA -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-top: 25px;">
+            <!-- PAINEL DE BLOQUEIOS -->
+            <div style="background: #ffffff; border: 1px solid var(--wa-card-border); border-radius: 10px; padding: 16px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h4 style="font-size: 14px; font-weight: 700; color: #dc2626; display: flex; align-items: center; gap: 8px;">
+                  <i class="fa-solid fa-ban"></i> Folgas & Bloqueios de Horários
+                </h4>
+                <button class="btn-secondary" onclick="openScheduleBlockModal()" style="font-size: 12px; padding: 4px 10px; background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;">+ Novo Bloqueio</button>
+              </div>
+              <div id="calendar-blocks-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 220px; overflow-y: auto;">
+                <p style="font-size: 12px; color: var(--wa-text-muted); text-align: center; padding: 12px;">Nenhum bloqueio cadastrado.</p>
+              </div>
+            </div>
+
+            <!-- PAINEL DE LISTA DE ESPERA -->
+            <div style="background: #ffffff; border: 1px solid var(--wa-card-border); border-radius: 10px; padding: 16px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h4 style="font-size: 14px; font-weight: 700; color: #d97706; display: flex; align-items: center; gap: 8px;">
+                  <i class="fa-solid fa-clock-rotate-left"></i> Lista de Espera Inteligente
+                </h4>
+                <span id="waitlist-count-badge" style="font-size: 11px; background: #fef3c7; color: #b45309; padding: 2px 8px; border-radius: 10px; font-weight: 700;">0 na fila</span>
+              </div>
+              <div id="calendar-waitlist-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 220px; overflow-y: auto;">
+                <p style="font-size: 12px; color: var(--wa-text-muted); text-align: center; padding: 12px;">Nenhum cliente na lista de espera.</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1660,6 +1697,43 @@
               <div class="form-group">
                 <label>Informações do Estabelecimento (Endereço, Horários, Políticas)</label>
                 <textarea id="ai-business-info" class="form-control" placeholder="Endereço, política de estacionamento, regras de cancelamento..."></textarea>
+              </div>
+
+              <!-- FAQ / PERGUNTAS FREQUENTES (#17) -->
+              <!-- CONFIGURAÇÃO DE VOZ E RESPOSTA POR ÁUDIO -->
+              <div class="form-group" style="margin-top: 20px; background: #f0fdf4; border: 1px solid rgba(0, 168, 132, 0.3); border-radius: 10px; padding: 14px;">
+                <div class="panel-box-title" style="font-size: 13.5px; margin-bottom: 12px; color: #008069;">
+                  <i class="fa-solid fa-microphone-lines"></i> Respostas por Voz no WhatsApp (Áudio TTS)
+                </div>
+
+                <div class="form-group" style="margin-bottom: 12px;">
+                  <label class="form-label" style="font-size: 12.5px; font-weight: 600;">Modo de Resposta por Áudio:</label>
+                  <select id="ai-voice-mode" class="form-control" style="background: #ffffff; font-size: 13px;">
+                    <option value="WHEN_AUDIO_RECEIVED">🎙️ Responder por Áudio quando o cliente enviar Áudio (Recomendado)</option>
+                    <option value="ALWAYS">📢 Sempre responder por Áudio</option>
+                    <option value="NEVER">💬 Responder sempre por Texto apenas</option>
+                  </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 4px;">
+                  <label class="form-label" style="font-size: 12.5px; font-weight: 600;">Voz da Atendente Virtual:</label>
+                  <div style="display: flex; gap: 8px;">
+                    <select id="ai-voice-id" class="form-control" style="background: #ffffff; font-size: 13px; flex: 1;" onchange="updateVoiceDescription()">
+                      <option value="pt-BR-FranciscaNeural">Francisca (Feminina - Suave & Acolhedora)</option>
+                      <option value="pt-BR-AntonioNeural">Antonio (Masculino - Profissional & Amigável)</option>
+                      <option value="pt-BR-ThalitaNeural">Thalita (Feminina - Jovem & Dinâmica)</option>
+                      <option value="pt-BR-FabioNeural">Fabio (Masculino - Confiante)</option>
+                      <option value="pt-BR-BrendaNeural">Brenda (Feminina - Espontânea)</option>
+                      <option value="pt-BR-DonatoNeural">Donato (Masculino - Maduro)</option>
+                    </select>
+                    <button type="button" class="btn-secondary" id="btn-preview-voice" onclick="playVoicePreview()" style="font-size: 12px; white-space: nowrap; background: #ffffff; border: 1px solid var(--wa-green); color: var(--wa-green-dark);">
+                      <i class="fa-solid fa-volume-high"></i> Ouvir Voz
+                    </button>
+                  </div>
+                  <p style="font-size: 11.5px; color: var(--wa-text-muted); margin-top: 6px; margin-bottom: 0;" id="ai-voice-desc">
+                    Voz neural ultra-realista em Português (Brasil).
+                  </p>
+                </div>
               </div>
 
               <button class="btn-primary" onclick="saveTenantAiSettings()"><i class="fa-solid fa-save"></i> Salvar Instruções Desta Conta</button>
@@ -1788,6 +1862,138 @@
           </div>
         </div>
 
+        <!-- CONFIG SUBTAB 4: REGRAS DE AGENDAMENTO (CAL.DIY) & PORTAL PÚBLICO -->
+        <div id="cfg-section-calcom" class="config-section" style="display: none;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+            <!-- Painel Esquerdo: Regras Avançadas de Agendamento -->
+            <div class="panel-box">
+              <div class="panel-box-header">
+                <div class="panel-box-title"><i class="fa-solid fa-stopwatch" style="color: var(--primary);"></i> Regras de Agendamento (Estilo Cal.com)</div>
+              </div>
+
+              <!-- Card de Link Público de Agendamento -->
+              <div style="background: linear-gradient(135deg, rgba(37,99,235,0.08), rgba(139,92,246,0.08)); border: 1px solid rgba(37,99,235,0.25); border-radius: 12px; padding: 16px; margin-bottom: 20px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                  <span style="font-size: 13px; font-weight: 700; color: #2563eb;"><i class="fa-solid fa-globe"></i> Link Público de Auto-Agendamento</span>
+                  <span style="background: #2563eb; color: white; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px;">Ativo</span>
+                </div>
+                <p style="font-size: 12px; color: var(--wa-text-muted); margin-bottom: 12px;">
+                  Envie este link para clientes que preferirem agendar pela web ou coloque na bio do seu Instagram:
+                </p>
+                <div style="display: flex; gap: 8px;">
+                  <input type="text" id="public-booking-url-input" class="form-control" readonly value="http://localhost:3001/agendar/estilo-beleza-premium" style="font-size: 12.5px; background: white; font-weight: 600; color: #1e293b;">
+                  <button type="button" class="btn-primary" onclick="copyPublicBookingLink()" style="font-size: 12px; white-space: nowrap; padding: 8px 14px;">
+                    <i class="fa-regular fa-copy"></i> Copiar
+                  </button>
+                  <a href="/agendar/estilo-beleza-premium" id="public-booking-preview-btn" target="_blank" class="btn-secondary" style="font-size: 12px; white-space: nowrap; padding: 8px 14px; text-decoration: none; display: flex; align-items: center; gap: 4px; background: white;">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Abrir
+                  </a>
+                </div>
+              </div>
+
+              <!-- Buffer Time -->
+              <div class="form-group">
+                <label style="font-weight: 600; font-size: 13px;"><i class="fa-solid fa-hourglass-half" style="color: var(--primary);"></i> Buffer Time (Intervalo pós-atendimento):</label>
+                <select id="cfg-buffer-time" class="form-control" style="background: white;">
+                  <option value="0">0 minutos (Sem intervalo)</option>
+                  <option value="5">5 minutos</option>
+                  <option value="10" selected>10 minutos (Recomendado)</option>
+                  <option value="15">15 minutos (Higienização/Preparo)</option>
+                  <option value="20">20 minutos</option>
+                  <option value="30">30 minutos</option>
+                </select>
+                <small style="color: var(--wa-text-muted); font-size: 11.5px;">Adiciona tempo de respiro automático após cada atendimento para evitar atrasos na equipe.</small>
+              </div>
+
+              <!-- Minimum Notice -->
+              <div class="form-group">
+                <label style="font-weight: 600; font-size: 13px;"><i class="fa-solid fa-business-time" style="color: var(--primary);"></i> Antecedência Mínima para Hoje (Minimum Notice):</label>
+                <select id="cfg-minimum-notice" class="form-control" style="background: white;">
+                  <option value="0">Sem limite</option>
+                  <option value="30">30 minutos antes</option>
+                  <option value="60" selected>1 hora antes (Recomendado)</option>
+                  <option value="120">2 horas antes</option>
+                  <option value="240">4 horas antes</option>
+                  <option value="1440">24 horas antes</option>
+                </select>
+                <small style="color: var(--wa-text-muted); font-size: 11.5px;">Impede que clientes agendem horários de última hora no mesmo dia sem você saber.</small>
+              </div>
+
+              <!-- Max Future Days -->
+              <div class="form-group">
+                <label style="font-weight: 600; font-size: 13px;"><i class="fa-regular fa-calendar-days" style="color: var(--primary);"></i> Janela Máxima de Agendamento no Futuro:</label>
+                <select id="cfg-max-future-days" class="form-control" style="background: white;">
+                  <option value="7">7 dias à frente</option>
+                  <option value="15">15 dias à frente</option>
+                  <option value="30" selected>30 dias à frente (Recomendado)</option>
+                  <option value="60">60 dias à frente</option>
+                  <option value="90">90 dias à frente</option>
+                </select>
+                <small style="color: var(--wa-text-muted); font-size: 11.5px;">Limita até quantos dias no futuro a agenda fica aberta.</small>
+              </div>
+
+              <!-- Round Robin Toggle -->
+              <div class="form-group" style="margin-top: 14px;">
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                  <input type="checkbox" id="cfg-round-robin" checked style="width: 18px; height: 18px; accent-color: var(--primary);">
+                  <span style="font-size: 13px; font-weight: 600;">Ativar Distribuição Round-Robin (Balanceamento de Equipe)</span>
+                </label>
+                <small style="color: var(--wa-text-muted); font-size: 11.5px; display: block; margin-top: 4px; margin-left: 28px;">
+                  Quando o cliente não tem preferência por um profissional, distribui automaticamente para o atendente menos ocupado no dia.
+                </small>
+              </div>
+
+              <button type="button" class="btn-primary" onclick="saveBookingRulesSettings()" style="margin-top: 16px;">
+                <i class="fa-solid fa-floppy-disk"></i> Salvar Regras de Agendamento
+              </button>
+            </div>
+
+            <!-- Painel Direito: Integração de Webhooks -->
+            <div class="panel-box">
+              <div class="panel-box-header">
+                <div class="panel-box-title"><i class="fa-solid fa-plug" style="color: #10b981;"></i> Webhooks & Automações Externas</div>
+              </div>
+
+              <p style="font-size: 13px; color: var(--wa-text-muted); margin-bottom: 16px;">
+                Dispare eventos HTTP automáticos em tempo real para o <strong>n8n</strong>, <strong>Zapier</strong>, <strong>Make</strong> ou seu CRM quando um agendamento for criado, cancelado ou alterado.
+              </p>
+
+              <div class="form-group">
+                <label style="font-weight: 600; font-size: 13px;">URL de Destino do Webhook (POST):</label>
+                <input type="url" id="cfg-webhook-url" class="form-control" placeholder="https://seu-n8n.com/webhook/agendamentos" style="background: white;">
+                <small style="color: var(--wa-text-muted); font-size: 11.5px;">Recebe payloads JSON com os eventos: <code>booking.created</code>, <code>booking.cancelled</code>, <code>booking.rescheduled</code>.</small>
+              </div>
+
+              <div style="display: flex; gap: 10px; margin-top: 14px;">
+                <button type="button" class="btn-secondary" onclick="testWebhookEndpoint()" id="btn-test-webhook" style="font-size: 13px; background: white;">
+                  <i class="fa-solid fa-flask"></i> Testar Conexão (Ping)
+                </button>
+                <button type="button" class="btn-primary" onclick="saveBookingRulesSettings()" style="font-size: 13px;">
+                  <i class="fa-solid fa-save"></i> Salvar Webhook
+                </button>
+              </div>
+
+              <div id="webhook-test-result" style="margin-top: 14px; display: none; font-size: 12.5px; padding: 10px 14px; border-radius: 8px;"></div>
+
+              <div style="margin-top: 24px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; font-size: 12px; color: #475569;">
+                <strong style="color: #1e293b; display: block; margin-bottom: 6px;"><i class="fa-solid fa-code"></i> Exemplo de Payload JSON Enviado:</strong>
+                <pre style="background: #0f172a; color: #38bdf8; padding: 10px; border-radius: 6px; overflow-x: auto; font-size: 11px;">{
+  "event": "booking.created",
+  "timestamp": "2026-08-18T14:00:00.000Z",
+  "tenantId": "tenant-demo-estilo",
+  "data": {
+    "customerName": "Lucas Santos",
+    "customerPhone": "5511999998888",
+    "serviceName": "Corte Especial",
+    "professionalName": "Lucas Silva",
+    "startTime": "2026-08-19T14:00:00-03:00"
+  }
+}</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
 
     </div>
@@ -1840,6 +2046,17 @@
       <div class="form-group">
         <label class="form-label"><i class="fa-solid fa-list-check" style="color: var(--wa-green-dark); margin-right: 6px;"></i> Serviços Atendidos por este Profissional:</label>
         <div id="modal-prof-services-checkboxes" style="display: flex; flex-direction: column; gap: 8px; background: #f0f2f5; padding: 14px; border-radius: 8px; border: 1px solid var(--wa-card-border);"></div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label class="form-label"><i class="fa-brands fa-whatsapp" style="color: var(--wa-green);"></i> WhatsApp Notificações</label>
+          <input type="text" id="modal-prof-phone" class="form-control" placeholder="5511999998888" style="background: #ffffff;">
+        </div>
+        <div class="form-group">
+          <label class="form-label"><i class="fa-solid fa-chart-pie" style="color: var(--wa-green);"></i> Limite Diário de Atendimentos</label>
+          <input type="number" id="modal-prof-max-day" class="form-control" placeholder="Ex: 8 (ou vazio)" min="1" max="50" style="background: #ffffff;">
+        </div>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
@@ -2164,6 +2381,55 @@
     </div>
   </div>
 
+  <!-- MODAL: BLOQUEAR HORÁRIO OU FOLGA (#7) -->
+  <div class="modal-overlay" id="schedule-block-modal">
+    <div class="modal-card">
+      <h3 style="margin-bottom: 16px; font-size: 18px; font-weight: 700; color: #dc2626;">
+        <i class="fa-solid fa-ban"></i> Bloquear Horário / Folga na Agenda
+      </h3>
+      
+      <div class="form-group">
+        <label class="form-label">Profissional:</label>
+        <select id="modal-block-prof" class="form-control" style="background: #ffffff;"></select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Data do Bloqueio:</label>
+        <input type="date" id="modal-block-date" class="form-control" style="background: #ffffff;">
+      </div>
+
+      <div class="form-group">
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--wa-text-main);">
+          <input type="checkbox" id="modal-block-allday" checked onchange="toggleBlockTimes()" style="accent-color: #dc2626; width: 16px; height: 16px;">
+          Bloquear o Dia Todo (Folga / Feriado)
+        </label>
+      </div>
+
+      <div id="modal-block-time-row" style="display: none; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label class="form-label">Horário Inicial</label>
+          <input type="time" id="modal-block-start" class="form-control" value="08:00" style="background: #ffffff;">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Horário Final</label>
+          <input type="time" id="modal-block-end" class="form-control" value="12:00" style="background: #ffffff;">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Motivo (visível na agenda):</label>
+        <input type="text" id="modal-block-reason" class="form-control" placeholder="Ex: Folga semanal, Feriado, Consulta médica, Manutenção" value="Folga" style="background: #ffffff;">
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 18px;">
+        <button class="btn-secondary" onclick="closeScheduleBlockModal()">Cancelar</button>
+        <button class="btn-primary" onclick="saveScheduleBlockSubmit()" style="background: #dc2626; border-color: #dc2626;">
+          <i class="fa-solid fa-lock"></i> Confirmar Bloqueio
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: ADICIONAR / EDITAR SERVIÇO OU PRODUTO -->
   <div class="modal-overlay" id="item-modal">
     <div class="modal-card">
@@ -2255,6 +2521,16 @@
     let currentCatalogTab = 'services';
 
     const baseUrl = window.location.protocol.startsWith('http') ? '' : 'http://localhost:3001';
+
+    function parseApptDate(dateInput) {
+      if (!dateInput) return new Date();
+      const d = new Date(dateInput);
+      if (!isNaN(d.getTime())) return d;
+      if (typeof dateInput === 'string') {
+        return new Date(dateInput.replace(' ', 'T'));
+      }
+      return new Date();
+    }
 
     function checkAuthOnBoot() {
       const userRaw = localStorage.getItem('saas_user');
@@ -2411,6 +2687,103 @@
       if (targetSec) targetSec.style.display = 'block';
 
       if (subId === 'wa') checkRealWhatsAppStatus();
+      if (subId === 'calcom') {
+        const publicUrl = `${window.location.origin}/agendar/estilo-beleza-premium`;
+        const input = document.getElementById('public-booking-url-input');
+        if (input) input.value = publicUrl;
+        const previewBtn = document.getElementById('public-booking-preview-btn');
+        if (previewBtn) previewBtn.href = publicUrl;
+      }
+    }
+
+    function copyPublicBookingLink() {
+      const input = document.getElementById('public-booking-url-input');
+      if (!input) return;
+      input.select();
+      navigator.clipboard.writeText(input.value).then(() => {
+        showToast('Link público de agendamento copiado!', 'success');
+      }).catch(() => {
+        document.execCommand('copy');
+        showToast('Link copiado!', 'success');
+      });
+    }
+
+    async function saveBookingRulesSettings() {
+      try {
+        const bufferTime = parseInt(document.getElementById('cfg-buffer-time').value, 10) || 0;
+        const minNotice = parseInt(document.getElementById('cfg-minimum-notice').value, 10) || 0;
+        const maxFutureDays = parseInt(document.getElementById('cfg-max-future-days').value, 10) || 30;
+        const roundRobin = document.getElementById('cfg-round-robin').checked;
+        const webhookUrl = document.getElementById('cfg-webhook-url').value.trim();
+
+        const res = await fetch(`${baseUrl}/api/tenants/${currentTenantId}/booking-rules`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            bufferTimeMinutes: bufferTime,
+            minimumNoticeMinutes: minNotice,
+            maxFutureDays: maxFutureDays,
+            roundRobinEnabled: roundRobin,
+            webhookUrl: webhookUrl
+          })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          showToast('Regras de agendamento salvas com sucesso! ⏱️', 'success');
+        } else {
+          showToast(data.error || 'Erro ao salvar regras', 'error');
+        }
+      } catch (err) {
+        showToast('Erro de conexão ao salvar regras', 'error');
+      }
+    }
+
+    async function testWebhookEndpoint() {
+      const webhookUrl = document.getElementById('cfg-webhook-url').value.trim();
+      if (!webhookUrl || !webhookUrl.startsWith('http')) {
+        showToast('Informe uma URL de webhook válida começando com http:// ou https://', 'error');
+        return;
+      }
+
+      const btn = document.getElementById('btn-test-webhook');
+      const feedback = document.getElementById('webhook-test-result');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Testando...';
+      feedback.style.display = 'none';
+
+      try {
+        const res = await fetch(`${baseUrl}/api/tenants/${currentTenantId}/webhook-test`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ webhookUrl })
+        });
+        const data = await res.json();
+
+        feedback.style.display = 'block';
+        if (data.success) {
+          feedback.style.background = '#f0fdf4';
+          feedback.style.color = '#166534';
+          feedback.style.border = '1px solid #bbf7d0';
+          feedback.innerHTML = `<i class="fa-solid fa-circle-check"></i> <strong>Sucesso!</strong> Servidor respondeu com status HTTP ${data.status || 200}.`;
+          showToast('Webhook testado com sucesso!', 'success');
+        } else {
+          feedback.style.background = '#fef2f2';
+          feedback.style.color = '#991b1b';
+          feedback.style.border = '1px solid #fecaca';
+          feedback.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <strong>Falha no teste:</strong> ${data.error || 'Erro desconhecido'}`;
+          showToast('Falha no envio do webhook', 'error');
+        }
+      } catch (err) {
+        feedback.style.display = 'block';
+        feedback.style.background = '#fef2f2';
+        feedback.style.color = '#991b1b';
+        feedback.style.border = '1px solid #fecaca';
+        feedback.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <strong>Erro de rede:</strong> ${err.message}`;
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-flask"></i> Testar Conexão (Ping)';
+      }
     }
 
     function switchCatalogTab(type) {
@@ -2438,6 +2811,15 @@
         if (tenant.aiConfig) {
           document.getElementById('ai-system-prompt').value = tenant.aiConfig.systemPrompt || '';
           document.getElementById('ai-business-info').value = tenant.aiConfig.businessInfo || '';
+          if (tenant.aiConfig.voiceId && document.getElementById('ai-voice-id')) {
+            document.getElementById('ai-voice-id').value = tenant.aiConfig.voiceId;
+          }
+          if (tenant.aiConfig.voiceReplyMode && document.getElementById('ai-voice-mode')) {
+            document.getElementById('ai-voice-mode').value = tenant.aiConfig.voiceReplyMode;
+          }
+          updateVoiceDescription();
+          faqItemsState = tenant.aiConfig.faqItems || [];
+          renderFaqList();
         }
 
         professionalsState = data.professionals || [];
@@ -2471,6 +2853,32 @@
           document.getElementById('profile-tenant-name').textContent = tenant.name;
           document.getElementById('profile-plan-tier-badge').textContent = planTier;
           document.getElementById('profile-quota-text').textContent = `Cota de Uso: ${(data.professionals || []).length} / ${tenant.maxUsers || 1} Profissionais Cadastrados`;
+        }
+
+        // Popula Regras de Agendamento Cal.com
+        const rules = tenant.bookingRules || {};
+        if (document.getElementById('cfg-buffer-time')) {
+          document.getElementById('cfg-buffer-time').value = rules.bufferTimeMinutes !== undefined ? String(rules.bufferTimeMinutes) : '10';
+        }
+        if (document.getElementById('cfg-minimum-notice')) {
+          document.getElementById('cfg-minimum-notice').value = rules.minimumNoticeMinutes !== undefined ? String(rules.minimumNoticeMinutes) : '60';
+        }
+        if (document.getElementById('cfg-max-future-days')) {
+          document.getElementById('cfg-max-future-days').value = rules.maxFutureDays !== undefined ? String(rules.maxFutureDays) : '30';
+        }
+        if (document.getElementById('cfg-round-robin')) {
+          document.getElementById('cfg-round-robin').checked = rules.roundRobinEnabled !== false;
+        }
+        if (document.getElementById('cfg-webhook-url')) {
+          document.getElementById('cfg-webhook-url').value = rules.webhookUrl || '';
+        }
+
+        const publicBookingUrl = `${window.location.origin}/agendar/${tenant.slug || tenant.id}`;
+        if (document.getElementById('public-booking-url-input')) {
+          document.getElementById('public-booking-url-input').value = publicBookingUrl;
+        }
+        if (document.getElementById('public-booking-preview-btn')) {
+          document.getElementById('public-booking-preview-btn').href = publicBookingUrl;
         }
 
         renderServicesGrid(data.services || []);
@@ -2757,6 +3165,9 @@
       document.getElementById('modal-prof-id').value = prof.id;
       document.getElementById('modal-prof-name-title').textContent = `Profissional: ${prof.name}`;
 
+      document.getElementById('modal-prof-phone').value = prof.phone || '';
+      document.getElementById('modal-prof-max-day').value = prof.maxAppointmentsPerDay || '';
+
       const checkboxesContainer = document.getElementById('modal-prof-services-checkboxes');
       checkboxesContainer.innerHTML = '';
 
@@ -2791,6 +3202,10 @@
       const profId = document.getElementById('modal-prof-id').value;
       if (!profId) return;
 
+      const phone = document.getElementById('modal-prof-phone').value.trim();
+      const maxApptVal = document.getElementById('modal-prof-max-day').value;
+      const maxAppointmentsPerDay = maxApptVal ? parseInt(maxApptVal, 10) : undefined;
+
       const servicesHandled = Array.from(document.querySelectorAll('.prof-service-cb:checked')).map(cb => cb.value);
       const startTime = document.getElementById('modal-prof-start-time').value;
       const endTime = document.getElementById('modal-prof-end-time').value;
@@ -2805,6 +3220,8 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             servicesHandled,
+            phone: phone || undefined,
+            maxAppointmentsPerDay,
             workSchedule: { startTime, endTime, lunchStartTime, lunchEndTime, workDays }
           })
         });
@@ -2813,7 +3230,7 @@
         if (data.success) {
           closeProfSettingsModal();
           loadTeamUsers();
-          alert('Horários e serviços do profissional atualizados!');
+          alert('Configurações e limites do profissional atualizados com sucesso!');
         } else {
           alert('Erro ao salvar horários: ' + data.error);
         }
@@ -3305,27 +3722,22 @@
         renderDashboardRecentAppts(rawList);
         renderWeeklyChart(rawList);
 
-        function parseApptDate(dateInput) {
-          if (!dateInput) return new Date();
-          const d = new Date(dateInput);
-          if (!isNaN(d.getTime())) return d;
-          if (typeof dateInput === 'string') {
-            return new Date(dateInput.replace(' ', 'T'));
-          }
-          return new Date();
-        }
-
         appointmentsState = rawList.map(a => {
+          let dateStr = a.dateStr;
+          let timeStr = a.timeStr;
+
           let startTime = parseApptDate(a.startTime);
           if (isNaN(startTime.getTime())) startTime = new Date();
           let endTime = parseApptDate(a.endTime || (startTime.getTime() + 45 * 60 * 1000));
           if (isNaN(endTime.getTime())) endTime = new Date(startTime.getTime() + 45 * 60 * 1000);
 
-          const year = startTime.getFullYear();
-          const month = String(startTime.getMonth() + 1).padStart(2, '0');
-          const day = String(startTime.getDate()).padStart(2, '0');
-          const dateStr = `${year}-${month}-${day}`;
-          const timeStr = String(startTime.getHours()).padStart(2, '0') + ':' + String(startTime.getMinutes()).padStart(2, '0');
+          if (!dateStr || !timeStr) {
+            const year = startTime.getFullYear();
+            const month = String(startTime.getMonth() + 1).padStart(2, '0');
+            const day = String(startTime.getDate()).padStart(2, '0');
+            dateStr = `${year}-${month}-${day}`;
+            timeStr = String(startTime.getHours()).padStart(2, '0') + ':' + String(startTime.getMinutes()).padStart(2, '0');
+          }
           
           const sObj = servicesState.find(s => s.id === a.serviceId);
           const pObj = professionalsState.find(p => p.id === a.professionalId);
@@ -3347,6 +3759,8 @@
           };
         }).sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
 
+        loadScheduleBlocks();
+        loadWaitlist();
         renderGoogleCalendar();
       } catch (err) {
         console.error('Erro ao carregar agendamentos do servidor:', err);
@@ -3574,20 +3988,300 @@
       }
     }
 
+    let scheduleBlocksState = [];
+    let waitlistState = [];
+    let faqItemsState = [];
+
+    // GESTÃO DE FAQ (#17)
+    function renderFaqList() {
+      const container = document.getElementById('ai-faq-list');
+      if (!container) return;
+      container.innerHTML = '';
+      if (faqItemsState.length === 0) {
+        container.innerHTML = '<p style="font-size: 12px; color: var(--wa-text-muted); padding: 6px;">Nenhuma pergunta frequente cadastrada. Adicione perguntas como "Qual o endereço?", "Quais as formas de pagamento?", etc.</p>';
+        return;
+      }
+      faqItemsState.forEach((item, idx) => {
+        const row = document.createElement('div');
+        row.style.cssText = 'background: #ffffff; border: 1px solid var(--wa-card-border); border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px;';
+        row.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <input type="text" class="form-control faq-q-input" value="${item.question.replace(/"/g, '&quot;')}" placeholder="Pergunta (ex: Qual o endereço de vocês?)" style="font-weight: 600; font-size: 13px; background: #f8fafc;" onchange="updateFaqItem(${idx}, 'question', this.value)">
+            <button type="button" class="btn-danger" onclick="removeFaqItemRow(${idx})" style="padding: 4px 8px; margin-left: 8px; font-size: 11px;"><i class="fa-solid fa-trash"></i></button>
+          </div>
+          <textarea class="form-control faq-a-input" placeholder="Resposta da IA..." style="font-size: 12.5px; height: 50px; background: #f8fafc;" onchange="updateFaqItem(${idx}, 'answer', this.value)">${item.answer}</textarea>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    function addFaqItemRow() {
+      faqItemsState.push({ question: '', answer: '' });
+      renderFaqList();
+    }
+
+    function updateFaqItem(idx, key, val) {
+      if (faqItemsState[idx]) {
+        faqItemsState[idx][key] = val;
+      }
+    }
+
+    function removeFaqItemRow(idx) {
+      faqItemsState.splice(idx, 1);
+      renderFaqList();
+    }
+
     async function saveTenantAiSettings() {
       const systemPrompt = document.getElementById('ai-system-prompt').value;
       const businessInfo = document.getElementById('ai-business-info').value;
+      const voiceId = document.getElementById('ai-voice-id')?.value || 'pt-BR-FranciscaNeural';
+      const voiceReplyMode = document.getElementById('ai-voice-mode')?.value || 'WHEN_AUDIO_RECEIVED';
+      const validFaq = faqItemsState.filter(f => f.question.trim() && f.answer.trim());
 
       try {
         const response = await fetch(`${baseUrl}/api/tenants/${currentTenantId}/ai`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ systemPrompt, businessInfo })
+          body: JSON.stringify({ systemPrompt, businessInfo, faqItems: validFaq, voiceId, voiceReplyMode })
         });
         const data = await response.json();
-        if (data.success) alert('Configurações de IA salvas!');
+        if (data.success) {
+          faqItemsState = validFaq;
+          renderFaqList();
+          alert('Configurações de IA, Vozes e FAQ salvas com sucesso!');
+        }
       } catch (err) {
         alert('Erro ao salvar IA.');
+      }
+    }
+
+    // VOZES & PREVIEW TTS
+    let voicesListState = [];
+    let currentPreviewAudio = null;
+
+    async function loadVoicesList() {
+      try {
+        const res = await fetch(`${baseUrl}/api/voices`);
+        const data = await res.json();
+        if (data.success && data.voices) {
+          voicesListState = data.voices;
+          const select = document.getElementById('ai-voice-id');
+          if (select) {
+            const currentVal = select.value;
+            select.innerHTML = data.voices.map(v => `<option value="${v.id}">${v.name}</option>`).join('');
+            if (currentVal) select.value = currentVal;
+          }
+          updateVoiceDescription();
+        }
+      } catch (e) {}
+    }
+
+    function updateVoiceDescription() {
+      const select = document.getElementById('ai-voice-id');
+      const desc = document.getElementById('ai-voice-desc');
+      if (!select || !desc) return;
+      const selectedObj = voicesListState.find(v => v.id === select.value);
+      if (selectedObj) {
+        desc.textContent = selectedObj.description;
+      }
+    }
+
+    async function playVoicePreview() {
+      const select = document.getElementById('ai-voice-id');
+      const voiceId = select ? select.value : 'pt-BR-FranciscaNeural';
+      const btn = document.getElementById('btn-preview-voice');
+      const originalHtml = btn.innerHTML;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Gerando...';
+      btn.disabled = true;
+
+      if (currentPreviewAudio) {
+        try { currentPreviewAudio.pause(); } catch(e) {}
+        currentPreviewAudio = null;
+      }
+
+      try {
+        const selectedVoiceObj = voicesListState.find(v => v.id === voiceId);
+        const sampleText = selectedVoiceObj?.previewText || 'Olá! Seja muito bem-vindo! Como posso te ajudar com seu agendamento hoje?';
+
+        const response = await fetch(`${baseUrl}/api/tts/synthesize`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: sampleText, voiceId })
+        });
+
+        if (!response.ok) throw new Error('Erro ao sintetizar voz');
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        currentPreviewAudio = new Audio(url);
+        currentPreviewAudio.play();
+        btn.innerHTML = '<i class="fa-solid fa-volume-high" style="color: #22c55e;"></i> Reproduzindo...';
+        currentPreviewAudio.onended = () => {
+          btn.innerHTML = originalHtml;
+          btn.disabled = false;
+        };
+      } catch (err) {
+        alert('Não foi possível reproduzir a voz no momento.');
+        btn.innerHTML = originalHtml;
+        btn.disabled = false;
+      }
+    }
+
+    // BLOQUEIOS DE AGENDA (#7)
+    function openScheduleBlockModal() {
+      const select = document.getElementById('modal-block-prof');
+      select.innerHTML = '<option value="">Todos os Profissionais</option>' + professionalsState.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+      const today = new Date();
+      document.getElementById('modal-block-date').value = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+      document.getElementById('modal-block-allday').checked = true;
+      document.getElementById('modal-block-time-row').style.display = 'none';
+      document.getElementById('modal-block-reason').value = 'Folga';
+      document.getElementById('schedule-block-modal').classList.add('open');
+    }
+
+    function closeScheduleBlockModal() {
+      document.getElementById('schedule-block-modal').classList.remove('open');
+    }
+
+    function toggleBlockTimes() {
+      const allday = document.getElementById('modal-block-allday').checked;
+      document.getElementById('modal-block-time-row').style.display = allday ? 'none' : 'grid';
+    }
+
+    async function saveScheduleBlockSubmit() {
+      const professionalId = document.getElementById('modal-block-prof').value || (professionalsState[0]?.id || 'prof-1');
+      const dateStr = document.getElementById('modal-block-date').value;
+      const allday = document.getElementById('modal-block-allday').checked;
+      const startTime = allday ? undefined : document.getElementById('modal-block-start').value;
+      const endTime = allday ? undefined : document.getElementById('modal-block-end').value;
+      const reason = document.getElementById('modal-block-reason').value.trim() || 'Bloqueio';
+
+      if (!dateStr) {
+        alert('Selecione uma data para o bloqueio.');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${baseUrl}/api/tenants/${currentTenantId}/blocks`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ professionalId, dateStr, startTime, endTime, reason })
+        });
+        const data = await response.json();
+        if (data.success) {
+          closeScheduleBlockModal();
+          loadScheduleBlocks();
+          renderGoogleCalendar();
+          alert('Bloqueio de agenda criado com sucesso!');
+        } else {
+          alert('Erro ao criar bloqueio: ' + data.error);
+        }
+      } catch (err) {
+        alert('Erro de conexão.');
+      }
+    }
+
+    async function loadScheduleBlocks() {
+      try {
+        const response = await fetch(`${baseUrl}/api/tenants/${currentTenantId}/blocks`);
+        const data = await response.json();
+        if (data.success) {
+          scheduleBlocksState = data.blocks || [];
+          renderScheduleBlocksList();
+        }
+      } catch (err) {
+        console.error('Erro ao carregar bloqueios:', err);
+      }
+    }
+
+    function renderScheduleBlocksList() {
+      const container = document.getElementById('calendar-blocks-list');
+      if (!container) return;
+      container.innerHTML = '';
+      if (scheduleBlocksState.length === 0) {
+        container.innerHTML = '<p style="font-size: 12px; color: var(--wa-text-muted); text-align: center; padding: 12px;">Nenhum bloqueio cadastrado.</p>';
+        return;
+      }
+      scheduleBlocksState.forEach(b => {
+        const prof = professionalsState.find(p => p.id === b.professionalId);
+        const [y, m, d] = b.dateStr.split('-');
+        const timeDesc = (b.startTime && b.endTime) ? `${b.startTime} às ${b.endTime}` : 'Dia Todo';
+        const item = document.createElement('div');
+        item.style.cssText = 'background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; font-size: 12.5px;';
+        item.innerHTML = `
+          <div>
+            <strong style="color: #991b1b;">🚫 ${d}/${m} - ${prof ? prof.name : 'Geral'}</strong>
+            <div style="color: #b91c1c; font-size: 11.5px;">${timeDesc} · <em>${b.reason || 'Bloqueio'}</em></div>
+          </div>
+          <button class="btn-danger" onclick="deleteScheduleBlock('${b.id}')" style="padding: 3px 7px; font-size: 11px;"><i class="fa-solid fa-trash"></i></button>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    async function deleteScheduleBlock(blockId) {
+      if (!confirm('Deseja remover este bloqueio de agenda?')) return;
+      try {
+        const response = await fetch(`${baseUrl}/api/tenants/${currentTenantId}/blocks/${blockId}`, { method: 'DELETE' });
+        const data = await response.json();
+        if (data.success) {
+          loadScheduleBlocks();
+          renderGoogleCalendar();
+        }
+      } catch (err) {
+        alert('Erro ao remover bloqueio.');
+      }
+    }
+
+    // LISTA DE ESPERA (#1)
+    async function loadWaitlist() {
+      try {
+        const response = await fetch(`${baseUrl}/api/tenants/${currentTenantId}/waitlist`);
+        const data = await response.json();
+        if (data.success) {
+          waitlistState = data.waitlist || [];
+          renderWaitlistList();
+        }
+      } catch (err) {
+        console.error('Erro ao carregar lista de espera:', err);
+      }
+    }
+
+    function renderWaitlistList() {
+      const container = document.getElementById('calendar-waitlist-list');
+      const badge = document.getElementById('waitlist-count-badge');
+      if (badge) badge.textContent = `${waitlistState.length} na fila`;
+      if (!container) return;
+      container.innerHTML = '';
+      if (waitlistState.length === 0) {
+        container.innerHTML = '<p style="font-size: 12px; color: var(--wa-text-muted); text-align: center; padding: 12px;">Nenhum cliente na lista de espera.</p>';
+        return;
+      }
+      waitlistState.forEach(w => {
+        const prof = professionalsState.find(p => p.id === w.professionalId);
+        const [y, m, d] = w.dateStr.split('-');
+        const item = document.createElement('div');
+        item.style.cssText = 'background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; font-size: 12.5px;';
+        item.innerHTML = `
+          <div>
+            <strong style="color: #92400e;">⏳ ${w.customerName}</strong> <span style="color: #b45309; font-size: 11px;">(${w.customerPhone})</span>
+            <div style="color: #b45309; font-size: 11.5px;">Data desejada: <strong>${d}/${m}</strong> · ${prof ? prof.name : 'Qualquer profissional'}</div>
+          </div>
+          <button class="btn-danger" onclick="deleteWaitlist('${w.id}')" style="padding: 3px 7px; font-size: 11px;" title="Remover da lista"><i class="fa-solid fa-xmark"></i></button>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    async function deleteWaitlist(waitlistId) {
+      if (!confirm('Deseja remover este cliente da lista de espera?')) return;
+      try {
+        const response = await fetch(`${baseUrl}/api/tenants/${currentTenantId}/waitlist/${waitlistId}`, { method: 'DELETE' });
+        const data = await response.json();
+        if (data.success) {
+          loadWaitlist();
+        }
+      } catch (err) {
+        alert('Erro ao remover da lista de espera.');
       }
     }
 
@@ -3687,7 +4381,20 @@
             .filter(a => a.dateStr === fullDateStr)
             .sort((a, b) => a.timeStr.localeCompare(b.timeStr));
 
+          const dayBlocks = scheduleBlocksState.filter(b => b.dateStr === fullDateStr);
+
           const now = new Date();
+
+          // Renderiza bloqueios de horário na célula do mês
+          dayBlocks.forEach(b => {
+            const pObj = professionalsState.find(p => p.id === b.professionalId);
+            const profName = pObj ? pObj.name : 'Todos';
+            const evt = document.createElement('div');
+            evt.className = 'cell-event blocked';
+            const timeDesc = (b.startTime && b.endTime) ? `${b.startTime}-${b.endTime}` : 'Dia Todo';
+            evt.innerHTML = `<strong>🚫 ${timeDesc}</strong> ${profName} (${b.reason || 'Folga'})`;
+            cell.appendChild(evt);
+          });
 
           dayAppointments.forEach(appt => {
             const isPast = appt.endTime ? (new Date(appt.endTime) < now) : (new Date(appt.startTime) < now);
@@ -3768,7 +4475,20 @@
             .filter(a => a.dateStr === fullDateStr)
             .sort((a, b) => a.timeStr.localeCompare(b.timeStr));
 
-          if (dayAppointments.length === 0) {
+          const dayBlocks = scheduleBlocksState.filter(b => b.dateStr === fullDateStr);
+
+          // Renderiza bloqueios de horário na coluna semanal
+          dayBlocks.forEach(b => {
+            const pObj = professionalsState.find(p => p.id === b.professionalId);
+            const profName = pObj ? pObj.name : 'Todos';
+            const evt = document.createElement('div');
+            evt.className = 'cell-event blocked';
+            const timeDesc = (b.startTime && b.endTime) ? `${b.startTime}-${b.endTime}` : 'Dia Todo';
+            evt.innerHTML = `<strong>🚫 ${timeDesc}</strong> ${profName} (${b.reason || 'Folga'})`;
+            cell.appendChild(evt);
+          });
+
+          if (dayAppointments.length === 0 && dayBlocks.length === 0) {
             cell.innerHTML = `<div style="color: var(--text-muted); font-size: 11px; text-align: center; margin-top: 15px;">Sem agendamentos</div>`;
           } else {
             dayAppointments.forEach(appt => {
@@ -3777,7 +4497,8 @@
               let statusClass = appt.status === 'CONFIRMED' ? 'confirmed' : 'pending';
               if (isPast) statusClass = 'past';
               evt.className = `cell-event ${statusClass}`;
-              evt.innerHTML = `<strong>${appt.timeStr}</strong> ${appt.client}${isPast ? ' <span style="font-size:10px; opacity:0.8;">✓</span>' : ''}`;
+              const pObj = professionalsState.find(p => p.id === appt.professionalId);
+              evt.innerHTML = `<strong>${appt.timeStr}</strong> ${appt.client} <span style="font-size: 10px; opacity: 0.85; background: rgba(0,0,0,0.06); padding: 1px 4px; border-radius: 4px;">${pObj ? pObj.name : ''}</span>${isPast ? ' ✓' : ''}`;
               evt.onclick = (e) => {
                 e.stopPropagation();
                 openAppointmentModal(appt.id);
@@ -3919,7 +4640,8 @@
             message: text,
             systemPrompt: systemPrompt,
             businessInfo: businessInfo,
-            pushName: currentUser ? currentUser.name : 'Cliente Teste'
+            pushName: currentUser ? currentUser.name : 'Cliente Teste',
+            voiceId: document.getElementById('ai-voice-id')?.value
           })
         });
 
@@ -3934,12 +4656,18 @@
         botBubble.className = 'message-bubble msg-bot';
         botBubble.textContent = data.replyText || 'Desculpe, não consegui processar a resposta.';
 
+        // Se veio áudio da IA (modo ALWAYS ou configurado), renderiza player de voz
+        if (data.audioReplyBase64) {
+          const voiceEl = createVoiceNoteElement(data.audioReplyBase64, data.replyText);
+          botBubble.appendChild(voiceEl);
+        }
+
         // Adiciona tag de engine na bolha
         const engineTag = document.createElement('div');
         const isLive = data.engine === 'LLAMA_LIVE_LLM' || data.engine === 'GLM_LIVE_LLM';
         engineTag.style.cssText = `font-size: 9.5px; margin-top: 5px; opacity: 0.7; display: flex; align-items: center; gap: 4px; color: ${isLive ? '#22c55e' : '#f59e0b'};`;
         engineTag.innerHTML = isLive
-          ? `<span style="width:5px;height:5px;background:#22c55e;border-radius:50%;display:inline-block;"></span> Llama 3.1 IA`
+          ? `<span style="width:5px;height:5px;background:#22c55e;border-radius:50%;display:inline-block;"></span> Llama 3.1 IA${data.audioReplyBase64 ? ' + Voz TTS' : ''}`
           : `<span style="width:5px;height:5px;background:#f59e0b;border-radius:50%;display:inline-block;"></span> Modo Offline`;
         botBubble.appendChild(engineTag);
         chatMessages.appendChild(botBubble);
@@ -4100,6 +4828,58 @@
       }
     }
 
+    // Elemento interativo de player de áudio do WhatsApp
+    function createVoiceNoteElement(audioBase64, replyText) {
+      const container = document.createElement('div');
+      container.style.cssText = 'background: transparent; padding: 2px 0; display: flex; flex-direction: column; gap: 4px; min-width: 220px;';
+
+      const audio = new Audio(`data:audio/mp3;base64,${audioBase64}`);
+      audio.play().catch(e => console.log('Autoplay blocked:', e));
+
+      container.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <button type="button" class="btn-play-voice-note" style="width: 38px; height: 38px; border-radius: 50%; background: #00a884; color: white; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 14px; flex-shrink: 0; box-shadow: 0 2px 6px rgba(0, 168, 132, 0.3);">
+            <i class="fa-solid fa-pause"></i>
+          </button>
+          <div style="flex: 1;">
+            <div style="display: flex; align-items: center; gap: 2.5px; height: 20px; margin-bottom: 2px;">
+              ${Array.from({ length: 26 }).map((_, i) => `<span style="flex: 1; height: ${Math.floor(28 + Math.sin(i*0.85)*22)}%; background: #00a884; border-radius: 2px; opacity: 0.75;"></span>`).join('')}
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--wa-text-muted);">
+              <span class="voice-timer">0:00</span>
+              <span><i class="fa-solid fa-microphone" style="color: #00a884;"></i> Mensagem de Voz</span>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const playBtn = container.querySelector('.btn-play-voice-note');
+      const timer = container.querySelector('.voice-timer');
+      const icon = playBtn.querySelector('i');
+
+      playBtn.onclick = () => {
+        if (audio.paused) {
+          audio.play();
+        } else {
+          audio.pause();
+        }
+      };
+
+      audio.onplay = () => { icon.className = 'fa-solid fa-pause'; };
+      audio.onpause = () => { icon.className = 'fa-solid fa-play'; };
+      audio.ontimeupdate = () => {
+        const mins = Math.floor(audio.currentTime / 60);
+        const secs = Math.floor(audio.currentTime % 60);
+        timer.textContent = `${mins}:${String(secs).padStart(2, '0')}`;
+      };
+      audio.onended = () => {
+        icon.className = 'fa-solid fa-play';
+        timer.textContent = '0:00';
+      };
+
+      return container;
+    }
+
     async function sendSimulatedVoiceMessage(spokenText) {
       const chatMessages = document.getElementById('chat-messages');
 
@@ -4130,7 +4910,9 @@
             message: spokenText,
             systemPrompt: systemPrompt,
             businessInfo: businessInfo,
-            pushName: currentUser ? currentUser.name : 'Cliente Teste'
+            pushName: currentUser ? currentUser.name : 'Cliente Teste',
+            isVoiceInput: true,
+            voiceId: document.getElementById('ai-voice-id')?.value
           })
         });
 
@@ -4139,13 +4921,20 @@
 
         const botBubble = document.createElement('div');
         botBubble.className = 'message-bubble msg-bot';
-        botBubble.textContent = data.replyText || 'Desculpe, não consegui processar a resposta.';
+
+        // Se veio áudio da IA, mostra apenas a mensagem de voz gravada
+        if (data.audioReplyBase64) {
+          const voiceEl = createVoiceNoteElement(data.audioReplyBase64, data.replyText);
+          botBubble.appendChild(voiceEl);
+        } else {
+          botBubble.textContent = data.replyText || 'Desculpe, não consegui processar a resposta.';
+        }
 
         const engineTag = document.createElement('div');
         const isLive = data.engine === 'LLAMA_LIVE_LLM' || data.engine === 'GLM_LIVE_LLM';
-        engineTag.style.cssText = `font-size: 9.5px; margin-top: 5px; opacity: 0.7; display: flex; align-items: center; gap: 4px; color: ${isLive ? '#22c55e' : '#f59e0b'};`;
+        engineTag.style.cssText = `font-size: 9.5px; margin-top: 5px; opacity: 0.7; display: flex; align-items: center; gap: 4px; color: #22c55e;`;
         engineTag.innerHTML = isLive
-          ? `<span style="width:5px;height:5px;background:#22c55e;border-radius:50%;display:inline-block;"></span> Llama 3.1 Voice STT`
+          ? `<span style="width:5px;height:5px;background:#22c55e;border-radius:50%;display:inline-block;"></span> Llama 3.1 Voice TTS`
           : `<span style="width:5px;height:5px;background:#f59e0b;border-radius:50%;display:inline-block;"></span> Modo Offline`;
         botBubble.appendChild(engineTag);
         chatMessages.appendChild(botBubble);
@@ -4199,11 +4988,18 @@
 
           const botBubble = document.createElement('div');
           botBubble.className = 'message-bubble msg-bot';
-          botBubble.textContent = data.replyText || 'Desculpe, não consegui processar a mensagem de voz.';
+
+          // Se veio áudio da IA, mostra apenas a mensagem de voz gravada
+          if (data.audioReplyBase64) {
+            const voiceEl = createVoiceNoteElement(data.audioReplyBase64, data.replyText);
+            botBubble.appendChild(voiceEl);
+          } else {
+            botBubble.textContent = data.replyText || 'Desculpe, não consegui processar a mensagem de voz.';
+          }
 
           const engineTag = document.createElement('div');
           engineTag.style.cssText = `font-size: 9.5px; margin-top: 5px; opacity: 0.7; display: flex; align-items: center; gap: 4px; color: #22c55e;`;
-          engineTag.innerHTML = `<span style="width:5px;height:5px;background:#22c55e;border-radius:50%;display:inline-block;"></span> Llama 3.1 Voice STT`;
+          engineTag.innerHTML = `<span style="width:5px;height:5px;background:#22c55e;border-radius:50%;display:inline-block;"></span> Llama 3.1 Voice TTS`;
           botBubble.appendChild(engineTag);
 
           chatMessages.appendChild(botBubble);
@@ -4286,12 +5082,14 @@
     }, 3000);
 
     document.addEventListener('DOMContentLoaded', () => {
+      loadVoicesList();
       if (checkAuthOnBoot()) {
         renderGoogleCalendar();
         loadTenantData();
       }
     });
     window.onload = () => {
+      loadVoicesList();
       if (checkAuthOnBoot()) {
         renderGoogleCalendar();
         loadTenantData();

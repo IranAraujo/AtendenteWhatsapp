@@ -33,9 +33,9 @@ export class ReminderService {
     for (const tenant of tenants) {
       const config = tenant.remindersConfig || {
         enable24hReminder: true,
-        custom24hText: 'Olá {nome}! Passando para lembrar do seu agendamento amanhã ({data}) às {horario} com {profissional}. \n\nResponda *1* para *CONFIRMAR* ou *2* para *CANCELAR*.',
+        custom24hText: 'Olá {nome}! Passando para lembrar do seu agendamento amanhã ({data}) às {horario} com {profissional}. \n\nResponda:\n*1* para ✅ CONFIRMAR\n*2* para ❌ CANCELAR\n*3* para 🔄 REAGENDAR',
         enable1hReminder: true,
-        custom1hText: 'Olá {nome}! Seu atendimento é daqui a 1 hora às {horario} com {profissional}. \n\nResponda *1* para *CONFIRMAR* ou *2* para *CANCELAR*.'
+        custom1hText: 'Olá {nome}! Seu atendimento é daqui a 1 hora às {horario} com {profissional}. \n\nResponda:\n*1* para ✅ CONFIRMAR\n*2* para ❌ CANCELAR'
       };
 
       if (!config.enable24hReminder && !config.enable1hReminder) {

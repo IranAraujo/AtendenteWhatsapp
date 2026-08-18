@@ -144,22 +144,23 @@ export class WhatsAppService {
           if (!remoteJid || remoteJid.endsWith('@g.us')) continue;
 
           let text = msg.message.conversation || msg.message.extendedTextMessage?.text;
+          const isAudioInput = Boolean(msg.message.audioMessage);
 
-          // Suporte NATIVO para Áudio de Voz do WhatsApp (Multimodal Gemini AI)
-          if (!text && msg.message.audioMessage) {
+          // Suporte NATIVO para Áudio de Voz do WhatsApp (Multimodal Gemini / Whisper AI)
+          if (!text && isAudioInput) {
             const customerPhone = remoteJid.split('@')[0].split(':')[0].replace(/\D/g, '');
             const pushName = msg.pushName || 'Cliente';
-            console.log(`[WhatsApp Real Audio] ️ Áudio de voz recebido de ${pushName} (${customerPhone}). Baixando e transcrevendo via Gemini AI...`);
+            console.log(`[WhatsApp Real Audio] 🎙️ Áudio de voz recebido de ${pushName} (${customerPhone}). Baixando e transcrevendo via Whisper AI...`);
 
             try {
               const buffer = await downloadMediaMessage(msg, 'buffer', {});
-              const mimeType = msg.message.audioMessage.mimetype || 'audio/ogg; codecs=opus';
+              const mimeType = msg.message.audioMessage?.mimetype || 'audio/ogg; codecs=opus';
               text = await transcribeAudioBuffer(buffer as Buffer, mimeType);
-              console.log(`[WhatsApp Real Audio Transcribed]  Transcrição do áudio: "${text}"`);
+              console.log(`[WhatsApp Real Audio Transcribed] 📝 Transcrição do áudio: "${text}"`);
             } catch (audioErr: any) {
               console.error('[WhatsApp Real Audio Error] Falha ao processar áudio:', audioErr.message);
               await sock.sendMessage(remoteJid, { 
-                text: `Desculpe, no momento não consigo ouvir mensagens de áudio por aqui! ️ Por favor, me mande sua mensagem por escrito em texto para que eu possa te ajudar com seu agendamento! ` 
+                text: `Desculpe, não consegui compreender o áudio perfeitamente! 🎙️ Poderia enviar por texto ou mandar outro áudio para que eu possa te ajudar? 😊` 
               });
               continue;
             }
@@ -172,24 +173,59 @@ export class WhatsAppService {
           console.log(`[WhatsApp Real Input] Mensagem recebida de ${customerPhone} (${pushName || 'Cliente'}) (tenant ${tenantId}): "${text}"`);
 
           try {
-            // 1. Simula que a atendente está digitando ("Digitando...")
+            const tenant = await dbRepository.getTenantById(tenantId);
+            const voiceMode = tenant?.aiConfig?.voiceReplyMode || 'WHEN_AUDIO_RECEIVED';
+            const voiceId = tenant?.aiConfig?.voiceId || 'pt-BR-FranciscaNeural';
+            const shouldReplyWithVoice = voiceMode === 'ALWAYS' || (voiceMode === 'WHEN_AUDIO_RECEIVED' && isAudioInput);
+
+            // Simula presença realista no WhatsApp ("Digitando..." ou "Gravando áudio...")
             try {
-              await sock.sendPresenceUpdate('composing', remoteJid);
+              if (shouldReplyWithVoice) {
+                await sock.sendPresenceUpdate('recording', remoteJid);
+              } else {
+                await sock.sendPresenceUpdate('composing', remoteJid);
+              }
             } catch (e) {}
 
             const aiResult = await aiOrchestrator.processIncomingMessage(tenantId, customerPhone, text, { pushName });
 
             if (aiResult.replyText) {
-              // 2. Tempo de digitação humano realista proporcional ao tamanho do texto (1.2s a 2.8s)
-              const typingDelay = Math.min(Math.max(aiResult.replyText.length * 15, 1200), 2800);
-              await new Promise(resolve => setTimeout(resolve, typingDelay));
+              if (shouldReplyWithVoice) {
+                try {
+                  const { generateSpeechAudio } = await import('./tts.service.js');
+                  const audioBuffer = await generateSpeechAudio(aiResult.replyText, voiceId);
 
-              try {
-                await sock.sendPresenceUpdate('paused', remoteJid);
-              } catch (e) {}
+                  // Tempo humano de gravação de áudio proporcional ao texto (1.2s a 3.0s)
+                  const recordingDelay = Math.min(Math.max(aiResult.replyText.length * 20, 1200), 3000);
+                  await new Promise(resolve => setTimeout(resolve, recordingDelay));
 
-              await sock.sendMessage(remoteJid, { text: aiResult.replyText });
-              console.log(`[WhatsApp Real Output] Resposta enviada para ${customerPhone}: "${aiResult.replyText}"`);
+                  try {
+                    await sock.sendPresenceUpdate('paused', remoteJid);
+                  } catch (e) {}
+
+                  // Envia como mensagem de voz gravada nativa do WhatsApp (PTT)
+                  await sock.sendMessage(remoteJid, {
+                    audio: audioBuffer,
+                    mimetype: 'audio/mp4',
+                    ptt: true
+                  });
+                  console.log(`[WhatsApp Real Voice Output] 🎙️ Áudio de voz gravado enviado para ${customerPhone} com a voz ${voiceId}`);
+                } catch (ttsErr: any) {
+                  console.warn('[WhatsApp Real Voice Output] Falha no TTS, enviando fallback em texto:', ttsErr.message);
+                  await sock.sendMessage(remoteJid, { text: aiResult.replyText });
+                }
+              } else {
+                // Modo Texto com tempo de digitação humano (1.2s a 2.5s)
+                const typingDelay = Math.min(Math.max(aiResult.replyText.length * 15, 1200), 2500);
+                await new Promise(resolve => setTimeout(resolve, typingDelay));
+
+                try {
+                  await sock.sendPresenceUpdate('paused', remoteJid);
+                } catch (e) {}
+
+                await sock.sendMessage(remoteJid, { text: aiResult.replyText });
+                console.log(`[WhatsApp Real Output] Resposta enviada para ${customerPhone}: "${aiResult.replyText}"`);
+              }
             }
           } catch (err: any) {
             console.error('[WhatsApp Real AI Error]', err.message);

@@ -16,7 +16,13 @@ export interface CalculateAvailableSlotsParams {
   schedule: ScheduleTimeBlock | null;
   isExceptionUnavailable?: boolean;
   existingAppointments: ExistingAppointmentSlot[];
-  slotIntervalMinutes?: number; // e.g. 15 or service duration
+  slotIntervalMinutes?: number; // e.g. 15 or 30 min
+  scheduleBlocks?: Array<{ startTime?: string; endTime?: string }>; // blocks for that day
+  maxAppointmentsPerDay?: number;    // if set and currentCount >= max, return []
+  currentDayAppointmentCount?: number; // current count for that day
+  bufferTimeMinutes?: number;         // Cal.com: folga/intervalo pós-atendimento (ex: 10 min)
+  minimumNoticeMinutes?: number;      // Cal.com: antecedência mínima a partir de agora (ex: 60 min)
+  maxFutureDays?: number;             // Cal.com: janela máxima de agendamento no futuro (ex: 30 dias)
 }
 
 /**
@@ -38,7 +44,8 @@ export function formatTimeHHMM(date: Date): string {
 }
 
 /**
- * Calcula os horários de início disponíveis para um determinado serviço em um dia específico.
+ * Calcula os horários de início disponíveis para um determinado serviço em um dia específico,
+ * respeitando expediente, almoço, bloqueios, atendimentos existentes com buffer times e antecedência mínima.
  */
 export function calculateAvailableSlots(params: CalculateAvailableSlotsParams): string[] {
   const {
@@ -47,12 +54,33 @@ export function calculateAvailableSlots(params: CalculateAvailableSlotsParams): 
     schedule,
     isExceptionUnavailable = false,
     existingAppointments,
-    slotIntervalMinutes = 30
+    slotIntervalMinutes = 30,
+    bufferTimeMinutes = 0,
+    minimumNoticeMinutes = 0,
+    maxFutureDays
   } = params;
 
-  // Se o profissional registrou folga/exceção de indisponibilidade
+  // 1. Se o profissional registrou folga/exceção de indisponibilidade
   if (isExceptionUnavailable || !schedule) {
     return [];
+  }
+
+  // 2. Janela Máxima de Agendamento no Futuro (Cal.com Future Booking Limit)
+  if (maxFutureDays !== undefined && maxFutureDays > 0) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const targetDate = parseDateTime(dateStr, '00:00');
+    const diffDays = Math.ceil((targetDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    if (diffDays > maxFutureDays) {
+      return [];
+    }
+  }
+
+  // 3. Limite Diário de Atendimentos por Profissional
+  if (params.maxAppointmentsPerDay !== undefined && params.currentDayAppointmentCount !== undefined) {
+    if (params.currentDayAppointmentCount >= params.maxAppointmentsPerDay) {
+      return [];
+    }
   }
 
   const workStart = parseDateTime(dateStr, schedule.startTime);
@@ -63,46 +91,65 @@ export function calculateAvailableSlots(params: CalculateAvailableSlotsParams): 
 
   const availableSlots: string[] = [];
   let currentSlotStart = new Date(workStart.getTime());
+  const bufferMs = bufferTimeMinutes * 60 * 1000;
+
+  // Antecedência Mínima para atendimentos no dia de hoje (Cal.com Minimum Notice)
+  const now = new Date();
+  const [curYear, curMonth, curDay] = [now.getFullYear(), now.getMonth() + 1, now.getDate()];
+  const todayStr = `${curYear}-${String(curMonth).padStart(2, '0')}-${String(curDay).padStart(2, '0')}`;
+  const minNoticeMs = (minimumNoticeMinutes > 0 ? minimumNoticeMinutes : 0) * 60 * 1000;
+  const earliestAllowedTime = now.getTime() + minNoticeMs;
 
   while (currentSlotStart < workEnd) {
     const currentSlotEnd = new Date(currentSlotStart.getTime() + serviceDurationMinutes * 60 * 1000);
 
-    // 1. O slot termina após o horário de expediente?
+    // 4.1. O slot termina após o horário de expediente?
     if (currentSlotEnd > workEnd) {
       break;
     }
 
-    // 2. O slot conflita com o horário de almoço?
+    // 4.2. O slot conflita com o horário de almoço?
     let overlapsLunch = false;
     if (lunchStart && lunchEnd) {
-      // Conflito se o início do slot for antes do fim do almoço E o fim do slot for depois do início do almoço
       if (currentSlotStart < lunchEnd && currentSlotEnd > lunchStart) {
         overlapsLunch = true;
       }
     }
 
-    // 3. O slot conflita com algum agendamento existente?
+    // 4.3. O slot conflita com algum bloqueio de agenda (folga parcial/total)?
+    let overlapsBlock = false;
+    if (params.scheduleBlocks && !overlapsLunch) {
+      for (const block of params.scheduleBlocks) {
+        if (!block.startTime || !block.endTime) { overlapsBlock = true; break; }
+        const blockStart = parseDateTime(dateStr, block.startTime);
+        const blockEnd = parseDateTime(dateStr, block.endTime);
+        if (currentSlotStart < blockEnd && currentSlotEnd > blockStart) { overlapsBlock = true; break; }
+      }
+    }
+
+    // 4.4. O slot conflita com algum agendamento existente (incluindo o Buffer Time)?
     let overlapsAppointment = false;
-    if (!overlapsLunch) {
+    if (!overlapsLunch && !overlapsBlock) {
       for (const appt of existingAppointments) {
-        if (currentSlotStart < appt.endTime && currentSlotEnd > appt.startTime) {
+        const apptStart = appt.startTime instanceof Date ? appt.startTime : new Date(appt.startTime);
+        const apptEnd = appt.endTime instanceof Date ? appt.endTime : new Date(appt.endTime);
+        // O atendimento existente ocupa até seu fim + o tempo de buffer de respiro
+        const apptEffectiveEnd = new Date(apptEnd.getTime() + bufferMs);
+        if (currentSlotStart < apptEffectiveEnd && currentSlotEnd > apptStart) {
           overlapsAppointment = true;
           break;
         }
       }
     }
 
-    // 4. Se a data for hoje, não mostra horários que já passaram
-    const now = new Date();
-    const [curYear, curMonth, curDay] = [now.getFullYear(), now.getMonth() + 1, now.getDate()];
-    const todayStr = `${curYear}-${String(curMonth).padStart(2, '0')}-${String(curDay).padStart(2, '0')}`;
-    let isPastTime = false;
-    if (dateStr === todayStr && currentSlotStart.getTime() <= now.getTime()) {
-      isPastTime = true;
+    // 4.5. Se a data for hoje, valida horário passado e antecedência mínima
+    let isPastOrTooSoon = false;
+    if (dateStr === todayStr && currentSlotStart.getTime() < earliestAllowedTime) {
+      isPastOrTooSoon = true;
     }
 
-    // Se estiver livre de almoço, de outros agendamentos e não for horário passado, adiciona à lista
-    if (!overlapsLunch && !overlapsAppointment && !isPastTime) {
+    // Se estiver 100% livre, adiciona o slot
+    if (!overlapsLunch && !overlapsBlock && !overlapsAppointment && !isPastOrTooSoon) {
       availableSlots.push(formatTimeHHMM(currentSlotStart));
     }
 
@@ -111,4 +158,35 @@ export function calculateAvailableSlots(params: CalculateAvailableSlotsParams): 
   }
 
   return availableSlots;
+}
+
+/**
+ * Algoritmo Round-Robin (Cal.com Workload Balance):
+ * Seleciona o profissional mais adequado para receber o agendamento com base na menor carga de trabalho do dia.
+ */
+export interface RoundRobinProfessionalCandidate {
+  id: string;
+  name: string;
+  phone?: string;
+  todayCount: number;
+  availableSlots: string[];
+}
+
+export function selectRoundRobinProfessional(
+  candidates: RoundRobinProfessionalCandidate[],
+  desiredTime?: string
+): RoundRobinProfessionalCandidate | undefined {
+  if (!candidates || candidates.length === 0) return undefined;
+
+  // Filtra candidatos disponíveis no horário desejado (se especificado)
+  const eligible = desiredTime 
+    ? candidates.filter(c => c.availableSlots.includes(desiredTime))
+    : candidates.filter(c => c.availableSlots.length > 0);
+
+  if (eligible.length === 0) return undefined;
+
+  // Ordena pelo menor número de atendimentos já marcados no dia (Workload Balance)
+  eligible.sort((a, b) => a.todayCount - b.todayCount);
+
+  return eligible[0];
 }

@@ -10,7 +10,10 @@
       "status": "ACTIVE",
       "aiConfig": {
         "systemPrompt": "Somos um centro de estética e beleza moderno. Trate o cliente com cordialidade, simpatia e eficiência.",
-        "businessInfo": "Endereço: Av. Central, 500 - Centro. Horário: Segunda a Sábado das 08h às 19h."
+        "businessInfo": "Endereço: Av. Central, 500 - Centro. Horário: Segunda a Sábado das 08h às 19h.",
+        "faqItems": [],
+        "voiceId": "pt-BR-FranciscaNeural",
+        "voiceReplyMode": "WHEN_AUDIO_RECEIVED"
       },
       "users": [
         {
@@ -45,6 +48,13 @@
         "custom24hText": "Olá {nome}! Passando para lembrar do seu agendamento amanhã ({data}) às {horario} com {profissional}. \n\nResponda *1* para *CONFIRMAR* ou *2* para *CANCELAR*.",
         "enable1hReminder": true,
         "custom1hText": "Olá {nome}! Seu atendimento é daqui a 1 hora às {horario} com {profissional}. \n\nResponda *1* para *CONFIRMAR* ou *2* para *CANCELAR*."
+      },
+      "bookingRules": {
+        "bufferTimeMinutes": 10,
+        "minimumNoticeMinutes": 60,
+        "maxFutureDays": 30,
+        "roundRobinEnabled": true,
+        "webhookUrl": ""
       }
     },
     {
@@ -138,7 +148,8 @@
       "userId": "usr-1",
       "servicesHandled": [
         "srv-1",
-        "srv-2"
+        "srv-2",
+        "srv-1785951284149"
       ],
       "workSchedule": {
         "startTime": "08:00",
@@ -153,7 +164,8 @@
           5,
           6
         ]
-      }
+      },
+      "phone": "5511988887777"
     },
     {
       "id": "prof-2",
@@ -162,7 +174,8 @@
       "userId": "usr-2",
       "servicesHandled": [
         "srv-1",
-        "srv-2"
+        "srv-2",
+        "srv-1785951284149"
       ],
       "workSchedule": {
         "startTime": "09:00",
@@ -203,6 +216,42 @@
       }
     }
   ],
+  "customerProfiles": [
+    {
+      "phone": "5511977778888",
+      "tenantId": "tenant-demo-estilo",
+      "visitCount": 3,
+      "name": "Juliana Costa",
+      "preferredProfId": "prof-1",
+      "preferredServiceId": "srv-1"
+    },
+    {
+      "phone": "5511999998888",
+      "tenantId": "tenant-demo-estilo",
+      "visitCount": 1,
+      "preferredProfId": "prof-1",
+      "preferredServiceId": "srv-1",
+      "lastVisitDate": "2026-08-17"
+    },
+    {
+      "phone": "5511988887777",
+      "tenantId": "tenant-demo-estilo",
+      "visitCount": 2,
+      "preferredProfId": "prof-2",
+      "preferredServiceId": "srv-1",
+      "lastVisitDate": "2026-08-18"
+    },
+    {
+      "phone": "84988234441",
+      "tenantId": "tenant-demo-estilo",
+      "visitCount": 1,
+      "preferredProfId": "prof-1",
+      "preferredServiceId": "srv-1785951284149",
+      "lastVisitDate": "2026-08-18"
+    }
+  ],
+  "waitlist": [],
+  "scheduleBlocks": [],
   "appointments": [
     {
       "id": "appt-demo-1",
@@ -225,30 +274,6 @@
       "startTime": "2026-08-04T18:30:00.000Z",
       "endTime": "2026-08-04T19:00:00.000Z",
       "status": "CONFIRMED"
-    },
-    {
-      "id": "appt-1785867739232",
-      "tenantId": "tenant-demo-estilo",
-      "professionalId": "prof-1",
-      "serviceId": "srv-1",
-      "customerName": "Iran Araujo",
-      "customerPhone": "5511955554444",
-      "startTime": "2026-08-18T17:00:00.000Z",
-      "endTime": "2026-08-18T17:45:00.000Z",
-      "status": "CONFIRMED",
-      "pixQrCode": "00020126580014br.gov.bcb.pix01361785867739232"
-    },
-    {
-      "id": "appt-1785867741001",
-      "tenantId": "tenant-demo-estilo",
-      "professionalId": "prof-1",
-      "serviceId": "srv-1",
-      "customerName": "nome do cliente",
-      "customerPhone": "5511933332222",
-      "startTime": "2026-08-18T17:00:00.000Z",
-      "endTime": "2026-08-18T17:45:00.000Z",
-      "status": "CONFIRMED",
-      "pixQrCode": "00020126580014br.gov.bcb.pix01361785867741001"
     },
     {
       "id": "appt-1785868994766",
@@ -278,10 +303,10 @@
       "tenantId": "tenant-demo-estilo",
       "professionalId": "prof-1",
       "serviceId": "srv-1",
-      "customerName": "Cliente",
+      "customerName": "Cliente Teste Cal.com",
       "customerPhone": "5511988887777",
-      "startTime": "2026-08-06T18:00:00.000Z",
-      "endTime": "2026-08-06T18:45:00.000Z",
+      "startTime": "2026-08-21T13:00:00.000Z",
+      "endTime": "2026-08-21T13:45:00.000Z",
       "status": "CONFIRMED"
     },
     {
@@ -352,17 +377,6 @@
       "status": "CONFIRMED"
     },
     {
-      "id": "appt-1786370909229",
-      "tenantId": "tenant-demo-estilo",
-      "professionalId": "prof-1",
-      "serviceId": "srv-2",
-      "customerName": "Iran Araujo",
-      "customerPhone": "5511999998888",
-      "startTime": "2026-08-10T17:00:00.000Z",
-      "endTime": "2026-08-10T17:30:00.000Z",
-      "status": "CONFIRMED"
-    },
-    {
       "id": "appt-1786373262469",
       "tenantId": "tenant-demo-estilo",
       "professionalId": "prof-1",
@@ -407,28 +421,6 @@
       "status": "CONFIRMED"
     },
     {
-      "id": "appt-1786984710261",
-      "tenantId": "tenant-demo-estilo",
-      "professionalId": "prof-1",
-      "serviceId": "srv-1",
-      "customerName": "Iran Araujo",
-      "customerPhone": "551195709158",
-      "startTime": "2026-08-18T16:00:00.000Z",
-      "endTime": "2026-08-18T16:45:00.000Z",
-      "status": "CONFIRMED"
-    },
-    {
-      "id": "appt-1786984714629",
-      "tenantId": "tenant-demo-estilo",
-      "professionalId": "prof-1",
-      "serviceId": "srv-1",
-      "customerName": "Quero agendar amanhão às 14h com o Lucas",
-      "customerPhone": "551193713851",
-      "startTime": "2026-08-18T17:00:00.000Z",
-      "endTime": "2026-08-18T17:45:00.000Z",
-      "status": "CONFIRMED"
-    },
-    {
       "id": "appt-1786985198219",
       "tenantId": "tenant-demo-estilo",
       "professionalId": "Lucas Silva",
@@ -440,80 +432,102 @@
       "status": "CONFIRMED"
     },
     {
-      "id": "appt-1786985238806",
+      "id": "appt-1786992168341",
+      "tenantId": "tenant-demo-estilo",
+      "professionalId": "prof-1",
+      "serviceId": "srv-1",
+      "customerName": "Fernanda Montenegro",
+      "customerPhone": "558499166242",
+      "startTime": "2026-08-18T14:00:00.000Z",
+      "endTime": "2026-08-18T14:45:00.000Z",
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "appt-1786992190198",
       "tenantId": "tenant-demo-estilo",
       "professionalId": "prof-1",
       "serviceId": "srv-1",
       "customerName": "Iran Araujo",
-      "customerPhone": "551195237567",
+      "customerPhone": "551195185619",
       "startTime": "2026-08-18T16:00:00.000Z",
-      "endTime": "2026-08-18T16:45:00.000Z",
+      "endTime": "2026-08-18T16:30:00.000Z",
       "status": "CONFIRMED"
     },
     {
-      "id": "appt-1786985247506",
+      "id": "appt-1786992194189",
       "tenantId": "tenant-demo-estilo",
       "professionalId": "prof-1",
       "serviceId": "srv-1",
-      "customerName": "Cliente Teste",
-      "customerPhone": "551193245057",
+      "customerName": "João",
+      "customerPhone": "551193190971",
+      "startTime": "2026-08-18T16:00:00.000Z",
+      "endTime": "2026-08-18T16:30:00.000Z",
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "appt-1786992937355",
+      "tenantId": "tenant-demo-estilo",
+      "professionalId": "prof-1",
+      "serviceId": "srv-1785951284149",
+      "customerName": "Iran Araujo",
+      "customerPhone": "5511999998888",
+      "startTime": "2026-08-18T17:00:00.000Z",
+      "endTime": "2026-08-18T17:45:00.000Z",
+      "status": "CANCELLED"
+    },
+    {
+      "id": "appt-1786996337464",
+      "tenantId": "tenant-demo-estilo",
+      "professionalId": "prof-1",
+      "serviceId": "srv-1785951284149",
+      "customerName": "Iran Araujo",
+      "customerPhone": "5584999000112",
+      "startTime": "2026-08-18T17:00:00.000Z",
+      "endTime": "2026-08-18T17:30:00.000Z",
+      "status": "CANCELLED"
+    },
+    {
+      "id": "appt-1786998390098",
+      "tenantId": "tenant-demo-estilo",
+      "professionalId": "prof-1",
+      "serviceId": "srv-1",
+      "customerName": "Renato Silva",
+      "customerPhone": "5511933334444",
+      "startTime": "2026-09-20T17:00:00.000Z",
+      "endTime": "2026-09-20T17:45:00.000Z",
+      "status": "CANCELLED"
+    },
+    {
+      "id": "appt-1786998420615",
+      "tenantId": "tenant-demo-estilo",
+      "professionalId": "prof-1",
+      "serviceId": "srv-1",
+      "customerName": "Renato Silva",
+      "customerPhone": "5511933334444",
+      "startTime": "2026-09-20T17:00:00.000Z",
+      "endTime": "2026-09-20T17:45:00.000Z",
+      "status": "CANCELLED"
+    },
+    {
+      "id": "appt-1787000674522",
+      "tenantId": "tenant-demo-estilo",
+      "professionalId": "prof-1",
+      "serviceId": "srv-1",
+      "customerName": "Iran Araujo",
+      "customerPhone": "5511999998888",
       "startTime": "2026-08-18T17:00:00.000Z",
       "endTime": "2026-08-18T17:45:00.000Z",
       "status": "CONFIRMED"
     },
     {
-      "id": "appt-1786985274408",
+      "id": "appt-1787072195931",
       "tenantId": "tenant-demo-estilo",
       "professionalId": "prof-1",
-      "serviceId": "srv-1",
-      "customerName": "Iran Araujo",
-      "customerPhone": "551195273302",
-      "startTime": "2026-08-18T16:00:00.000Z",
-      "endTime": "2026-08-18T16:45:00.000Z",
-      "status": "CONFIRMED"
-    },
-    {
-      "id": "appt-1786985280039",
-      "tenantId": "tenant-demo-estilo",
-      "professionalId": "prof-1",
-      "serviceId": "srv-1",
-      "customerName": "Cliente Teste",
-      "customerPhone": "551193278714",
-      "startTime": "2026-08-18T16:00:00.000Z",
-      "endTime": "2026-08-18T16:45:00.000Z",
-      "status": "CONFIRMED"
-    },
-    {
-      "id": "appt-1786985655821",
-      "tenantId": "tenant-demo-estilo",
-      "professionalId": "prof-1",
-      "serviceId": "srv-1",
-      "customerName": "eu gostaria de marcar com lucas as 14 amanhã",
-      "customerPhone": "5584998877665",
-      "startTime": "2026-08-18T17:00:00.000Z",
-      "endTime": "2026-08-18T17:45:00.000Z",
-      "status": "CONFIRMED"
-    },
-    {
-      "id": "appt-1786986505893",
-      "tenantId": "tenant-demo-estilo",
-      "professionalId": "prof-1",
-      "serviceId": "srv-1",
-      "customerName": "Iran Araujo",
-      "customerPhone": "551195504719",
-      "startTime": "2026-08-18T16:00:00.000Z",
-      "endTime": "2026-08-18T16:45:00.000Z",
-      "status": "CONFIRMED"
-    },
-    {
-      "id": "appt-1786986512109",
-      "tenantId": "tenant-demo-estilo",
-      "professionalId": "prof-1",
-      "serviceId": "srv-1",
-      "customerName": "Cliente Teste",
-      "customerPhone": "551193511371",
-      "startTime": "2026-08-18T16:00:00.000Z",
-      "endTime": "2026-08-18T16:45:00.000Z",
+      "serviceId": "srv-1785951284149",
+      "customerName": "iran araujo",
+      "customerPhone": "84988234441",
+      "startTime": "2026-08-19T13:30:00.000Z",
+      "endTime": "2026-08-19T14:00:00.000Z",
       "status": "CONFIRMED"
     }
   ]

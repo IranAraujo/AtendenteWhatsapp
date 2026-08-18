@@ -8,6 +8,9 @@ class DbRepository {
     services = [];
     products = [];
     professionals = [];
+    customerProfiles = [];
+    waitlist = [];
+    scheduleBlocks = [];
     constructor() {
         const isVercel = !!process.env.VERCEL || process.env.NODE_ENV === 'production';
         const baseDir = isVercel ? '/tmp' : process.cwd();
@@ -45,6 +48,9 @@ class DbRepository {
                 this.services = parsed.services || [];
                 this.products = parsed.products || [];
                 this.professionals = parsed.professionals || [];
+                this.customerProfiles = parsed.customerProfiles || [];
+                this.waitlist = parsed.waitlist || [];
+                this.scheduleBlocks = parsed.scheduleBlocks || [];
                 this.inMemoryAppointments = (parsed.appointments || []).map(a => ({
                     ...a,
                     startTime: new Date(a.startTime),
@@ -161,6 +167,9 @@ class DbRepository {
                 services: this.services,
                 products: this.products,
                 professionals: this.professionals,
+                customerProfiles: this.customerProfiles,
+                waitlist: this.waitlist,
+                scheduleBlocks: this.scheduleBlocks,
                 appointments: this.inMemoryAppointments.map(a => ({
                     ...a,
                     startTime: a.startTime.toISOString(),
@@ -395,13 +404,27 @@ class DbRepository {
                 return false;
             if (a.status === 'CANCELLED')
                 return false;
-            const apptDateStr = a.startTime.toISOString().split('T')[0];
+            // BUG 4 FIX: usar fuso de Brasília para comparar datas (toISOString() retorna UTC)
+            const st = (a.startTime instanceof Date) ? a.startTime : new Date(a.startTime);
+            const parts = new Intl.DateTimeFormat('en-CA', {
+                timeZone: 'America/Sao_Paulo',
+                year: 'numeric', month: '2-digit', day: '2-digit'
+            }).formatToParts(st);
+            const apptDateStr = `${parts.find(p => p.type === 'year')?.value}-${parts.find(p => p.type === 'month')?.value}-${parts.find(p => p.type === 'day')?.value}`;
             return apptDateStr === dateStr;
         });
     }
-    async findActiveAppointmentByPhone(tenantId, customerPhone) {
+    async findUserById(userId) {
+        for (const tenant of this.tenants) {
+            const u = (tenant.users || []).find(user => user.id === userId);
+            if (u)
+                return { user: u, tenant };
+        }
+        return null;
+    }
+    async listActiveAppointmentsByPhone(tenantId, customerPhone) {
         const cleanToFind = customerPhone.replace(/\D/g, '');
-        return this.inMemoryAppointments.find(a => {
+        return this.inMemoryAppointments.filter(a => {
             if (a.tenantId !== tenantId || a.status === 'CANCELLED')
                 return false;
             const cleanA = a.customerPhone.replace(/\D/g, '');
@@ -420,11 +443,17 @@ class DbRepository {
             return false;
         });
     }
-    async updateAppointmentTime(appointmentId, newStartTime, newEndTime) {
+    async findActiveAppointmentByPhone(tenantId, customerPhone) {
+        const appts = await this.listActiveAppointmentsByPhone(tenantId, customerPhone);
+        return appts.length > 0 ? appts[0] : undefined;
+    }
+    async updateAppointmentTime(appointmentId, newStartTime, newEndTime, newCustomerName) {
         const index = this.inMemoryAppointments.findIndex(a => a.id === appointmentId);
         if (index !== -1) {
             this.inMemoryAppointments[index].startTime = newStartTime;
             this.inMemoryAppointments[index].endTime = newEndTime;
+            if (newCustomerName)
+                this.inMemoryAppointments[index].customerName = newCustomerName;
             this.inMemoryAppointments[index].status = 'CONFIRMED';
             this.saveData();
             return this.inMemoryAppointments[index];
@@ -508,6 +537,19 @@ class DbRepository {
         this.saveData();
         return newAppointment;
     }
+    async createAdditionalAppointment(data) {
+        const validStart = (data.startTime instanceof Date && !isNaN(data.startTime.getTime())) ? data.startTime : new Date();
+        const validEnd = (data.endTime instanceof Date && !isNaN(data.endTime.getTime())) ? data.endTime : new Date(validStart.getTime() + 30 * 60000);
+        const newAppointment = {
+            id: `appt-${Date.now()}`,
+            ...data,
+            startTime: validStart,
+            endTime: validEnd
+        };
+        this.inMemoryAppointments.push(newAppointment);
+        this.saveData();
+        return newAppointment;
+    }
     async updateTenantReminders(tenantId, config) {
         const tenant = await this.getTenantById(tenantId);
         if (tenant) {
@@ -564,6 +606,147 @@ class DbRepository {
         };
         this.saveData();
         return true;
+    }
+    // -------------------------------------------------------
+    // PERFIS DE CLIENTES (preferências + histórico de visitas)
+    // -------------------------------------------------------
+    async getCustomerProfile(tenantId, customerPhone) {
+        const clean = customerPhone.replace(/\D/g, '');
+        return this.customerProfiles.find(p => p.tenantId === tenantId && p.phone === clean);
+    }
+    async upsertCustomerProfile(tenantId, customerPhone, updates) {
+        const clean = customerPhone.replace(/\D/g, '');
+        let profile = this.customerProfiles.find(p => p.tenantId === tenantId && p.phone === clean);
+        if (!profile) {
+            profile = { phone: clean, tenantId, visitCount: 0 };
+            this.customerProfiles.push(profile);
+        }
+        if (updates.name && !profile.name)
+            profile.name = updates.name;
+        if (updates.preferredProfId)
+            profile.preferredProfId = updates.preferredProfId;
+        if (updates.preferredServiceId)
+            profile.preferredServiceId = updates.preferredServiceId;
+        if (updates.visitCount !== undefined)
+            profile.visitCount = updates.visitCount;
+        if (updates.lastVisitDate)
+            profile.lastVisitDate = updates.lastVisitDate;
+        this.saveData();
+        return profile;
+    }
+    async incrementVisitCount(tenantId, customerPhone, professionalId, serviceId) {
+        const clean = customerPhone.replace(/\D/g, '');
+        const today = new Date();
+        const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+        await this.upsertCustomerProfile(tenantId, clean, {
+            visitCount: ((await this.getCustomerProfile(tenantId, clean))?.visitCount || 0) + 1,
+            lastVisitDate: todayStr,
+            preferredProfId: professionalId,
+            preferredServiceId: serviceId
+        });
+    }
+    // -------------------------------------------------------
+    // LISTA DE ESPERA
+    // -------------------------------------------------------
+    async addToWaitlist(data) {
+        // Remove existing entry for same phone+date if any
+        this.waitlist = this.waitlist.filter(w => !(w.tenantId === data.tenantId && w.customerPhone === data.customerPhone && w.dateStr === data.dateStr));
+        const item = {
+            id: `wait-${Date.now()}`,
+            ...data,
+            createdAt: new Date().toISOString()
+        };
+        this.waitlist.push(item);
+        this.saveData();
+        return item;
+    }
+    async getWaitlistForDate(tenantId, dateStr, professionalId) {
+        return this.waitlist.filter(w => {
+            if (w.tenantId !== tenantId || w.dateStr !== dateStr)
+                return false;
+            if (professionalId && w.professionalId && w.professionalId !== professionalId)
+                return false;
+            return true;
+        });
+    }
+    async getAllWaitlist(tenantId) {
+        return this.waitlist.filter(w => w.tenantId === tenantId);
+    }
+    async removeFromWaitlist(waitlistId) {
+        const initial = this.waitlist.length;
+        this.waitlist = this.waitlist.filter(w => w.id !== waitlistId);
+        if (this.waitlist.length !== initial) {
+            this.saveData();
+            return true;
+        }
+        return false;
+    }
+    async removeFromWaitlistByPhone(tenantId, customerPhone) {
+        const clean = customerPhone.replace(/\D/g, '');
+        const initial = this.waitlist.length;
+        this.waitlist = this.waitlist.filter(w => !(w.tenantId === tenantId && w.customerPhone.replace(/\D/g, '') === clean));
+        if (this.waitlist.length !== initial) {
+            this.saveData();
+            return true;
+        }
+        return false;
+    }
+    // -------------------------------------------------------
+    // BLOQUEIOS DE AGENDA
+    // -------------------------------------------------------
+    async addScheduleBlock(data) {
+        const block = { id: `block-${Date.now()}`, ...data };
+        this.scheduleBlocks.push(block);
+        this.saveData();
+        return block;
+    }
+    async getScheduleBlocks(tenantId, professionalId, dateStr) {
+        return this.scheduleBlocks.filter(b => {
+            if (b.tenantId !== tenantId)
+                return false;
+            if (professionalId && b.professionalId !== professionalId)
+                return false;
+            if (dateStr && b.dateStr !== dateStr)
+                return false;
+            return true;
+        });
+    }
+    async removeScheduleBlock(blockId) {
+        const initial = this.scheduleBlocks.length;
+        this.scheduleBlocks = this.scheduleBlocks.filter(b => b.id !== blockId);
+        if (this.scheduleBlocks.length !== initial) {
+            this.saveData();
+            return true;
+        }
+        return false;
+    }
+    // -------------------------------------------------------
+    // LIMITE DIÁRIO DE AGENDAMENTOS POR PROFISSIONAL
+    // -------------------------------------------------------
+    async getDailyAppointmentCount(professionalId, dateStr) {
+        const appts = await this.getAppointmentsForProfessional(professionalId, dateStr);
+        return appts.filter(a => a.status !== 'CANCELLED').length;
+    }
+    // -------------------------------------------------------
+    // CAL.COM BOOKING RULES & PUBLIC ACCESS
+    // -------------------------------------------------------
+    async getTenantBySlug(slug) {
+        return this.tenants.find(t => t.slug === slug || t.slug.toLowerCase() === slug.toLowerCase());
+    }
+    async updateTenantBookingRules(tenantId, rules) {
+        const tenant = await this.getTenantById(tenantId);
+        if (!tenant)
+            return undefined;
+        tenant.bookingRules = {
+            bufferTimeMinutes: 10,
+            minimumNoticeMinutes: 60,
+            maxFutureDays: 30,
+            roundRobinEnabled: true,
+            ...(tenant.bookingRules || {}),
+            ...rules
+        };
+        await this.saveTenant(tenant);
+        return tenant;
     }
 }
 export const dbRepository = new DbRepository();

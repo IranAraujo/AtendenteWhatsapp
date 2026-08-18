@@ -19,3 +19,4 @@ data/baileys_auth_*
 Thumbs.db
 *.log
 dist/
+scratch/
