@@ -973,55 +973,83 @@ export class AiOrchestratorService {
 
       // Loop de function calling OpenAI-compatible
       for (let round = 0; round < 5; round++) {
-      // M7: Timeout de 30s para evitar travar o servidor em respostas lentas da LLM
-        const llmAbortController = new AbortController();
-        const llmTimeoutId = setTimeout(() => llmAbortController.abort(), 30000);
+        let resp: Response | null = null;
 
-        let resp = await fetch(llmEndpoint, {
-          method: 'POST',
-          signal: llmAbortController.signal,
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${llmKey}`
-          },
-          body: JSON.stringify({
-            model: llmModel,
-            messages,
-            tools,
-            tool_choice: 'auto',
-            max_tokens: 4096,
-            temperature: 0.7
-          })
-        });
-        clearTimeout(llmTimeoutId);
-
-        // Fallback automático para NVIDIA NIM caso Groq atinja 429 (rate limit) ou falhe
-        if (!resp.ok && useGroq && nvidiaKey) {
-          console.warn(`[Groq Failover -> NVIDIA NIM]: status ${resp.status}`);
-          const nimAbortController = new AbortController();
-          const nimTimeoutId = setTimeout(() => nimAbortController.abort(), 30000);
-          resp = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
-            method: 'POST',
-            signal: nimAbortController.signal,
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${nvidiaKey}`
-            },
-            body: JSON.stringify({
-              model: 'meta/llama-3.1-8b-instruct',
-              messages,
-              tools,
-              tool_choice: 'auto',
-              max_tokens: 4096,
-              temperature: 0.75
-            })
-          });
-          clearTimeout(nimTimeoutId);
+        // 1. Tenta Groq com modelos em cascata (gpt-oss-120b -> gpt-oss-20b -> qwen3.6-27b)
+        if (groqKey) {
+          const groqModels = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'qwen/qwen3.6-27b'];
+          for (const gModel of groqModels) {
+            try {
+              const abortCtrl = new AbortController();
+              const timeoutId = setTimeout(() => abortCtrl.abort(), 20000);
+              const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                method: 'POST',
+                signal: abortCtrl.signal,
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${groqKey}`
+                },
+                body: JSON.stringify({
+                  model: gModel,
+                  messages,
+                  tools,
+                  tool_choice: 'auto',
+                  max_tokens: 4096,
+                  temperature: 0.75
+                })
+              });
+              clearTimeout(timeoutId);
+              if (r.ok) {
+                resp = r;
+                break;
+              } else {
+                console.warn(`[Groq ${gModel} returned status ${r.status}]`);
+              }
+            } catch (e: any) {
+              console.warn(`[Groq ${gModel} Error]:`, e.message);
+            }
+          }
         }
 
-        if (!resp.ok) {
-          const errBody = await resp.text();
-          throw new Error(`LLM API ${resp.status}: ${errBody}`);
+        // 2. Se Groq falhar ou atingir rate limit, tenta NVIDIA NIM
+        if (!resp && nvidiaKey) {
+          const nvidiaModels = ['meta/llama-3.3-70b-instruct', 'meta/llama-3.1-8b-instruct'];
+          for (const nModel of nvidiaModels) {
+            try {
+              const abortCtrl = new AbortController();
+              const timeoutId = setTimeout(() => abortCtrl.abort(), 25000);
+              const r = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
+                method: 'POST',
+                signal: abortCtrl.signal,
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${nvidiaKey}`
+                },
+                body: JSON.stringify({
+                  model: nModel,
+                  messages,
+                  tools,
+                  tool_choice: 'auto',
+                  max_tokens: 4096,
+                  temperature: 0.75
+                })
+              });
+              clearTimeout(timeoutId);
+              if (r.ok) {
+                resp = r;
+                break;
+              } else {
+                console.warn(`[NVIDIA ${nModel} returned status ${r.status}]`);
+              }
+            } catch (e: any) {
+              console.warn(`[NVIDIA ${nModel} Error]:`, e.message);
+            }
+          }
+        }
+
+        if (!resp || !resp.ok) {
+          const errBody = resp ? await resp.text() : 'Sem conexão com provedores de IA';
+          throw new Error(`LLM Failover Exceeded: ${errBody}`);
         }
 
         const data = await resp.json();
