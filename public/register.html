@@ -278,20 +278,13 @@
       border: 1px solid #fde68a;
     }
 
-    /* Cards de Planos (3 Grid) */
+    /* Cards de Planos em Lista Vertical */
     .plans-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 24px;
-      max-width: 1060px;
-      margin: 0 auto 50px auto;
-    }
-
-    @media (max-width: 992px) {
-      .plans-grid {
-        grid-template-columns: 1fr;
-        max-width: 440px;
-      }
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      max-width: 680px;
+      margin: 0 auto 40px auto;
     }
 
     .plan-card {
