@@ -275,7 +275,7 @@
       <li class="nav-item active">
         <i class="fa-solid fa-store"></i> Gerenciar Clientes SaaS
       </li>
-      <li class="nav-item" onclick="window.location.href='/'">
+      <li class="nav-item" onclick="window.location.href='/dashboard'">
         <i class="fa-solid fa-arrow-right-to-bracket"></i> Acessar Portal do Cliente
       </li>
     </ul>
@@ -388,7 +388,7 @@
     }
 
     function accessTenantPortal(tenantId) {
-      window.location.href = `/?tenantId=${tenantId}`;
+      window.location.href = `/dashboard?tenantId=${tenantId}`;
     }
 
     function togglePlanUsersInput() {
