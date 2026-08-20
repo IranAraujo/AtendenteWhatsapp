@@ -178,6 +178,52 @@
           "professionalId": "prof-1787253359216"
         }
       ]
+    },
+    {
+      "id": "tenant-1787254628618",
+      "name": "Giulia Bistro",
+      "slug": "giulia-bistro",
+      "ownerEmail": "iran.s.araujo@gmail.com",
+      "planTier": "FREE",
+      "maxUsers": 1,
+      "status": "ACTIVE",
+      "aiConfig": {
+        "systemPrompt": "Somos a Giulia Bistro. Atenda os clientes com profissionalismo, agilidade e excelência no agendamento de horários.",
+        "businessInfo": "Horário de Atendimento: Segunda a Sábado das 08h às 19h. Endereço: Avenida Prudente de Morais.",
+        "voiceId": "pt-BR-FranciscaNeural",
+        "voiceReplyMode": "WHEN_AUDIO_RECEIVED",
+        "faqItems": [
+          {
+            "question": "Quais as formas de pagamento aceitas?",
+            "answer": "Aceitamos Pix, cartão de débito, crédito e dinheiro."
+          },
+          {
+            "question": "Onde fica o estabelecimento?",
+            "answer": "Ficamos localizados em: Avenida Prudente de Morais"
+          }
+        ]
+      },
+      "bookingRules": {
+        "bufferTimeMinutes": 10,
+        "minimumNoticeMinutes": 0,
+        "maxFutureDays": 30,
+        "roundRobinEnabled": true
+      },
+      "remindersConfig": {
+        "enable24hReminder": true,
+        "enable1hReminder": true
+      },
+      "users": [
+        {
+          "id": "usr-1787254628618",
+          "tenantId": "tenant-1787254628618",
+          "name": "Iran Araujo",
+          "email": "iran.s.araujo@gmail.com",
+          "passwordHash": "$2b$10$PTdbo57OBp2vm5LIydjzkuH0raZihrzQVocr6ABw/zgPu5P.Nv4ZW",
+          "role": "OWNER",
+          "professionalId": "prof-1787254628618"
+        }
+      ]
     }
   ],
   "services": [
@@ -260,6 +306,22 @@
       "price": 150,
       "durationMinutes": 45,
       "description": "Sessão de procedimento especializado"
+    },
+    {
+      "id": "srv-1787254628790",
+      "tenantId": "tenant-1787254628618",
+      "name": "Atendimento Padrão",
+      "price": 60,
+      "durationMinutes": 30,
+      "description": "Sessão padrão de atendimento"
+    },
+    {
+      "id": "srv-1787254628796",
+      "tenantId": "tenant-1787254628618",
+      "name": "Consulta Especializada",
+      "price": 120,
+      "durationMinutes": 60,
+      "description": "Atendimento aprofundado e completo"
     }
   ],
   "products": [
@@ -382,6 +444,27 @@
       "name": "Ana Paula Free",
       "userId": "usr-1787253359216",
       "phone": "11977778888",
+      "workSchedule": {
+        "startTime": "08:00",
+        "endTime": "18:00",
+        "lunchStartTime": "12:00",
+        "lunchEndTime": "13:00",
+        "workDays": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ]
+      }
+    },
+    {
+      "id": "prof-1787254628618",
+      "tenantId": "tenant-1787254628618",
+      "name": "Iran Araujo",
+      "userId": "usr-1787254628618",
+      "phone": "84988234441",
       "workSchedule": {
         "startTime": "08:00",
         "endTime": "18:00",

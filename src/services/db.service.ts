@@ -909,7 +909,7 @@ class DbRepository {
 
   getTenantDailyAppointmentLimit(tenant: DbTenantItem | null | undefined): number | undefined {
     if (!tenant) return undefined;
-    if (tenant.planTier === 'FREE') return 5; // Limite de 5 agendamentos por dia no plano Free
+    if (tenant.planTier === 'FREE') return 10; // Limite de 10 agendamentos por dia no plano Free
     return undefined; // Ilimitado para Starter e Pro
   }
 

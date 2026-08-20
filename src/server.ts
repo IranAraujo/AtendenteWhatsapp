@@ -131,7 +131,7 @@ app.get('/api/plans', (req: Request, res: Response) => {
         features: [
           '1 Profissional / 1 Usuário',
           'Atendente IA no WhatsApp',
-          'Limite de até 5 agendamentos por dia',
+          'Limite de até 10 agendamentos por dia',
           'Catálogo de serviços e produtos',
           'Agenda online pública',
           'Acesso vitalício sem mensalidade'
