@@ -224,6 +224,107 @@
           "professionalId": "prof-1787254628618"
         }
       ]
+    },
+    {
+      "id": "tenant-1787257078718",
+      "name": "Barbearia do Carlos",
+      "slug": "barbearia-do-carlos",
+      "ownerEmail": "carlos.1787257078621@teste.com",
+      "planTier": "FREE",
+      "maxUsers": 1,
+      "status": "ACTIVE",
+      "aiConfig": {
+        "systemPrompt": "Somos a Barbearia do Carlos, uma barbearia moderna. Atenda o cliente com agilidade, simpatia e foco na excelência dos cortes masculinos e barba.",
+        "businessInfo": "Horário de Atendimento: Segunda a Sábado das 08h às 19h.",
+        "voiceId": "pt-BR-FranciscaNeural",
+        "voiceReplyMode": "WHEN_AUDIO_RECEIVED",
+        "faqItems": [
+          {
+            "question": "Quais as formas de pagamento aceitas?",
+            "answer": "Aceitamos Pix, cartão de débito, crédito e dinheiro."
+          },
+          {
+            "question": "Onde fica o estabelecimento?",
+            "answer": "Consulte nosso endereço diretamente no painel ou com a nossa equipe."
+          }
+        ]
+      },
+      "bookingRules": {
+        "bufferTimeMinutes": 10,
+        "minimumNoticeMinutes": 0,
+        "maxFutureDays": 30,
+        "roundRobinEnabled": true
+      },
+      "remindersConfig": {
+        "enable24hReminder": true,
+        "enable1hReminder": true
+      },
+      "users": [
+        {
+          "id": "usr-1787257078718",
+          "tenantId": "tenant-1787257078718",
+          "name": "Carlos Teste",
+          "email": "carlos.1787257078621@teste.com",
+          "passwordHash": "$2b$10$osM3sCRkILasEJRbKHCr3e.Hot8utU7W14jR0e9euQPOifUR1mq5m",
+          "role": "OWNER",
+          "professionalId": "prof-1787257078718"
+        }
+      ]
+    },
+    {
+      "id": "tenant-1787257078930",
+      "name": "Clínica Estética Pro",
+      "slug": "cl-nica-est-tica-pro",
+      "ownerEmail": "luciana.1787257078929@teste.com",
+      "planTier": "MULTI_USER",
+      "maxUsers": 5,
+      "status": "ACTIVE",
+      "aiConfig": {
+        "systemPrompt": "Somos a Clínica Estética Pro, clínica de estética e saúde. Atenda os pacientes com extrema cordialidade, profissionalismo e atenção aos procedimentos.",
+        "businessInfo": "Horário de Atendimento: Segunda a Sábado das 08h às 19h.",
+        "voiceId": "pt-BR-FranciscaNeural",
+        "voiceReplyMode": "WHEN_AUDIO_RECEIVED",
+        "faqItems": [
+          {
+            "question": "Quais as formas de pagamento aceitas?",
+            "answer": "Aceitamos Pix, cartão de débito, crédito e dinheiro."
+          },
+          {
+            "question": "Onde fica o estabelecimento?",
+            "answer": "Consulte nosso endereço diretamente no painel ou com a nossa equipe."
+          }
+        ]
+      },
+      "bookingRules": {
+        "bufferTimeMinutes": 10,
+        "minimumNoticeMinutes": 0,
+        "maxFutureDays": 30,
+        "roundRobinEnabled": true
+      },
+      "remindersConfig": {
+        "enable24hReminder": true,
+        "enable1hReminder": true
+      },
+      "users": [
+        {
+          "id": "usr-1787257078930",
+          "tenantId": "tenant-1787257078930",
+          "name": "Luciana Pro",
+          "email": "luciana.1787257078929@teste.com",
+          "passwordHash": "$2b$10$V01MgY7SqoEDli0nwJOsNuNAWEK0aVjPnpWxBBgIrlTTfceoboU2S",
+          "role": "OWNER",
+          "professionalId": "prof-1787257078930"
+        },
+        {
+          "id": "usr-1787257079113",
+          "tenantId": "tenant-1787257078930",
+          "name": "Dra. Vanessa",
+          "email": "vanessa.1787257079112@teste.com",
+          "passwordHash": "$2b$10$WpIMh2qmQMmN6FSDO2QqsurC/Wi7IRM2VlSPaF4N/KgwbWzlB41am",
+          "role": "PROFESSIONAL",
+          "professionalId": "prof-1787257079266"
+        }
+      ]
     }
   ],
   "services": [
@@ -322,6 +423,62 @@
       "price": 120,
       "durationMinutes": 60,
       "description": "Atendimento aprofundado e completo"
+    },
+    {
+      "id": "srv-1787257078887",
+      "tenantId": "tenant-1787257078718",
+      "name": "Corte de Cabelo",
+      "price": 45,
+      "durationMinutes": 30,
+      "description": "Corte tradicional ou degradê na tesoura/máquina"
+    },
+    {
+      "id": "srv-1787257078893",
+      "tenantId": "tenant-1787257078718",
+      "name": "Barba Completa",
+      "price": 35,
+      "durationMinutes": 30,
+      "description": "Modelagem de barba com toalha quente e navalha"
+    },
+    {
+      "id": "srv-1787257078895",
+      "tenantId": "tenant-1787257078718",
+      "name": "Combo Cabelo + Barba",
+      "price": 70,
+      "durationMinutes": 50,
+      "description": "Corte completo com tratamento de barba"
+    },
+    {
+      "id": "srv-1787257078920",
+      "tenantId": "tenant-1787257078718",
+      "name": "Degradê Navalhado",
+      "price": 55,
+      "durationMinutes": 45,
+      "description": "Corte navalhado com toalha quente"
+    },
+    {
+      "id": "srv-1787257079085",
+      "tenantId": "tenant-1787257078930",
+      "name": "Avaliação Inicial",
+      "price": 80,
+      "durationMinutes": 30,
+      "description": "Avaliação clínica e plano de tratamento"
+    },
+    {
+      "id": "srv-1787257079101",
+      "tenantId": "tenant-1787257078930",
+      "name": "Limpeza de Pele Profunda",
+      "price": 130,
+      "durationMinutes": 60,
+      "description": "Higienização, esfoliação e hidratação facial"
+    },
+    {
+      "id": "srv-1787257079105",
+      "tenantId": "tenant-1787257078930",
+      "name": "Sessão de Atendimento",
+      "price": 150,
+      "durationMinutes": 45,
+      "description": "Sessão de procedimento especializado"
     }
   ],
   "products": [
@@ -465,6 +622,69 @@
       "name": "Iran Araujo",
       "userId": "usr-1787254628618",
       "phone": "84988234441",
+      "workSchedule": {
+        "startTime": "08:00",
+        "endTime": "18:00",
+        "lunchStartTime": "12:00",
+        "lunchEndTime": "13:00",
+        "workDays": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ]
+      }
+    },
+    {
+      "id": "prof-1787257078718",
+      "tenantId": "tenant-1787257078718",
+      "name": "Carlos Teste",
+      "userId": "usr-1787257078718",
+      "phone": "11988887777",
+      "workSchedule": {
+        "startTime": "08:00",
+        "endTime": "18:00",
+        "lunchStartTime": "12:00",
+        "lunchEndTime": "13:00",
+        "workDays": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ]
+      }
+    },
+    {
+      "id": "prof-1787257078930",
+      "tenantId": "tenant-1787257078930",
+      "name": "Luciana Pro",
+      "userId": "usr-1787257078930",
+      "phone": "11977776666",
+      "workSchedule": {
+        "startTime": "08:00",
+        "endTime": "18:00",
+        "lunchStartTime": "12:00",
+        "lunchEndTime": "13:00",
+        "workDays": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ]
+      }
+    },
+    {
+      "id": "prof-1787257079266",
+      "tenantId": "tenant-1787257078930",
+      "name": "Dra. Vanessa",
+      "userId": "usr-1787257079113",
+      "servicesHandled": [],
       "workSchedule": {
         "startTime": "08:00",
         "endTime": "18:00",

@@ -664,14 +664,16 @@ app.get('/api/tenants/:id/services', async (req, res) => {
 });
 app.post('/api/tenants/:id/services', async (req, res) => {
     try {
-        const { name, price, durationMinutes, description } = req.body;
-        if (!name || price === undefined || !durationMinutes) {
-            return res.status(400).json({ success: false, error: 'Campos name, price e durationMinutes são obrigatórios.' });
+        const { name, price, durationMinutes = 30, description } = req.body;
+        if (!name || price === undefined || price === null || String(name).trim() === '') {
+            return res.status(400).json({ success: false, error: 'Campos nome e preço são obrigatórios.' });
         }
+        const cleanPrice = typeof price === 'string' ? parseFloat(price.replace(',', '.')) : Number(price);
+        const cleanDuration = Number(durationMinutes) || 30;
         const service = await dbRepository.addService(req.params.id, {
-            name,
-            price: Number(price),
-            durationMinutes: Number(durationMinutes),
+            name: String(name).trim(),
+            price: isNaN(cleanPrice) ? 0 : cleanPrice,
+            durationMinutes: cleanDuration,
             description: description || ''
         });
         res.json({ success: true, service });
@@ -682,7 +684,15 @@ app.post('/api/tenants/:id/services', async (req, res) => {
 });
 app.put('/api/tenants/:id/services/:serviceId', async (req, res) => {
     try {
-        const updated = await dbRepository.updateService(req.params.id, req.params.serviceId, req.body);
+        const updates = { ...req.body };
+        if (updates.price !== undefined) {
+            const cleanPrice = typeof updates.price === 'string' ? parseFloat(updates.price.replace(',', '.')) : Number(updates.price);
+            updates.price = isNaN(cleanPrice) ? 0 : cleanPrice;
+        }
+        if (updates.durationMinutes !== undefined) {
+            updates.durationMinutes = Number(updates.durationMinutes) || 30;
+        }
+        const updated = await dbRepository.updateService(req.params.id, req.params.serviceId, updates);
         if (!updated) {
             return res.status(404).json({ success: false, error: 'Serviço não encontrado' });
         }
@@ -716,13 +726,15 @@ app.get('/api/tenants/:id/products', async (req, res) => {
 app.post('/api/tenants/:id/products', async (req, res) => {
     try {
         const { name, price, stock = 10, description } = req.body;
-        if (!name || price === undefined) {
-            return res.status(400).json({ success: false, error: 'Campos name e price são obrigatórios.' });
+        if (!name || price === undefined || price === null || String(name).trim() === '') {
+            return res.status(400).json({ success: false, error: 'Campos nome e preço são obrigatórios.' });
         }
+        const cleanPrice = typeof price === 'string' ? parseFloat(price.replace(',', '.')) : Number(price);
+        const cleanStock = Number(stock) || 10;
         const product = await dbRepository.addProduct(req.params.id, {
-            name,
-            price: Number(price),
-            stock: Number(stock),
+            name: String(name).trim(),
+            price: isNaN(cleanPrice) ? 0 : cleanPrice,
+            stock: cleanStock,
             description: description || ''
         });
         res.json({ success: true, product });

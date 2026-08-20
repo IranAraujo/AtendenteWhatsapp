@@ -12,8 +12,8 @@ class DbRepository {
     waitlist = [];
     scheduleBlocks = [];
     constructor() {
-        const isVercel = !!process.env.VERCEL || process.env.NODE_ENV === 'production';
-        const baseDir = isVercel ? '/tmp' : process.cwd();
+        const isServerless = !!process.env.VERCEL || !!process.env.AWS_LAMBDA_FUNCTION_NAME;
+        const baseDir = isServerless ? '/tmp' : process.cwd();
         const dataDir = path.join(baseDir, 'data');
         if (!fs.existsSync(dataDir)) {
             try {
@@ -22,7 +22,7 @@ class DbRepository {
             catch (e) { }
         }
         this.dataFilePath = path.join(dataDir, 'database.json');
-        if (isVercel && !fs.existsSync(this.dataFilePath)) {
+        if (isServerless && !fs.existsSync(this.dataFilePath)) {
             const origPath = path.join(process.cwd(), 'data', 'database.json');
             if (fs.existsSync(origPath)) {
                 try {

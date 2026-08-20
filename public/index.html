@@ -2518,6 +2518,8 @@
     let appointmentsState = [];
     let professionalsState = [];
     let servicesState = [];
+    let productsState = [];
+    let teamUsersState = [];
     let currentCatalogTab = 'services';
 
     const baseUrl = window.location.protocol.startsWith('http') ? '' : 'http://localhost:3001';
@@ -3051,11 +3053,26 @@
         if (!data.success) return;
 
         professionalsState = data.professionals || [];
+        teamUsersState = data.users || [];
 
-        document.getElementById('team-quota-info').textContent = `Plano ${data.planTier} (${data.users.length} / ${data.maxUsers} Profissionais cadastrados)`;
+        const planNameLabel = data.planTier === 'FREE' ? 'Grátis' : (data.planTier === 'SINGLE_USER' ? 'Starter Individual' : 'Pro Negócios');
+        document.getElementById('team-quota-info').textContent = `Plano ${planNameLabel} (${data.users.length} / ${data.maxUsers} Profissionais cadastrados)`;
 
         const teamContainer = document.getElementById('team-cards-container');
         teamContainer.innerHTML = '';
+
+        if (data.planTier === 'FREE' || data.planTier === 'SINGLE_USER') {
+          const infoBanner = document.createElement('div');
+          infoBanner.style.cssText = 'grid-column: 1 / -1; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 12px 16px; font-size: 13px; color: #166534; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;';
+          infoBanner.innerHTML = `
+            <div>
+              <i class="fa-solid fa-circle-info" style="color: #008069; margin-right: 6px;"></i>
+              Seu plano atual (<strong>${planNameLabel}</strong>) inclui <strong>1 Profissional</strong>. Você pode editar seus dados, horários e serviços abaixo.
+            </div>
+            <button class="btn-primary" style="padding: 6px 14px; font-size: 12px;" onclick="openUpgradePlanModal()">Fazer Upgrade para Pro</button>
+          `;
+          teamContainer.appendChild(infoBanner);
+        }
 
         data.users.forEach(u => {
           const card = document.createElement('div');
@@ -3103,8 +3120,8 @@
 
             <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--wa-card-border); padding-top: 14px; gap: 8px; flex-wrap: wrap;">
               <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                <button class="btn-secondary" style="padding: 7px 12px; font-size: 12.5px;" onclick='openEditUserModal(${JSON.stringify(u)})'><i class="fa-solid fa-user-pen"></i> Editar Dados</button>
-                ${profObj ? `<button class="btn-primary" style="padding: 7px 12px; font-size: 12.5px;" onclick='openProfSettingsModal(${JSON.stringify(profObj)})'><i class="fa-solid fa-gear"></i> Serviços & Horários</button>` : ''}
+                <button class="btn-secondary" style="padding: 7px 12px; font-size: 12.5px;" onclick="openEditUserModalById('${u.id}')"><i class="fa-solid fa-user-pen"></i> Editar Dados</button>
+                ${profObj ? `<button class="btn-primary" style="padding: 7px 12px; font-size: 12.5px;" onclick="openProfSettingsModalById('${profObj.id}')"><i class="fa-solid fa-gear"></i> Serviços & Horários</button>` : ''}
               </div>
               <button class="btn-danger" style="padding: 7px 12px; font-size: 12.5px;" onclick="deleteUserConfirm('${u.id}')"><i class="fa-solid fa-trash"></i> Remover</button>
             </div>
@@ -3114,6 +3131,16 @@
       } catch (err) {
         console.error('Erro ao carregar equipe:', err);
       }
+    }
+
+    function openEditUserModalById(userId) {
+      const user = teamUsersState.find(u => u.id === userId) || { id: userId, name: '', email: '', role: 'PROFESSIONAL' };
+      openEditUserModal(user);
+    }
+
+    function openProfSettingsModalById(profId) {
+      const prof = professionalsState.find(p => p.id === profId);
+      if (prof) openProfSettingsModal(prof);
     }
 
     function openEditUserModal(user) {
@@ -3149,7 +3176,7 @@
         });
         const data = await response.json();
         if (data.success) {
-          alert('Dados do profissional atualizados com sucesso!');
+          showToast('Dados do profissional atualizados com sucesso!');
           closeEditUserModal();
           loadTeamUsers();
           loadTenantData();
@@ -3176,7 +3203,7 @@
         const isChecked = handledList.length === 0 || handledList.includes(s.id);
         const lbl = document.createElement('label');
         lbl.style.cssText = 'display: flex; align-items: center; gap: 8px; font-size: 13.5px; cursor: pointer; color: var(--wa-text-main); font-weight: 500;';
-        lbl.innerHTML = `<input type="checkbox" class="prof-service-cb" value="${s.id}" ${isChecked ? 'checked' : ''} style="accent-color: var(--wa-green); width: 17px; height: 17px;">  ${s.name} <span style="color: #008069; font-weight: 700; margin-left: auto;">(R$ ${s.price.toFixed(2)})</span>`;
+        lbl.innerHTML = `<input type="checkbox" class="prof-service-cb" value="${s.id}" ${isChecked ? 'checked' : ''} style="accent-color: var(--wa-green); width: 17px; height: 17px;">  ${s.name} <span style="color: #008069; font-weight: 700; margin-left: auto;">(R$ ${Number(s.price).toFixed(2)})</span>`;
         checkboxesContainer.appendChild(lbl);
       });
 
@@ -3230,7 +3257,7 @@
         if (data.success) {
           closeProfSettingsModal();
           loadTeamUsers();
-          alert('Configurações e limites do profissional atualizados com sucesso!');
+          showToast('Configurações e limites do profissional atualizados com sucesso!');
         } else {
           alert('Erro ao salvar horários: ' + data.error);
         }
@@ -3266,7 +3293,7 @@
         });
         const data = await response.json();
         if (data.success) {
-          alert(`Profissional ${name} cadastrado com sucesso!`);
+          showToast(`Profissional ${name} cadastrado com sucesso!`);
           closeNewUserModal();
           loadTeamUsers();
           loadTenantData();
@@ -3283,7 +3310,10 @@
         try {
           const response = await fetch(`${baseUrl}/api/tenants/${currentTenantId}/users/${userId}`, { method: 'DELETE' });
           const data = await response.json();
-          if (data.success) loadTeamUsers();
+          if (data.success) {
+            showToast('Profissional removido com sucesso.');
+            loadTeamUsers();
+          }
         } catch (err) {
           alert('Erro ao remover usuário.');
         }
@@ -3296,20 +3326,31 @@
         const data = await response.json();
         if (data.success) {
           servicesState = data.services || [];
-          renderServicesGrid(data.services || []);
-          renderProductsGrid(data.products || []);
+          productsState = data.products || [];
+          renderServicesGrid(servicesState);
+          renderProductsGrid(productsState);
         }
       } catch (err) {
         console.error('Erro ao carregar catálogo:', err);
       }
     }
 
+    function openEditServiceModalById(srvId) {
+      const srv = servicesState.find(s => s.id === srvId);
+      if (srv) openEditServiceModal(srv);
+    }
+
+    function openEditProductModalById(prodId) {
+      const prod = productsState.find(p => p.id === prodId);
+      if (prod) openEditProductModal(prod);
+    }
+
     function renderServicesGrid(services) {
       const servicesGrid = document.getElementById('services-grid-container');
       servicesGrid.innerHTML = '';
 
-      if (services.length === 0) {
-        servicesGrid.innerHTML = '<p style="color: var(--wa-text-muted);">Nenhum serviço cadastrado ainda.</p>';
+      if (!services || services.length === 0) {
+        servicesGrid.innerHTML = '<p style="color: var(--wa-text-muted); grid-column: 1 / -1; padding: 20px 0;">Nenhum serviço cadastrado ainda. Clique em "Adicionar Novo Serviço" para criar seu primeiro serviço!</p>';
         return;
       }
 
@@ -3323,13 +3364,13 @@
         card.innerHTML = `
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h4 style="font-size: 15.5px; font-weight: 700; color: var(--wa-text-main);"> ${srv.name}</h4>
-            <span style="font-size: 11.5px; background: #f0f2f5; color: var(--wa-text-main); padding: 4px 10px; border-radius: 12px; font-weight: 600;">${srv.durationMinutes} min</span>
+            <span style="font-size: 11.5px; background: #f0f2f5; color: var(--wa-text-main); padding: 4px 10px; border-radius: 12px; font-weight: 600;">${srv.durationMinutes || 30} min</span>
           </div>
           <p style="color: var(--wa-text-muted); font-size: 13px; margin: 8px 0 14px 0;">${srv.description || 'Sem descrição.'}</p>
           <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--wa-card-border); padding-top: 12px;">
-            <div style="font-size: 18px; font-weight: 700; color: #008069;">R$ ${Number(srv.price).toFixed(2)}</div>
+            <div style="font-size: 18px; font-weight: 700; color: #008069;">R$ ${Number(srv.price || 0).toFixed(2)}</div>
             <div style="display: flex; gap: 8px;">
-              <button class="btn-secondary" style="padding: 6px 12px; font-size: 12px;" onclick='openEditServiceModal(${JSON.stringify(srv)})'><i class="fa-solid fa-pen"></i> Editar</button>
+              <button class="btn-secondary" style="padding: 6px 12px; font-size: 12px;" onclick="openEditServiceModalById('${srv.id}')"><i class="fa-solid fa-pen"></i> Editar</button>
               <button class="btn-danger" style="padding: 6px 12px; font-size: 12px;" onclick="deleteServiceConfirm('${srv.id}')"><i class="fa-solid fa-trash"></i></button>
             </div>
           </div>
@@ -3342,8 +3383,8 @@
       const productsGrid = document.getElementById('products-grid-container');
       productsGrid.innerHTML = '';
 
-      if (products.length === 0) {
-        productsGrid.innerHTML = '<p style="color: var(--wa-text-muted);">Nenhum produto cadastrado ainda.</p>';
+      if (!products || products.length === 0) {
+        productsGrid.innerHTML = '<p style="color: var(--wa-text-muted); grid-column: 1 / -1; padding: 20px 0;">Nenhum produto cadastrado ainda. Clique em "Adicionar Novo Produto" para cadastrar!</p>';
         return;
       }
 
@@ -3357,13 +3398,13 @@
         card.innerHTML = `
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h4 style="font-size: 15.5px; font-weight: 700; color: var(--wa-text-main);">🧴 ${prod.name}</h4>
-            <span style="font-size: 11.5px; background: #d9fdd3; color: #008069; padding: 4px 10px; border-radius: 12px; font-weight: 600;">Estoque: ${prod.stock} un</span>
+            <span style="font-size: 11.5px; background: #d9fdd3; color: #008069; padding: 4px 10px; border-radius: 12px; font-weight: 600;">Estoque: ${prod.stock || 0} un</span>
           </div>
           <p style="color: var(--wa-text-muted); font-size: 13px; margin: 8px 0 14px 0;">${prod.description || 'Sem descrição.'}</p>
           <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--wa-card-border); padding-top: 12px;">
-            <div style="font-size: 18px; font-weight: 700; color: #008069;">R$ ${Number(prod.price).toFixed(2)}</div>
+            <div style="font-size: 18px; font-weight: 700; color: #008069;">R$ ${Number(prod.price || 0).toFixed(2)}</div>
             <div style="display: flex; gap: 8px;">
-              <button class="btn-secondary" style="padding: 6px 12px; font-size: 12px;" onclick='openEditProductModal(${JSON.stringify(prod)})'><i class="fa-solid fa-pen"></i> Editar</button>
+              <button class="btn-secondary" style="padding: 6px 12px; font-size: 12px;" onclick="openEditProductModalById('${prod.id}')"><i class="fa-solid fa-pen"></i> Editar</button>
               <button class="btn-danger" style="padding: 6px 12px; font-size: 12px;" onclick="deleteProductConfirm('${prod.id}')"><i class="fa-solid fa-trash"></i></button>
             </div>
           </div>
@@ -3547,13 +3588,14 @@
 
     function openCreateItemModal() {
       document.getElementById('modal-item-id').value = '';
-      document.getElementById('modal-item-type').value = currentCatalogTab;
+      const type = currentCatalogTab || 'services';
+      document.getElementById('modal-item-type').value = type;
       document.getElementById('modal-item-name').value = '';
       document.getElementById('modal-item-price').value = '';
       document.getElementById('modal-item-desc').value = '';
 
-      if (currentCatalogTab === 'services') {
-        document.getElementById('modal-item-title').innerHTML = '<i class="fa-solid fa-briefcase" style="color: var(--primary);"></i> Novo Serviço';
+      if (type === 'services') {
+        document.getElementById('modal-item-title').innerHTML = '<i class="fa-solid fa-briefcase" style="color: var(--wa-green-dark);"></i> Novo Serviço';
         document.getElementById('modal-lbl-name').textContent = 'Nome do Serviço';
         document.getElementById('group-modal-duration').style.display = 'block';
         document.getElementById('group-modal-stock').style.display = 'none';
@@ -3570,13 +3612,14 @@
     }
 
     function openEditServiceModal(srv) {
+      if (!srv) return;
       document.getElementById('modal-item-id').value = srv.id;
       document.getElementById('modal-item-type').value = 'services';
-      document.getElementById('modal-item-title').innerHTML = '<i class="fa-solid fa-pen" style="color: var(--primary);"></i> Editar Serviço';
+      document.getElementById('modal-item-title').innerHTML = '<i class="fa-solid fa-pen" style="color: var(--wa-green-dark);"></i> Editar Serviço';
       document.getElementById('modal-lbl-name').textContent = 'Nome do Serviço';
-      document.getElementById('modal-item-name').value = srv.name;
-      document.getElementById('modal-item-price').value = srv.price;
-      document.getElementById('modal-item-duration').value = srv.durationMinutes;
+      document.getElementById('modal-item-name').value = srv.name || '';
+      document.getElementById('modal-item-price').value = srv.price !== undefined ? srv.price : '';
+      document.getElementById('modal-item-duration').value = srv.durationMinutes || 30;
       document.getElementById('modal-item-desc').value = srv.description || '';
 
       document.getElementById('group-modal-duration').style.display = 'block';
@@ -3586,13 +3629,14 @@
     }
 
     function openEditProductModal(prod) {
+      if (!prod) return;
       document.getElementById('modal-item-id').value = prod.id;
       document.getElementById('modal-item-type').value = 'products';
       document.getElementById('modal-item-title').innerHTML = '<i class="fa-solid fa-pen" style="color: var(--accent-purple);"></i> Editar Produto';
       document.getElementById('modal-lbl-name').textContent = 'Nome do Produto';
-      document.getElementById('modal-item-name').value = prod.name;
-      document.getElementById('modal-item-price').value = prod.price;
-      document.getElementById('modal-item-stock').value = prod.stock;
+      document.getElementById('modal-item-name').value = prod.name || '';
+      document.getElementById('modal-item-price').value = prod.price !== undefined ? prod.price : '';
+      document.getElementById('modal-item-stock').value = prod.stock || 10;
       document.getElementById('modal-item-desc').value = prod.description || '';
 
       document.getElementById('group-modal-duration').style.display = 'none';
@@ -3607,13 +3651,18 @@
 
     async function saveItemSubmit() {
       const id = document.getElementById('modal-item-id').value;
-      const type = document.getElementById('modal-item-type').value;
+      const type = document.getElementById('modal-item-type').value || currentCatalogTab || 'services';
       const name = document.getElementById('modal-item-name').value.trim();
-      const price = parseFloat(document.getElementById('modal-item-price').value);
+      const priceRaw = (document.getElementById('modal-item-price').value || '').trim().replace(',', '.');
+      const price = parseFloat(priceRaw);
       const description = document.getElementById('modal-item-desc').value.trim();
 
-      if (!name || isNaN(price)) {
-        alert('Por favor, informe o nome e o preço.');
+      if (!name) {
+        alert('Por favor, informe o nome do item.');
+        return;
+      }
+      if (isNaN(price) || price < 0) {
+        alert('Por favor, informe um preço válido (ex: 50.00 ou 0 para grátis).');
         return;
       }
 
@@ -3642,9 +3691,10 @@
         const data = await response.json();
         if (data.success) {
           closeItemModal();
+          showToast(id ? 'Item atualizado com sucesso!' : 'Novo item adicionado com sucesso!');
           loadServicesAndProducts();
         } else {
-          alert('Erro ao salvar item: ' + data.error);
+          alert('Erro ao salvar item: ' + (data.error || 'Erro desconhecido.'));
         }
       } catch (err) {
         alert('Erro ao conectar ao servidor.');
