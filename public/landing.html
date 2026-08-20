@@ -1,0 +1,1829 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WhatsApp Atendente IA - Automatize seus Agendamentos e Vendas 24/7</title>
+  
+  <!-- Fontes Google & FontAwesome Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <style>
+    :root {
+      /* PALETA OFICIAL WHATSAPP CLARO */
+      --wa-green: #00a884;
+      --wa-green-light: #25D366;
+      --wa-green-hover: #06cf9c;
+      --wa-green-dark: #008069;
+      --wa-teal: #128c7e;
+      --wa-light-bg: #f0f2f5;
+      --wa-card-bg: #ffffff;
+      --wa-card-border: #e9edef;
+      --wa-text-main: #111b21;
+      --wa-text-muted: #667781;
+      --wa-text-sub: #54656f;
+      --wa-pill-active: #d9fdd3;
+      --wa-pill-active-text: #008069;
+      --accent-amber: #d97706;
+      --radius-xl: 18px;
+      --radius-lg: 14px;
+      --radius-md: 10px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background-color: var(--wa-light-bg);
+      color: var(--wa-text-main);
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+
+    /* Container */
+    .container {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Navbar */
+    .navbar {
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--wa-card-border);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      padding: 16px 0;
+      transition: all 0.2s ease;
+    }
+
+    .nav-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--wa-text-main);
+    }
+
+    .brand-icon {
+      width: 42px;
+      height: 42px;
+      background: linear-gradient(135deg, var(--wa-green-light), var(--wa-green-dark));
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      color: white;
+      box-shadow: 0 4px 14px rgba(0, 168, 132, 0.35);
+    }
+
+    .brand-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .brand-badge {
+      background: var(--wa-pill-active);
+      color: var(--wa-pill-active-text);
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 10px;
+      text-transform: uppercase;
+      margin-left: 6px;
+    }
+
+    .nav-menu {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      list-style: none;
+    }
+
+    @media (max-width: 992px) {
+      .nav-menu {
+        display: none;
+      }
+    }
+
+    .nav-link {
+      text-decoration: none;
+      color: var(--wa-text-sub);
+      font-size: 14.5px;
+      font-weight: 600;
+      transition: color 0.2s ease;
+    }
+
+    .nav-link:hover {
+      color: var(--wa-green-dark);
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn-login {
+      text-decoration: none;
+      color: var(--wa-text-main);
+      padding: 10px 18px;
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      font-weight: 600;
+      border: 1px solid var(--wa-card-border);
+      background: #ffffff;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-login:hover {
+      background: #f8fafc;
+      border-color: var(--wa-green);
+      color: var(--wa-green-dark);
+    }
+
+    .btn-primary {
+      text-decoration: none;
+      background: var(--wa-green);
+      color: white;
+      padding: 11px 22px;
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 14px rgba(0, 168, 132, 0.3);
+    }
+
+    .btn-primary:hover {
+      background: var(--wa-green-dark);
+      transform: translateY(-1px);
+    }
+
+    .btn-lg {
+      padding: 16px 32px;
+      font-size: 16px;
+      border-radius: var(--radius-lg);
+    }
+
+    /* Hero Section */
+    .hero-section {
+      padding: 70px 0 60px 0;
+      background-image: radial-gradient(circle at 50% -10%, rgba(0, 168, 132, 0.12) 0%, transparent 70%);
+      position: relative;
+    }
+
+    .hero-content {
+      text-align: center;
+      max-width: 880px;
+      margin: 0 auto 40px auto;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--wa-pill-active);
+      color: var(--wa-pill-active-text);
+      padding: 7px 18px;
+      border-radius: 50px;
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 20px;
+      border: 1px solid rgba(0, 168, 132, 0.25);
+    }
+
+    .hero-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 50px;
+      font-weight: 800;
+      line-height: 1.14;
+      letter-spacing: -1px;
+      color: var(--wa-text-main);
+      margin-bottom: 20px;
+    }
+
+    .hero-title span {
+      color: var(--wa-green-dark);
+      background: linear-gradient(135deg, var(--wa-green-dark), var(--wa-green));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    @media (max-width: 768px) {
+      .hero-title {
+        font-size: 34px;
+      }
+    }
+
+    .hero-subtitle {
+      font-size: 18px;
+      color: var(--wa-text-muted);
+      line-height: 1.6;
+      margin-bottom: 32px;
+      max-width: 760px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .hero-cta-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 28px;
+    }
+
+    .hero-social-proof {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 24px;
+      font-size: 13.5px;
+      color: var(--wa-text-sub);
+      flex-wrap: wrap;
+    }
+
+    .hero-social-proof span {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .hero-social-proof i {
+      color: #f59e0b;
+    }
+
+    /* Hero Banner Image Showcase */
+    .hero-showcase {
+      max-width: 1060px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    .hero-image-wrapper {
+      background: var(--wa-card-bg);
+      border: 1px solid var(--wa-card-border);
+      border-radius: var(--radius-xl);
+      padding: 12px;
+      box-shadow: 0 20px 50px rgba(11, 20, 26, 0.12);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .hero-image-wrapper img {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: var(--radius-lg);
+    }
+
+    /* Floating Badges */
+    .floating-card {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--wa-card-border);
+      padding: 12px 18px;
+      border-radius: var(--radius-md);
+      box-shadow: 0 12px 30px rgba(11, 20, 26, 0.12);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+      font-weight: 700;
+      animation: float 4s ease-in-out infinite;
+      z-index: 10;
+    }
+
+    .floating-card.left {
+      bottom: 24px;
+      left: -20px;
+      animation-delay: 0s;
+    }
+
+    .floating-card.right {
+      top: 30px;
+      right: -20px;
+      animation-delay: 2s;
+    }
+
+    @media (max-width: 900px) {
+      .floating-card {
+        display: none;
+      }
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-8px); }
+    }
+
+    .floating-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .icon-green {
+      background: linear-gradient(135deg, var(--wa-green-light), var(--wa-green-dark));
+    }
+
+    .icon-blue {
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    }
+
+    /* Logos Bar */
+    .logos-bar {
+      padding: 40px 0;
+      border-top: 1px solid var(--wa-card-border);
+      border-bottom: 1px solid var(--wa-card-border);
+      background: #ffffff;
+      margin-top: 60px;
+      text-align: center;
+    }
+
+    .logos-title {
+      font-size: 13.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--wa-text-muted);
+      margin-bottom: 20px;
+    }
+
+    .logos-grid {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 36px;
+      flex-wrap: wrap;
+    }
+
+    .logo-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14.5px;
+      font-weight: 700;
+      color: var(--wa-text-sub);
+    }
+
+    .logo-item i {
+      color: var(--wa-green);
+      font-size: 18px;
+    }
+
+    /* Section General */
+    .section {
+      padding: 80px 0;
+    }
+
+    .section-header {
+      text-align: center;
+      max-width: 720px;
+      margin: 0 auto 50px auto;
+    }
+
+    .section-tag {
+      display: inline-block;
+      background: var(--wa-pill-active);
+      color: var(--wa-pill-active-text);
+      font-size: 12px;
+      font-weight: 800;
+      padding: 4px 14px;
+      border-radius: 50px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 36px;
+      font-weight: 800;
+      letter-spacing: -0.8px;
+      color: var(--wa-text-main);
+      margin-bottom: 12px;
+    }
+
+    .section-desc {
+      font-size: 16px;
+      color: var(--wa-text-muted);
+      line-height: 1.6;
+    }
+
+    /* How it works */
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 28px;
+    }
+
+    @media (max-width: 860px) {
+      .steps-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .step-card {
+      background: var(--wa-card-bg);
+      border: 1px solid var(--wa-card-border);
+      border-radius: var(--radius-xl);
+      padding: 36px 28px;
+      text-align: left;
+      position: relative;
+      box-shadow: 0 4px 16px rgba(11, 20, 26, 0.04);
+      transition: all 0.25s ease;
+    }
+
+    .step-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 28px rgba(11, 20, 26, 0.08);
+      border-color: #cbd5e1;
+    }
+
+    .step-number {
+      font-family: 'Outfit', sans-serif;
+      font-size: 44px;
+      font-weight: 800;
+      color: #e2e8f0;
+      line-height: 1;
+      margin-bottom: 16px;
+    }
+
+    .step-icon {
+      width: 52px;
+      height: 52px;
+      background: var(--wa-pill-active);
+      color: var(--wa-green-dark);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      margin-bottom: 20px;
+    }
+
+    .step-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: var(--wa-text-main);
+    }
+
+    .step-text {
+      font-size: 14.5px;
+      color: var(--wa-text-muted);
+      line-height: 1.5;
+    }
+
+    /* Live Chat Simulation Section */
+    .demo-section {
+      background: #ffffff;
+      border-top: 1px solid var(--wa-card-border);
+      border-bottom: 1px solid var(--wa-card-border);
+      padding: 80px 0;
+    }
+
+    .demo-wrapper {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+      align-items: center;
+    }
+
+    @media (max-width: 900px) {
+      .demo-wrapper {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .demo-info h3 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 32px;
+      font-weight: 800;
+      margin-bottom: 16px;
+      letter-spacing: -0.5px;
+    }
+
+    .demo-feature-list {
+      list-style: none;
+      margin: 24px 0 32px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .demo-feature-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-size: 15px;
+      color: var(--wa-text-sub);
+    }
+
+    .demo-feature-item i {
+      color: var(--wa-green);
+      font-size: 18px;
+      margin-top: 2px;
+    }
+
+    /* Phone Mockup */
+    .phone-mockup {
+      background: #111b21;
+      border-radius: 36px;
+      padding: 14px;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.25);
+      border: 4px solid #334155;
+      max-width: 380px;
+      margin: 0 auto;
+    }
+
+    .phone-screen {
+      background: #efeae2;
+      border-radius: 26px;
+      overflow: hidden;
+      position: relative;
+      min-height: 520px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .wa-chat-header {
+      background: var(--wa-teal);
+      color: white;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .wa-chat-avatar {
+      width: 36px;
+      height: 36px;
+      background: #ffffff;
+      color: var(--wa-teal);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .wa-chat-name {
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .wa-chat-status {
+      font-size: 11px;
+      opacity: 0.85;
+    }
+
+    .wa-chat-body {
+      padding: 16px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex-grow: 1;
+    }
+
+    .chat-bubble {
+      max-width: 82%;
+      padding: 9px 12px;
+      border-radius: 10px;
+      font-size: 12.5px;
+      line-height: 1.4;
+      position: relative;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+
+    .bubble-user {
+      background: var(--wa-pill-active);
+      align-self: flex-end;
+      border-top-right-radius: 2px;
+    }
+
+    .bubble-bot {
+      background: #ffffff;
+      align-self: flex-start;
+      border-top-left-radius: 2px;
+    }
+
+    .bubble-time {
+      font-size: 10px;
+      color: #8696a0;
+      text-align: right;
+      margin-top: 3px;
+    }
+
+    .audio-player-mock {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #e2f7cb;
+      padding: 6px 10px;
+      border-radius: 8px;
+      margin-top: 4px;
+    }
+
+    .audio-btn {
+      width: 24px;
+      height: 24px;
+      background: var(--wa-green-dark);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+    }
+
+    .audio-waves {
+      flex-grow: 1;
+      height: 10px;
+      background: repeating-linear-gradient(90deg, #54656f, #54656f 2px, transparent 2px, transparent 4px);
+      opacity: 0.6;
+    }
+
+    /* Features Grid */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    @media (max-width: 900px) {
+      .features-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .feature-card {
+      background: var(--wa-card-bg);
+      border: 1px solid var(--wa-card-border);
+      border-radius: var(--radius-xl);
+      padding: 32px 26px;
+      box-shadow: 0 4px 16px rgba(11, 20, 26, 0.04);
+      transition: all 0.25s ease;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 28px rgba(11, 20, 26, 0.08);
+      border-color: #cbd5e1;
+    }
+
+    .feature-icon-box {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-md);
+      background: var(--wa-pill-active);
+      color: var(--wa-green-dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      margin-bottom: 20px;
+    }
+
+    .feature-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 19px;
+      font-weight: 700;
+      color: var(--wa-text-main);
+      margin-bottom: 8px;
+    }
+
+    .feature-desc {
+      font-size: 14px;
+      color: var(--wa-text-muted);
+      line-height: 1.5;
+    }
+
+    /* Pricing Section */
+    .pricing-section {
+      background: #ffffff;
+      border-top: 1px solid var(--wa-card-border);
+      border-bottom: 1px solid var(--wa-card-border);
+      padding: 80px 0;
+    }
+
+    .billing-toggle-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 36px;
+    }
+
+    .toggle-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--wa-text-muted);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .toggle-label.active {
+      color: var(--wa-text-main);
+      font-weight: 700;
+    }
+
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 52px;
+      height: 28px;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #e2e8f0;
+      transition: .3s;
+      border-radius: 34px;
+    }
+
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      transition: .3s;
+      border-radius: 50%;
+    }
+
+    input:checked + .toggle-slider {
+      background-color: var(--wa-green);
+    }
+
+    input:checked + .toggle-slider:before {
+      transform: translateX(24px);
+    }
+
+    .discount-badge {
+      background: #fef3c7;
+      color: #b45309;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      border: 1px solid #fde68a;
+    }
+
+    .plans-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      max-width: 1060px;
+      margin: 0 auto 20px auto;
+    }
+
+    @media (max-width: 992px) {
+      .plans-grid {
+        grid-template-columns: 1fr;
+        max-width: 440px;
+      }
+    }
+
+    .plan-card {
+      background: var(--wa-card-bg);
+      border: 1px solid var(--wa-card-border);
+      border-radius: var(--radius-xl);
+      padding: 28px 22px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      transition: all 0.25s ease;
+      box-shadow: 0 4px 16px rgba(11, 20, 26, 0.05);
+    }
+
+    .plan-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 28px rgba(11, 20, 26, 0.1);
+      border-color: #cbd5e1;
+    }
+
+    .plan-card.popular {
+      border-color: var(--wa-green);
+      background: linear-gradient(180deg, #f0fdf4 0%, #ffffff 100%);
+      box-shadow: 0 0 0 2px var(--wa-green), 0 12px 30px rgba(0, 168, 132, 0.15);
+    }
+
+    .plan-badge {
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--wa-green);
+      color: white;
+      font-size: 10.5px;
+      font-weight: 800;
+      padding: 4px 12px;
+      border-radius: 50px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      box-shadow: 0 4px 10px rgba(0, 168, 132, 0.35);
+      white-space: nowrap;
+    }
+
+    .plan-header {
+      margin-bottom: 14px;
+    }
+
+    .plan-name {
+      font-family: 'Outfit', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--wa-text-main);
+      margin-bottom: 4px;
+    }
+
+    .plan-tagline {
+      font-size: 12.5px;
+      color: var(--wa-text-muted);
+      min-height: 36px;
+      line-height: 1.4;
+    }
+
+    .plan-price-wrapper {
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--wa-card-border);
+    }
+
+    .price-currency {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--wa-text-muted);
+      vertical-align: top;
+      margin-right: 2px;
+    }
+
+    .price-amount {
+      font-family: 'Outfit', sans-serif;
+      font-size: 38px;
+      font-weight: 800;
+      letter-spacing: -1px;
+      color: var(--wa-text-main);
+    }
+
+    .price-period {
+      font-size: 12.5px;
+      color: var(--wa-text-muted);
+    }
+
+    .price-subtext {
+      font-size: 11.5px;
+      color: var(--wa-green-dark);
+      margin-top: 4px;
+      font-weight: 700;
+    }
+
+    .plan-features {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 26px;
+      flex-grow: 1;
+    }
+
+    .plan-feature-item {
+      font-size: 13px;
+      color: var(--wa-text-sub);
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      line-height: 1.35;
+    }
+
+    .plan-feature-item i {
+      color: var(--wa-green);
+      font-size: 13px;
+      margin-top: 2px;
+      flex-shrink: 0;
+    }
+
+    .btn-plan-action {
+      width: 100%;
+      padding: 12px;
+      border-radius: var(--radius-md);
+      font-weight: 700;
+      font-size: 13.5px;
+      border: 1px solid var(--wa-card-border);
+      background: #f8fafc;
+      color: var(--wa-text-main);
+      cursor: pointer;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-plan-action:hover {
+      background: #e2e8f0;
+    }
+
+    .plan-card.popular .btn-plan-action {
+      background: var(--wa-green);
+      border-color: var(--wa-green);
+      color: white;
+      box-shadow: 0 4px 12px rgba(0, 168, 132, 0.25);
+    }
+
+    .plan-card.popular .btn-plan-action:hover {
+      background: var(--wa-green-dark);
+    }
+
+    /* Testimonials */
+    .testimonials-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    @media (max-width: 900px) {
+      .testimonials-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .testimonial-card {
+      background: var(--wa-card-bg);
+      border: 1px solid var(--wa-card-border);
+      border-radius: var(--radius-xl);
+      padding: 30px 24px;
+      box-shadow: 0 4px 16px rgba(11, 20, 26, 0.04);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .stars {
+      color: #f59e0b;
+      font-size: 14px;
+      margin-bottom: 14px;
+      display: flex;
+      gap: 3px;
+    }
+
+    .testimonial-quote {
+      font-size: 14.5px;
+      color: var(--wa-text-main);
+      line-height: 1.6;
+      font-style: italic;
+      margin-bottom: 20px;
+    }
+
+    .testimonial-author {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .author-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--wa-pill-active);
+      color: var(--wa-green-dark);
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    .author-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--wa-text-main);
+    }
+
+    .author-role {
+      font-size: 12px;
+      color: var(--wa-text-muted);
+    }
+
+    /* FAQ Section */
+    .faq-container {
+      max-width: 800px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .faq-item {
+      background: var(--wa-card-bg);
+      border: 1px solid var(--wa-card-border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      transition: all 0.2s ease;
+    }
+
+    .faq-question {
+      padding: 18px 22px;
+      font-size: 15.5px;
+      font-weight: 700;
+      color: var(--wa-text-main);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .faq-question i {
+      color: var(--wa-green);
+      transition: transform 0.2s ease;
+    }
+
+    .faq-answer {
+      padding: 0 22px 18px 22px;
+      font-size: 14.5px;
+      color: var(--wa-text-muted);
+      line-height: 1.6;
+      display: none;
+    }
+
+    .faq-item.open .faq-answer {
+      display: block;
+    }
+
+    .faq-item.open .faq-question i {
+      transform: rotate(180deg);
+    }
+
+    /* Big CTA Banner */
+    .cta-banner {
+      background: linear-gradient(135deg, var(--wa-green-dark), #004d40);
+      color: white;
+      border-radius: var(--radius-xl);
+      padding: 60px 40px;
+      text-align: center;
+      margin: 40px 0 80px 0;
+      box-shadow: 0 20px 40px rgba(0, 128, 105, 0.25);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cta-banner h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 38px;
+      font-weight: 800;
+      margin-bottom: 14px;
+      letter-spacing: -0.5px;
+    }
+
+    .cta-banner p {
+      font-size: 17px;
+      opacity: 0.9;
+      max-width: 650px;
+      margin: 0 auto 30px auto;
+    }
+
+    .btn-cta-white {
+      background: white;
+      color: var(--wa-green-dark);
+      padding: 16px 36px;
+      border-radius: var(--radius-md);
+      font-size: 16px;
+      font-weight: 800;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    }
+
+    .btn-cta-white:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+    }
+
+    /* Footer */
+    .footer {
+      background: #ffffff;
+      border-top: 1px solid var(--wa-card-border);
+      padding: 60px 0 30px 0;
+      color: var(--wa-text-muted);
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 40px;
+      margin-bottom: 40px;
+    }
+
+    @media (max-width: 768px) {
+      .footer-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .footer-col h4 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--wa-text-main);
+      margin-bottom: 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .footer-links {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .footer-links a {
+      text-decoration: none;
+      color: var(--wa-text-muted);
+      font-size: 14px;
+      transition: color 0.2s ease;
+    }
+
+    .footer-links a:hover {
+      color: var(--wa-green-dark);
+    }
+
+    .footer-bottom {
+      border-top: 1px solid var(--wa-card-border);
+      padding-top: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="container nav-container">
+      <a href="/" class="brand">
+        <div class="brand-icon"><i class="fa-brands fa-whatsapp"></i></div>
+        <div>
+          <span class="brand-title">WhatsApp Atendente</span>
+          <span class="brand-badge">SaaS IA</span>
+        </div>
+      </a>
+
+      <ul class="nav-menu">
+        <li><a href="#como-funciona" class="nav-link">Como Funciona</a></li>
+        <li><a href="#recursos" class="nav-link">Vantagens</a></li>
+        <li><a href="#demonstracao" class="nav-link">Demonstração</a></li>
+        <li><a href="#planos" class="nav-link">Planos</a></li>
+        <li><a href="#depoimentos" class="nav-link">Depoimentos</a></li>
+        <li><a href="#faq" class="nav-link">FAQ</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <a href="/login.html" class="btn-login"><i class="fa-solid fa-right-to-bracket"></i> Entrar</a>
+        <a href="/register" class="btn-primary"><i class="fa-solid fa-bolt"></i> Criar Conta Grátis</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="container">
+      <div class="hero-content">
+        <div class="hero-badge"><i class="fa-solid fa-sparkles"></i> A Nova Era do Atendimento no WhatsApp</div>
+        <h1 class="hero-title">Sua Atendente de WhatsApp com IA que Trabalha 24h e <span>Lota sua Agenda</span></h1>
+        <p class="hero-subtitle">Atenda seus clientes instantaneamente, tire dúvidas com voz ultra-realista e faça agendamentos automáticos no WhatsApp sem você precisar encostar no celular.</p>
+        
+        <div class="hero-cta-row">
+          <a href="/register" class="btn-primary btn-lg"><i class="fa-solid fa-rocket"></i> Começar Grátis Agora</a>
+          <a href="#demonstracao" class="btn-login btn-lg"><i class="fa-solid fa-play"></i> Ver Como Funciona</a>
+        </div>
+
+        <div class="hero-social-proof">
+          <span><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i> <strong>4.9 / 5.0</strong></span>
+          <span>• <strong>+1.500</strong> Negócios Atendendo no Automático</span>
+          <span>• <strong>85%</strong> Menos Faltas e No-Shows</span>
+        </div>
+      </div>
+
+      <!-- Hero Visual Showcase -->
+      <div class="hero-showcase">
+        <div class="floating-card left">
+          <div class="floating-icon icon-green"><i class="fa-solid fa-calendar-check"></i></div>
+          <div>
+            <div>Novo Agendamento!</div>
+            <div style="font-size: 11.5px; font-weight: normal; color: var(--wa-text-muted);">Corte e Barba • Amanhã às 15:30</div>
+          </div>
+        </div>
+
+        <div class="floating-card right">
+          <div class="floating-icon icon-blue"><i class="fa-solid fa-bolt"></i></div>
+          <div>
+            <div>Resposta em 1.2s via Áudio</div>
+            <div style="font-size: 11.5px; font-weight: normal; color: var(--wa-text-muted);">Voz natural feminina ultra-realista</div>
+          </div>
+        </div>
+
+        <div class="hero-image-wrapper">
+          <img src="/assets/hero-banner.jpg" alt="WhatsApp Atendente com Inteligência Artificial para Negócios e Agendamentos">
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Logos / Segmentos Bar -->
+  <div class="logos-bar">
+    <div class="container">
+      <div class="logos-title">Perfeito para qualquer negócio que atende e agenda clientes</div>
+      <div class="logos-grid">
+        <div class="logo-item"><i class="fa-solid fa-scissors"></i> Salões de Beleza</div>
+        <div class="logo-item"><i class="fa-solid fa-chair"></i> Barbearias Modernas</div>
+        <div class="logo-item"><i class="fa-solid fa-user-doctor"></i> Clínicas Médicas</div>
+        <div class="logo-item"><i class="fa-solid fa-tooth"></i> Odontologia</div>
+        <div class="logo-item"><i class="fa-solid fa-spa"></i> Estética & Spa</div>
+        <div class="logo-item"><i class="fa-solid fa-paw"></i> Pet Shops & Veterinárias</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Como Funciona Section -->
+  <section class="section" id="como-funciona">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Passo a Passo Simples</span>
+        <h2 class="section-title">Como o WhatsApp Atendente Funciona?</h2>
+        <p class="section-desc">Em menos de 3 minutos seu estabelecimento já está pronto para receber e agendar clientes no piloto automático.</p>
+      </div>
+
+      <div class="steps-grid">
+        
+        <div class="step-card">
+          <div class="step-number">01</div>
+          <div class="step-icon"><i class="fa-solid fa-qrcode"></i></div>
+          <h3 class="step-title">Conecte seu WhatsApp</h3>
+          <p class="step-text">Basta escanear o QR Code no seu painel. Funciona direto no seu número atual de WhatsApp, sem precisar de aprovações demoradas.</p>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number">02</div>
+          <div class="step-icon"><i class="fa-solid fa-sliders"></i></div>
+          <h3 class="step-title">Cadastre seus Serviços & Equipe</h3>
+          <p class="step-text">Informe os preços, tempo de cada serviço e os horários de trabalho dos seus profissionais. A IA aprende tudo instantaneamente.</p>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number">03</div>
+          <div class="step-icon"><i class="fa-solid fa-robot"></i></div>
+          <h3 class="step-title">A IA Atende e Lota sua Agenda</h3>
+          <p class="step-text">A atendente conversa com os clientes com simpatia e naturalidade, consulta horários livres e confirma agendamentos 24 horas por dia.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Live Chat Simulator Section -->
+  <section class="demo-section" id="demonstracao">
+    <div class="container">
+      <div class="demo-wrapper">
+        
+        <div class="demo-info">
+          <span class="section-tag">Experiência Humanizada</span>
+          <h3>Uma conversa tão natural que seu cliente nem percebe que é IA</h3>
+          <p class="section-desc">Nossa IA não usa botões engessados nem menus robóticos. Ela entende gírias, áudios de voz, remarcações e cancelamentos de forma rápida e espontânea.</p>
+
+          <ul class="demo-feature-list">
+            <li class="demo-feature-item"><i class="fa-solid fa-circle-check"></i> <strong>Escuta e Responde Áudios:</strong> Converte a voz do cliente em texto e responde em áudio ultra-realista.</li>
+            <li class="demo-feature-item"><i class="fa-solid fa-circle-check"></i> <strong>Confirmação de Horários em Tempo Real:</strong> Checa a agenda dos profissionais antes de confirmar.</li>
+            <li class="demo-feature-item"><i class="fa-solid fa-circle-check"></i> <strong>Lembretes Automáticos Anti-No-Show:</strong> Envia mensagem 24h e 1h antes com confirmação em 1 clique.</li>
+          </ul>
+
+          <a href="/register" class="btn-primary"><i class="fa-solid fa-bolt"></i> Experimentar Grátis Agora</a>
+        </div>
+
+        <!-- Phone Mockup with Simulation -->
+        <div class="phone-mockup">
+          <div class="phone-screen">
+            <div class="wa-chat-header">
+              <div class="wa-chat-avatar"><i class="fa-solid fa-robot"></i></div>
+              <div>
+                <div class="wa-chat-name">Ana • Atendente IA</div>
+                <div class="wa-chat-status">online 24h</div>
+              </div>
+            </div>
+
+            <div class="wa-chat-body">
+              <div class="chat-bubble bubble-user">
+                Olá, queria saber se vocês têm horário para amanhã de manhã para cortar cabelo?
+                <div class="bubble-time">14:20</div>
+              </div>
+
+              <div class="chat-bubble bubble-bot">
+                Olá! Tudo bem? Temos sim! Amanhã pela manhã temos horários livres com o <strong>Lucas Silva</strong> às <strong>09:00</strong> e <strong>10:30</strong>. Qual fica melhor para você?
+                <div class="bubble-time">14:20</div>
+              </div>
+
+              <div class="chat-bubble bubble-user">
+                Pode ser às 09:00 com o Lucas!
+                <div class="bubble-time">14:21</div>
+              </div>
+
+              <div class="chat-bubble bubble-bot">
+                Excelente! Qual é o seu nome completo para confirmarmos o agendamento?
+                <div class="bubble-time">14:21</div>
+              </div>
+
+              <div class="chat-bubble bubble-user">
+                Iran Araujo
+                <div class="bubble-time">14:21</div>
+              </div>
+
+              <div class="chat-bubble bubble-bot">
+                Agendamento confirmado com sucesso, Iran! 🎉
+                <br><br>
+                ✂️ <strong>Corte Masculino</strong>
+                <br>👤 <strong>Profissional:</strong> Lucas Silva
+                <br>📅 <strong>Data:</strong> Amanhã às 09:00
+                <br><br>
+                Te enviaremos um lembrete antes do atendimento. Até lá!
+                <div class="bubble-time">14:21</div>
+              </div>
+
+              <div class="chat-bubble bubble-bot" style="background: #e7fedb; border: 1px dashed var(--wa-green);">
+                <div style="font-size: 11px; font-weight: 700; color: var(--wa-green-dark); margin-bottom: 2px;">
+                  <i class="fa-solid fa-volume-high"></i> Áudio Enviado pela IA:
+                </div>
+                <div class="audio-player-mock">
+                  <div class="audio-btn"><i class="fa-solid fa-play"></i></div>
+                  <div class="audio-waves"></div>
+                  <span style="font-size: 10px; color: #54656f;">0:08</span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Grid Section -->
+  <section class="section" id="recursos">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Vantagens Exclusivas</span>
+        <h2 class="section-title">Tudo o que seu negócio precisa para crescer</h2>
+        <p class="section-desc">Uma plataforma completa de automação desenvolvida sob medida para quem precisa de mais tempo e faturamento.</p>
+      </div>
+
+      <div class="features-grid">
+        
+        <div class="feature-card">
+          <div class="feature-icon-box"><i class="fa-solid fa-clock"></i></div>
+          <h3 class="feature-title">Atendimento 24h por Dia</h3>
+          <p class="feature-desc">Não perca mais clientes que mandam mensagem de noite ou no domingo. A IA responde na mesma hora e agenda o serviço.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon-box"><i class="fa-solid fa-microphone"></i></div>
+          <h3 class="feature-title">Compreensão de Áudios</h3>
+          <p class="feature-desc">Se o cliente enviar um áudio longo, a IA transcreve, entende o que ele precisa e responde sem você precisar ouvir nada.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon-box"><i class="fa-solid fa-bell"></i></div>
+          <h3 class="feature-title">Lembretes Anti-No-Show</h3>
+          <p class="feature-desc">Envio automático de lembretes 24h e 1h antes com confirmação direta pelo WhatsApp. Reduz faltas em até 85%.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon-box"><i class="fa-solid fa-users"></i></div>
+          <h3 class="feature-title">Múltiplos Profissionais</h3>
+          <p class="feature-desc">Gerencie a agenda de vários profissionais em uma única conta, cada um com seus horários, folgas e comissões.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon-box"><i class="fa-solid fa-hourglass-half"></i></div>
+          <h3 class="feature-title">Lista de Espera Inteligente</h3>
+          <p class="feature-desc">Quando um horário é cancelado, a IA notifica automaticamente o próximo cliente da fila para preencher o buraco na agenda.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon-box"><i class="fa-solid fa-chart-line"></i></div>
+          <h3 class="feature-title">Métricas & Faturamento</h3>
+          <p class="feature-desc">Painel gerencial em tempo real com receita estimada, taxa de ocupação, novos clientes e serviços mais procurados.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing Section -->
+  <section class="pricing-section" id="planos">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Planos Transparentes</span>
+        <h2 class="section-title">Escolha o plano ideal para seu negócio</h2>
+        <p class="section-desc">Comece no plano gratuito ou turbine com nossos planos profissionais com 7 dias de teste grátis.</p>
+      </div>
+
+      <!-- Billing Toggle Switch -->
+      <div class="billing-toggle-wrapper">
+        <span class="toggle-label active" id="label-monthly" onclick="setBillingPeriod('monthly')">Faturamento Mensal</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="billing-period-toggle" onchange="handlePeriodToggle(this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+        <span class="toggle-label" id="label-annual" onclick="setBillingPeriod('annual')">
+          Faturamento Anual <span class="discount-badge">20% OFF</span>
+        </span>
+      </div>
+
+      <!-- Plans 4 Cards -->
+      <div class="plans-grid">
+
+        <!-- Plano Free -->
+        <div class="plan-card">
+          <div class="plan-header">
+            <h3 class="plan-name">Plano Grátis</h3>
+            <p class="plan-tagline">Para conhecer e começar sem nenhum custo.</p>
+          </div>
+          <div class="plan-price-wrapper">
+            <span class="price-currency">R$</span>
+            <span class="price-amount" id="price-FREE">0</span>
+            <span class="price-period">/mês</span>
+            <div class="price-subtext">✨ 100% Gratuito Para Sempre</div>
+          </div>
+          <ul class="plan-features">
+            <li class="plan-feature-item"><i class="fa-solid fa-check"></i> <strong>Até 5 agendamentos por dia</strong></li>
+            <li class="plan-feature-item"><i class="fa-solid fa-check"></i> <strong>1 Profissional</strong> / 1 Usuário</li>
+            <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Atendente IA no WhatsApp</li>
+            <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Catálogo de serviços e produtos</li>
+            <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Página pública de agendamento</li>
+            <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Acesso vitalício sem mensalidade</li>
+          </ul>
+          <a href="/register?plan=FREE" class="btn-plan-action">Começar Grátis</a>
+        </div>
+
+        <!-- Plano Starter -->
+        <div class="plan-card">
+          <div class="plan-header">
+            <h3 class="plan-name">Starter Individual</h3>
+            <p class="plan-tagline">Para autônomos e independentes.</p>
+          </div>
+          <div class="plan-price-wrapper">
+            <span class="price-currency">R$</span>
+            <span class="price-amount" id="price-SINGLE_USER">97</span>
+            <span class="price-period">/mês</span>
+            <div class="price-subtext" id="subtext-SINGLE_USER">✨ 7 dias de teste grátis</div>
+          </div>
+          <ul class="plan-features">
+            <li class="plan-feature-item"><i class="fa-solid fa-check"></i> <strong>Agendamentos Ilimitados</strong></li>
+            <li class="plan-feature-item"><i class="fa-solid fa-check"></i> <strong>1 Profissional</strong> / 1 Usuário</li>
+            <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Atendente IA 24/7 no WhatsApp</li>
+            <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Lembretes automáticos 24h e 1h</li>
+            <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Catálogo completo & agenda online</li>
+            <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Suporte via WhatsApp</li>
+          </ul>
+          <a href="/register?plan=SINGLE_USER" class="btn-plan-action">Escolher Starter</a>
+        </div>
+
+        <!-- Plano Pro (Popular) -->
+        <div class="plan-card popular">
+          <div class="plan-badge">Mais Escolhido ⭐</div>
+          <div class="plan-header">
+            <h3 class="plan-name">Pro Negócios</h3>
+            <p class="plan-tagline">Para salões, barbearias e clínicas.</p>
+          </div>
+          <div class="plan-price-wrapper">
+            <span class="price-currency">R$</span>
+            <span class="price-amount" id="price-MULTI_USER">197</span>
+            <span class="price-period">/mês</span>
+            <div class="price-subtext" id="subtext-MULTI_USER">✨ 7 dias de teste grátis</div>
+          </div>
+          <ul class="plan-features">
+            <li class="plan-feature-item"><i class="fa-solid fa-check"></i> <strong>Agendamentos Ilimitados</strong></li>
+            <li class="plan-feature-item"><i class="fa-solid fa-check"></i> <strong>Até 5 Profissionais</strong> independentes</li>
+            <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Atendente IA com Respostas Naturais</li>
+            <li class="plan-feature-item"><i class="fa-solid fa-check"></i> <strong>Envio de Áudio por Voz (TTS)</strong></li>
+            <li class="plan-feature-item"><i class="fa-solid fa-check"></i> <strong>Lista de Espera Inteligente</strong></li>
+            <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Bloqueio de Folgas e Intervalos</li>
+            <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Métricas Financeiras e Faturamento</li>
+            <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Suporte Prioritário</li>
+          </ul>
+          <a href="/register?plan=MULTI_USER" class="btn-plan-action">Escolher Pro</a>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials Section -->
+  <section class="section" id="depoimentos">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Depoimentos Reais</span>
+        <h2 class="section-title">O que dizem os donos de negócios</h2>
+        <p class="section-desc">Empresas que multiplicaram seus agendamentos e recuperaram seu tempo livre.</p>
+      </div>
+
+      <div class="testimonials-grid">
+        
+        <div class="testimonial-card">
+          <div>
+            <div class="stars">
+              <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+            </div>
+            <p class="testimonial-quote">"Minha barbearia nunca esteve tão organizada. A IA atende os clientes e marca horários enquanto eu estou cortando cabelo. Aumentamos o faturamento em mais de 35% no primeiro mês!"</p>
+          </div>
+          <div class="testimonial-author">
+            <div class="author-avatar">CM</div>
+            <div>
+              <div class="author-name">Carlos Mendes</div>
+              <div class="author-role">Proprietário da Barbearia Vintage</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="testimonial-card">
+          <div>
+            <div class="stars">
+              <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+            </div>
+            <p class="testimonial-quote">"As faltas diminuíram quase a zero por causa dos lembretes automáticos com 1h de antecedência. Os clientes adoram a agilidade para marcar."</p>
+          </div>
+          <div class="testimonial-author">
+            <div class="author-avatar">JR</div>
+            <div>
+              <div class="author-name">Dra. Juliana Rocha</div>
+              <div class="author-role">Clínica de Estética Avançada</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="testimonial-card">
+          <div>
+            <div class="stars">
+              <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+            </div>
+            <p class="testimonial-quote">"A voz enviada pela IA é tão natural que os clientes nem percebem que não é uma pessoa de verdade. Foi a melhor contratação que já fiz para o meu salão!"</p>
+          </div>
+          <div class="testimonial-author">
+            <div class="author-avatar">MV</div>
+            <div>
+              <div class="author-name">Marcos Vinicius</div>
+              <div class="author-role">Studio Prime Hair</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ Section -->
+  <section class="section" id="faq" style="background: #ffffff; border-top: 1px solid var(--wa-card-border);">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Tire suas Dúvidas</span>
+        <h2 class="section-title">Perguntas Frequentes</h2>
+        <p class="section-desc">Tudo o que você precisa saber para começar com total tranquilidade.</p>
+      </div>
+
+      <div class="faq-container">
+        
+        <div class="faq-item open">
+          <div class="faq-question" onclick="toggleFaq(this)">
+            <span>Preciso deixar meu computador ou celular ligado?</span>
+            <i class="fa-solid fa-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            Não! Nosso sistema roda 100% na nuvem. Uma vez conectado via QR Code, sua atendente IA continuará respondendo seus clientes 24 horas por dia, 7 dias por semana, mesmo que seu celular esteja desligado ou sem internet.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
+            <span>Posso usar meu número atual do WhatsApp?</span>
+            <i class="fa-solid fa-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            Sim! Você pode conectar tanto o seu número atual do WhatsApp (pessoal ou Business) quanto um número exclusivo para o seu estabelecimento.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
+            <span>Como funciona a lista de espera automática?</span>
+            <i class="fa-solid fa-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            Quando um dia ou profissional estiver com a agenda lotada, a IA oferece a opção do cliente entrar na lista de espera. Se outro cliente cancelar, a IA notifica o primeiro da fila instantaneamente no WhatsApp para preencher o horário vago.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
+            <span>E se eu quiser assumir o atendimento no WhatsApp?</span>
+            <i class="fa-solid fa-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            Você tem controle total! Você pode responder qualquer conversa manualmente a qualquer momento pelo seu celular. A IA detecta e não atrapalha o seu atendimento.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
+            <span>Como funciona o teste grátis de 7 dias?</span>
+            <i class="fa-solid fa-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            Você cria sua conta em menos de 1 minuto sem precisar de cartão de crédito e já começa a usar todos os recursos. Se gostar, pode escolher o plano que melhor atende o seu negócio.
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Big CTA Banner -->
+      <div class="cta-banner">
+        <h2>Pronto para lotar sua agenda no piloto automático?</h2>
+        <p>Junte-se a centenas de estabelecimentos que já economizam tempo e aumentaram seu faturamento com o WhatsApp Atendente IA.</p>
+        <a href="/register" class="btn-cta-white"><i class="fa-solid fa-bolt"></i> Criar Conta Grátis em 1 Minuto</a>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        
+        <div class="footer-col">
+          <a href="/" class="brand" style="margin-bottom: 16px; display: inline-flex;">
+            <div class="brand-icon"><i class="fa-brands fa-whatsapp"></i></div>
+            <div>
+              <span class="brand-title">WhatsApp Atendente</span>
+              <span class="brand-badge">SaaS IA</span>
+            </div>
+          </a>
+          <p style="font-size: 13.5px; line-height: 1.6; max-width: 320px;">
+            Plataforma de inteligência artificial para atendimento, agendamentos automáticos e gestão de clientes pelo WhatsApp.
+          </p>
+        </div>
+
+        <div class="footer-col">
+          <h4>Navegação</h4>
+          <ul class="footer-links">
+            <li><a href="#como-funciona">Como Funciona</a></li>
+            <li><a href="#recursos">Vantagens</a></li>
+            <li><a href="#demonstracao">Demonstração</a></li>
+            <li><a href="#planos">Planos & Preços</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Plataforma</h4>
+          <ul class="footer-links">
+            <li><a href="/login.html">Painel de Acesso</a></li>
+            <li><a href="/register">Cadastre-se Grátis</a></li>
+            <li><a href="/admin">Portal Master Admin</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Segurança</h4>
+          <ul class="footer-links">
+            <li><span style="font-size: 13.5px; color: var(--wa-green-dark); font-weight: 700;"><i class="fa-solid fa-shield-halved"></i> 100% Criptografado</span></li>
+            <li><span style="font-size: 13px;">Conformidade LGPD</span></li>
+            <li><span style="font-size: 13px;">Suporte VIP 24h</span></li>
+          </ul>
+        </div>
+
+      </div>
+
+      <div class="footer-bottom">
+        <div>© 2026 WhatsApp Atendente IA. Todos os direitos reservados.</div>
+        <div style="display: flex; gap: 20px;">
+          <span>Desenvolvido com IA de Alta Performance</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    let currentPeriod = 'monthly';
+    const planPrices = {
+      FREE: { monthly: 0, annual: 0 },
+      SINGLE_USER: { monthly: 97, annual: 77 },
+      MULTI_USER: { monthly: 197, annual: 157 }
+    };
+
+    function handlePeriodToggle(isAnnual) {
+      currentPeriod = isAnnual ? 'annual' : 'monthly';
+      updatePricingUI();
+    }
+
+    function setBillingPeriod(period) {
+      currentPeriod = period;
+      document.getElementById('billing-period-toggle').checked = (period === 'annual');
+      updatePricingUI();
+    }
+
+    function updatePricingUI() {
+      const isAnnual = currentPeriod === 'annual';
+      document.getElementById('label-monthly').classList.toggle('active', !isAnnual);
+      document.getElementById('label-annual').classList.toggle('active', isAnnual);
+
+      Object.keys(planPrices).forEach(planKey => {
+        const priceEl = document.getElementById(`price-${planKey}`);
+        const subtextEl = document.getElementById(`subtext-${planKey}`);
+        const price = isAnnual ? planPrices[planKey].annual : planPrices[planKey].monthly;
+        if (priceEl) priceEl.textContent = price;
+        if (subtextEl) {
+          if (planKey !== 'FREE') {
+            subtextEl.textContent = isAnnual 
+              ? `Cobrado anualmente (Economize R$ ${(planPrices[planKey].monthly - planPrices[planKey].annual) * 12}/ano)` 
+              : '✨ 7 dias de teste grátis';
+          }
+        }
+      });
+    }
+
+    function toggleFaq(el) {
+      const item = el.parentElement;
+      item.classList.toggle('open');
+    }
+  </script>
+
+</body>
+</html>

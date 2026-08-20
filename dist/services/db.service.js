@@ -589,8 +589,6 @@ class DbRepository {
         let maxUsers = 1;
         if (planTier === 'MULTI_USER')
             maxUsers = 5;
-        if (planTier === 'ENTERPRISE')
-            maxUsers = 999;
         tenant.planTier = planTier;
         tenant.maxUsers = maxUsers;
         this.saveData();
@@ -721,11 +719,33 @@ class DbRepository {
         return false;
     }
     // -------------------------------------------------------
-    // LIMITE DIÁRIO DE AGENDAMENTOS POR PROFISSIONAL
+    // LIMITE DIÁRIO DE AGENDAMENTOS POR PROFISSIONAL & TENANT
     // -------------------------------------------------------
     async getDailyAppointmentCount(professionalId, dateStr) {
         const appts = await this.getAppointmentsForProfessional(professionalId, dateStr);
         return appts.filter(a => a.status !== 'CANCELLED').length;
+    }
+    async getDailyAppointmentCountForTenant(tenantId, dateStr) {
+        return this.inMemoryAppointments.filter(a => {
+            if (a.tenantId !== tenantId)
+                return false;
+            if (a.status === 'CANCELLED')
+                return false;
+            const st = (a.startTime instanceof Date) ? a.startTime : new Date(a.startTime);
+            const parts = new Intl.DateTimeFormat('en-CA', {
+                timeZone: 'America/Sao_Paulo',
+                year: 'numeric', month: '2-digit', day: '2-digit'
+            }).formatToParts(st);
+            const apptDateStr = `${parts.find(p => p.type === 'year')?.value}-${parts.find(p => p.type === 'month')?.value}-${parts.find(p => p.type === 'day')?.value}`;
+            return apptDateStr === dateStr;
+        }).length;
+    }
+    getTenantDailyAppointmentLimit(tenant) {
+        if (!tenant)
+            return undefined;
+        if (tenant.planTier === 'FREE')
+            return 5; // Limite de 5 agendamentos por dia no plano Free
+        return undefined; // Ilimitado para Starter e Pro
     }
     // -------------------------------------------------------
     // CADASTRO DE NOVO TENANT & PROPRIETÁRIO (SAAS ONBOARDING)
@@ -748,7 +768,7 @@ class DbRepository {
             slug = `${baseSlug}-${Math.floor(100 + Math.random() * 900)}`;
         }
         const plan = data.planTier || 'FREE';
-        const maxUsers = plan === 'FREE' || plan === 'SINGLE_USER' ? 1 : plan === 'MULTI_USER' ? 5 : 999;
+        const maxUsers = plan === 'FREE' || plan === 'SINGLE_USER' ? 1 : 5;
         let systemPrompt = `Somos a ${data.companyName}. Atenda os clientes com profissionalismo, agilidade e excelência no agendamento de horários.`;
         if (data.segment === 'barbearia') {
             systemPrompt = `Somos a ${data.companyName}, uma barbearia moderna. Atenda o cliente com agilidade, simpatia e foco na excelência dos cortes masculinos e barba.`;

@@ -278,24 +278,16 @@
       border: 1px solid #fde68a;
     }
 
-    /* Cards de Planos (4 Grid) */
+    /* Cards de Planos (3 Grid) */
     .plans-grid {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 20px;
-      margin-bottom: 50px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      max-width: 1060px;
+      margin: 0 auto 50px auto;
     }
 
-    @media (max-width: 1100px) {
-      .plans-grid {
-        grid-template-columns: repeat(2, 1fr);
-        max-width: 780px;
-        margin-left: auto;
-        margin-right: auto;
-      }
-    }
-
-    @media (max-width: 640px) {
+    @media (max-width: 992px) {
       .plans-grid {
         grid-template-columns: 1fr;
         max-width: 440px;
@@ -839,14 +831,11 @@
       </span>
     </div>
 
-    <!-- Cards de Planos (4 Grid) -->
-    <div class="plans-grid" id="plans-container">
-
       <!-- Plano Free / Grátis -->
       <div class="plan-card" id="plan-card-FREE" onclick="selectPlan('FREE', true)">
         <div class="plan-header">
           <h3 class="plan-name">Plano Grátis</h3>
-          <p class="plan-tagline">Para conhecer e começar sem custos.</p>
+          <p class="plan-tagline">Para conhecer e começar sem nenhum custo.</p>
         </div>
         <div class="plan-price-wrapper">
           <span class="price-currency">R$</span>
@@ -855,11 +844,12 @@
           <div class="price-subtext" id="subtext-FREE">✨ 100% Gratuito Para Sempre</div>
         </div>
         <ul class="plan-features">
+          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> <strong>Até 5 agendamentos por dia</strong></li>
           <li class="plan-feature-item"><i class="fa-solid fa-check"></i> <strong>1 Profissional</strong> / 1 Usuário</li>
           <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Atendente IA no WhatsApp</li>
-          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Agendamentos básicos</li>
           <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Catálogo de serviços e produtos</li>
           <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Página pública de agendamento</li>
+          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Acesso vitalício sem mensalidade</li>
         </ul>
         <button type="button" class="btn-select-plan" id="btn-FREE" data-plan="FREE">
           Começar Grátis
@@ -879,9 +869,9 @@
           <div class="price-subtext" id="subtext-SINGLE_USER">✨ 7 dias de teste grátis</div>
         </div>
         <ul class="plan-features">
+          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> <strong>Agendamentos Ilimitados</strong></li>
           <li class="plan-feature-item"><i class="fa-solid fa-check"></i> <strong>1 Profissional</strong> / 1 Usuário</li>
           <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Atendente IA 24/7 no WhatsApp</li>
-          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Agendamentos Ilimitados</li>
           <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Lembretes automáticos 24h e 1h</li>
           <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Catálogo completo & agenda online</li>
           <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Suporte WhatsApp</li>
@@ -905,6 +895,7 @@
           <div class="price-subtext" id="subtext-MULTI_USER">✨ 7 dias de teste grátis</div>
         </div>
         <ul class="plan-features">
+          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> <strong>Agendamentos Ilimitados</strong></li>
           <li class="plan-feature-item"><i class="fa-solid fa-check"></i> <strong>Até 5 Profissionais</strong> independentes</li>
           <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Atendente IA com Respostas Naturais</li>
           <li class="plan-feature-item"><i class="fa-solid fa-check"></i> <strong>Envio de Áudio por Voz (TTS)</strong></li>
@@ -915,31 +906,6 @@
         </ul>
         <button type="button" class="btn-select-plan" id="btn-MULTI_USER" data-plan="MULTI_USER">
           Escolher Pro
-        </button>
-      </div>
-
-      <!-- Plano Enterprise -->
-      <div class="plan-card" id="plan-card-ENTERPRISE" onclick="selectPlan('ENTERPRISE', true)">
-        <div class="plan-header">
-          <h3 class="plan-name">Enterprise / Redes</h3>
-          <p class="plan-tagline">Para grandes redes, franquias e clínicas.</p>
-        </div>
-        <div class="plan-price-wrapper">
-          <span class="price-currency">R$</span>
-          <span class="price-amount" id="price-ENTERPRISE">397</span>
-          <span class="price-period">/mês</span>
-          <div class="price-subtext" id="subtext-ENTERPRISE">✨ 7 dias de teste grátis</div>
-        </div>
-        <ul class="plan-features">
-          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> <strong>Profissionais e Usuários Ilimitados</strong></li>
-          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Todas as funções do Plano Pro</li>
-          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Personalização avançada de Prompt</li>
-          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Integrações via Webhook externo</li>
-          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Treinamento e Onboarding dedicado</li>
-          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> SLA de atendimento VIP 24h</li>
-        </ul>
-        <button type="button" class="btn-select-plan" id="btn-ENTERPRISE" data-plan="ENTERPRISE">
-          Escolher Enterprise
         </button>
       </div>
 
@@ -1094,10 +1060,9 @@
     let currentPeriod = 'monthly'; // 'monthly' | 'annual'
 
     const planPrices = {
-      FREE: { monthly: 0, annual: 0, name: 'Grátis', usersText: '1 profissional' },
-      SINGLE_USER: { monthly: 97, annual: 77, name: 'Starter Individual', usersText: '1 profissional' },
-      MULTI_USER: { monthly: 197, annual: 157, name: 'Pro Negócios', usersText: 'Até 5 profissionais' },
-      ENTERPRISE: { monthly: 397, annual: 317, name: 'Enterprise / Redes', usersText: 'Profissionais ilimitados' }
+      FREE: { monthly: 0, annual: 0, name: 'Grátis', usersText: '1 profissional (até 5 agendamentos/dia)' },
+      SINGLE_USER: { monthly: 97, annual: 77, name: 'Starter Individual', usersText: '1 profissional (ilimitado)' },
+      MULTI_USER: { monthly: 197, annual: 157, name: 'Pro Negócios', usersText: 'Até 5 profissionais (ilimitado)' }
     };
 
     function handlePeriodToggle(isAnnual) {
@@ -1149,8 +1114,6 @@
           btn.textContent = 'Escolher Starter';
         } else if (key === 'MULTI_USER') {
           btn.textContent = 'Escolher Pro';
-        } else if (key === 'ENTERPRISE') {
-          btn.textContent = 'Escolher Enterprise';
         }
       });
 
@@ -1313,7 +1276,7 @@
 
         // Redireciona diretamente para o painel de controle com boas-vindas
         setTimeout(() => {
-          window.location.href = '/?welcome=true';
+          window.location.href = '/dashboard?welcome=true';
         }, 1200);
 
       } catch (err) {
@@ -1328,7 +1291,14 @@
     window.addEventListener('DOMContentLoaded', () => {
       window.scrollTo(0, 0);
       updatePricingUI();
-      selectPlan('MULTI_USER', false); // sem rolagem automática
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const planFromUrl = urlParams.get('plan');
+      if (planFromUrl && planPrices[planFromUrl]) {
+        selectPlan(planFromUrl, false);
+      } else {
+        selectPlan('MULTI_USER', false);
+      }
     });
   </script>
 

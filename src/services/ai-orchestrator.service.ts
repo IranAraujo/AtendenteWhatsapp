@@ -543,6 +543,8 @@ export class AiOrchestratorService {
         const tenantItem = await dbRepository.getTenantById(tenantId);
         const bufferMinutes = service?.bufferTimeMinutes ?? tenantItem?.bookingRules?.bufferTimeMinutes ?? 10;
         const minNotice = tenantItem?.bookingRules?.minimumNoticeMinutes ?? 60;
+        const tenantDailyLimit = dbRepository.getTenantDailyAppointmentLimit(tenantItem);
+        const tenantDayCount = await dbRepository.getDailyAppointmentCountForTenant(tenantId, dateStr);
         const maxFutureDays = tenantItem?.bookingRules?.maxFutureDays ?? 30;
 
         const slots = calculateAvailableSlots({
@@ -553,6 +555,8 @@ export class AiOrchestratorService {
           scheduleBlocks: blocks.map(b => ({ startTime: b.startTime, endTime: b.endTime })),
           maxAppointmentsPerDay: (prof as any).maxAppointmentsPerDay,
           currentDayAppointmentCount: dayCount,
+          maxDailyAppointmentsForTenant: tenantDailyLimit,
+          currentTenantDailyAppointmentCount: tenantDayCount,
           bufferTimeMinutes: bufferMinutes,
           minimumNoticeMinutes: minNotice,
           maxFutureDays: maxFutureDays,
@@ -627,6 +631,10 @@ export class AiOrchestratorService {
       const otherAppointments = existingAppointments.filter(a => a.customerPhone !== customerPhone);
       const blocks = await dbRepository.getScheduleBlocks(tenantId, targetProf.id, targetDateStr);
       const dayCount = otherAppointments.length;
+      const tenantObj = await dbRepository.getTenantById(tenantId);
+      const tenantDailyLimit = dbRepository.getTenantDailyAppointmentLimit(tenantObj);
+      const tenantDayCount = await dbRepository.getDailyAppointmentCountForTenant(tenantId, targetDateStr);
+
       const availableSlots = calculateAvailableSlots({
         dateStr: targetDateStr,
         serviceDurationMinutes: duration,
@@ -635,6 +643,8 @@ export class AiOrchestratorService {
         scheduleBlocks: blocks.map(b => ({ startTime: b.startTime, endTime: b.endTime })),
         maxAppointmentsPerDay: targetProf.maxAppointmentsPerDay,
         currentDayAppointmentCount: dayCount,
+        maxDailyAppointmentsForTenant: tenantDailyLimit,
+        currentTenantDailyAppointmentCount: tenantDayCount,
         slotIntervalMinutes: 30
       });
 

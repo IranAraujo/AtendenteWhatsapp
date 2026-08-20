@@ -20,6 +20,8 @@ export interface CalculateAvailableSlotsParams {
   scheduleBlocks?: Array<{ startTime?: string; endTime?: string }>; // blocks for that day
   maxAppointmentsPerDay?: number;    // if set and currentCount >= max, return []
   currentDayAppointmentCount?: number; // current count for that day
+  maxDailyAppointmentsForTenant?: number; // Limite diário do plano do estabelecimento (ex: Plano Free = 5/dia)
+  currentTenantDailyAppointmentCount?: number; // Quantidade de agendamentos já marcados para o tenant no dia
   bufferTimeMinutes?: number;         // Folga/intervalo pós-atendimento (ex: 10 min)
   minimumNoticeMinutes?: number;      // Antecedência mínima a partir de agora (ex: 60 min)
   maxFutureDays?: number;             // Janela máxima de agendamento no futuro (ex: 30 dias)
@@ -79,6 +81,13 @@ export function calculateAvailableSlots(params: CalculateAvailableSlotsParams): 
   // 3. Limite Diário de Atendimentos por Profissional
   if (params.maxAppointmentsPerDay !== undefined && params.currentDayAppointmentCount !== undefined) {
     if (params.currentDayAppointmentCount >= params.maxAppointmentsPerDay) {
+      return [];
+    }
+  }
+
+  // 3.1 Limite Diário de Atendimentos por Plano do Estabelecimento (ex: Plano Free limite de 5/dia)
+  if (params.maxDailyAppointmentsForTenant !== undefined && params.currentTenantDailyAppointmentCount !== undefined) {
+    if (params.currentTenantDailyAppointmentCount >= params.maxDailyAppointmentsForTenant) {
       return [];
     }
   }

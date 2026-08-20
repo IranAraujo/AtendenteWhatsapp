@@ -116,7 +116,7 @@ export interface DbTenantItem {
   name: string;
   slug: string;
   ownerEmail: string;
-  planTier: 'FREE' | 'SINGLE_USER' | 'MULTI_USER' | 'ENTERPRISE';
+  planTier: 'FREE' | 'SINGLE_USER' | 'MULTI_USER';
   maxUsers: number;
   status: 'ACTIVE' | 'SUSPENDED';
   aiConfig: {
@@ -755,13 +755,12 @@ class DbRepository {
     return false;
   }
 
-  async updateTenantPlan(tenantId: string, planTier: 'FREE' | 'SINGLE_USER' | 'MULTI_USER' | 'ENTERPRISE'): Promise<{ success: boolean; maxUsers: number }> {
+  async updateTenantPlan(tenantId: string, planTier: 'FREE' | 'SINGLE_USER' | 'MULTI_USER'): Promise<{ success: boolean; maxUsers: number }> {
     const tenant = await this.getTenantById(tenantId);
     if (!tenant) return { success: false, maxUsers: 1 };
 
     let maxUsers = 1;
     if (planTier === 'MULTI_USER') maxUsers = 5;
-    if (planTier === 'ENTERPRISE') maxUsers = 999;
 
     tenant.planTier = planTier;
     tenant.maxUsers = maxUsers;
@@ -887,11 +886,31 @@ class DbRepository {
   }
 
   // -------------------------------------------------------
-  // LIMITE DIÁRIO DE AGENDAMENTOS POR PROFISSIONAL
+  // LIMITE DIÁRIO DE AGENDAMENTOS POR PROFISSIONAL & TENANT
   // -------------------------------------------------------
   async getDailyAppointmentCount(professionalId: string, dateStr: string): Promise<number> {
     const appts = await this.getAppointmentsForProfessional(professionalId, dateStr);
     return appts.filter(a => a.status !== 'CANCELLED').length;
+  }
+
+  async getDailyAppointmentCountForTenant(tenantId: string, dateStr: string): Promise<number> {
+    return this.inMemoryAppointments.filter(a => {
+      if (a.tenantId !== tenantId) return false;
+      if (a.status === 'CANCELLED') return false;
+      const st = (a.startTime instanceof Date) ? a.startTime : new Date(a.startTime);
+      const parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/Sao_Paulo',
+        year: 'numeric', month: '2-digit', day: '2-digit'
+      }).formatToParts(st);
+      const apptDateStr = `${parts.find(p => p.type === 'year')?.value}-${parts.find(p => p.type === 'month')?.value}-${parts.find(p => p.type === 'day')?.value}`;
+      return apptDateStr === dateStr;
+    }).length;
+  }
+
+  getTenantDailyAppointmentLimit(tenant: DbTenantItem | null | undefined): number | undefined {
+    if (!tenant) return undefined;
+    if (tenant.planTier === 'FREE') return 5; // Limite de 5 agendamentos por dia no plano Free
+    return undefined; // Ilimitado para Starter e Pro
   }
 
   // -------------------------------------------------------
@@ -903,7 +922,7 @@ class DbRepository {
     password: string;
     companyName: string;
     phone?: string;
-    planTier?: 'FREE' | 'SINGLE_USER' | 'MULTI_USER' | 'ENTERPRISE';
+    planTier?: 'FREE' | 'SINGLE_USER' | 'MULTI_USER';
     segment?: 'barbearia' | 'salao' | 'clinica' | 'estetica' | 'outro';
     businessAddress?: string;
   }): Promise<{ tenant: DbTenantItem; user: DbTenantUser; initialServices: DbServiceItem[]; initialProfessional: DbProfessionalItem }> {
@@ -926,7 +945,7 @@ class DbRepository {
     }
 
     const plan = data.planTier || 'FREE';
-    const maxUsers = plan === 'FREE' || plan === 'SINGLE_USER' ? 1 : plan === 'MULTI_USER' ? 5 : 999;
+    const maxUsers = plan === 'FREE' || plan === 'SINGLE_USER' ? 1 : 5;
 
     let systemPrompt = `Somos a ${data.companyName}. Atenda os clientes com profissionalismo, agilidade e excelência no agendamento de horários.`;
     if (data.segment === 'barbearia') {

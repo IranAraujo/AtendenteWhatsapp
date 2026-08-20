@@ -43,16 +43,16 @@ app.use((req, res, next) => {
     next();
 });
 const PORT = process.env.PORT || 3001;
-// Rota Raiz (/) -> Abre diretamente a Tela de Login
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/login.html'));
+// Rota Principal (/) -> Frente de Loja / Landing Page Institucional
+app.get(['/', '/home', '/landing'], (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/landing.html'));
 });
 // Rota do Login (/login)
 app.get('/login', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/login.html'));
 });
-// Rota do Painel Dashboard (/dashboard)
-app.get('/dashboard', (req, res) => {
+// Rota do Painel Dashboard (/dashboard, /app)
+app.get(['/dashboard', '/app'], (req, res) => {
     res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 // Servir arquivos estáticos do Painel Web Frontend (public/) sem index automático
@@ -109,10 +109,10 @@ app.get('/api/plans', (req, res) => {
                 features: [
                     '1 Profissional / 1 Usuário',
                     'Atendente IA no WhatsApp',
-                    'Agendamentos básicos',
+                    'Limite de até 5 agendamentos por dia',
                     'Catálogo de serviços e produtos',
                     'Agenda online pública',
-                    'Acesso vitalício gratuito'
+                    'Acesso vitalício sem mensalidade'
                 ]
             },
             {
@@ -128,7 +128,7 @@ app.get('/api/plans', (req, res) => {
                 features: [
                     '1 Profissional / 1 Usuário',
                     'Atendente IA 24/7 no WhatsApp',
-                    'Agendamentos ilimitados',
+                    'Agendamentos Ilimitados',
                     'Lembretes automáticos (24h e 1h antes)',
                     'Catálogo de serviços e produtos',
                     'Painel de gestão e agenda online',
@@ -154,25 +154,6 @@ app.get('/api/plans', (req, res) => {
                     'Painel de Métricas Financeiras e Faturamento',
                     'Controle de Acesso por Permissões',
                     'Suporte Prioritário'
-                ]
-            },
-            {
-                id: 'ENTERPRISE',
-                name: 'Enterprise / Redes',
-                tagline: 'Para grandes estabelecimentos, franquias e redes',
-                monthlyPrice: 397,
-                annualPriceMonthly: 317, // R$ 3.804/ano
-                maxUsers: 99,
-                maxProfessionals: 99,
-                badge: 'Completo',
-                popular: false,
-                features: [
-                    'Profissionais e Usuários Ilimitados',
-                    'Todas as funções do Plano Pro inclusas',
-                    'Personalização avançada de Prompt da IA',
-                    'Integrações via Webhook externo',
-                    'Treinamento e Onboarding dedicado',
-                    'SLA de atendimento VIP 24h'
                 ]
             }
         ]
@@ -304,7 +285,7 @@ app.post('/api/auth/change-password', async (req, res) => {
 app.post('/api/tenants/:id/upgrade-plan', async (req, res) => {
     try {
         const { planTier } = req.body;
-        if (!planTier || !['SINGLE_USER', 'MULTI_USER', 'ENTERPRISE'].includes(planTier)) {
+        if (!planTier || !['FREE', 'SINGLE_USER', 'MULTI_USER'].includes(planTier)) {
             return res.status(400).json({ success: false, error: 'Plano inválido.' });
         }
         const result = await dbRepository.updateTenantPlan(req.params.id, planTier);
@@ -1100,6 +1081,11 @@ app.post('/api/public/tenants/:slug/slots', async (req, res) => {
         const bufferMinutes = service?.bufferTimeMinutes ?? tenant.bookingRules?.bufferTimeMinutes ?? 10;
         const minNotice = tenant.bookingRules?.minimumNoticeMinutes ?? 60;
         const maxFutureDays = tenant.bookingRules?.maxFutureDays ?? 30;
+        const tenantDailyLimit = dbRepository.getTenantDailyAppointmentLimit(tenant);
+        const tenantDayCount = await dbRepository.getDailyAppointmentCountForTenant(tenant.id, dateStr);
+        if (tenantDailyLimit !== undefined && tenantDayCount >= tenantDailyLimit) {
+            return res.json({ success: true, dateStr, slots: [], limitReached: true, message: 'Capacidade máxima diária de agendamentos deste estabelecimento atingida para esta data.' });
+        }
         const allUniqueSlots = new Set();
         for (const prof of targetProfs) {
             const profSchedule = prof.workSchedule || { startTime: '08:00', endTime: '18:00', lunchStartTime: '12:00', lunchEndTime: '13:00' };
@@ -1114,6 +1100,8 @@ app.post('/api/public/tenants/:slug/slots', async (req, res) => {
                 scheduleBlocks: blocks.map(b => ({ startTime: b.startTime, endTime: b.endTime })),
                 maxAppointmentsPerDay: prof.maxAppointmentsPerDay,
                 currentDayAppointmentCount: dayCount,
+                maxDailyAppointmentsForTenant: tenantDailyLimit,
+                currentTenantDailyAppointmentCount: tenantDayCount,
                 bufferTimeMinutes: bufferMinutes,
                 minimumNoticeMinutes: minNotice,
                 maxFutureDays: maxFutureDays,
@@ -1140,6 +1128,11 @@ app.post('/api/public/tenants/:slug/book', async (req, res) => {
         const { serviceId, professionalId, dateStr, timeStr, customerName, customerPhone, notes } = req.body;
         if (!serviceId || !dateStr || !timeStr || !customerName || !customerPhone) {
             return res.status(400).json({ error: 'Preencha todos os campos obrigatórios.' });
+        }
+        const tenantDailyLimit = dbRepository.getTenantDailyAppointmentLimit(tenant);
+        const tenantDayCount = await dbRepository.getDailyAppointmentCountForTenant(tenant.id, dateStr);
+        if (tenantDailyLimit !== undefined && tenantDayCount >= tenantDailyLimit) {
+            return res.status(400).json({ error: 'O limite diário de agendamentos deste estabelecimento foi atingido para esta data. Por favor, escolha outro dia.' });
         }
         const cleanPhone = customerPhone.replace(/\D/g, '');
         const cleanName = customerName.trim();

@@ -40,6 +40,12 @@ export function calculateAvailableSlots(params) {
             return [];
         }
     }
+    // 3.1 Limite Diário de Atendimentos por Plano do Estabelecimento (ex: Plano Free limite de 5/dia)
+    if (params.maxDailyAppointmentsForTenant !== undefined && params.currentTenantDailyAppointmentCount !== undefined) {
+        if (params.currentTenantDailyAppointmentCount >= params.maxDailyAppointmentsForTenant) {
+            return [];
+        }
+    }
     const workStart = parseDateTime(dateStr, schedule.startTime);
     const workEnd = parseDateTime(dateStr, schedule.endTime);
     const lunchStart = schedule.lunchStartTime ? parseDateTime(dateStr, schedule.lunchStartTime) : null;
