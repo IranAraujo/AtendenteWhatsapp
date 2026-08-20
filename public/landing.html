@@ -60,13 +60,13 @@
 
     /* Navbar */
     .navbar {
-      background: rgba(255, 255, 255, 0.92);
+      background: rgba(255, 255, 255, 0.95);
       backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--wa-card-border);
       position: sticky;
       top: 0;
       z-index: 1000;
-      padding: 16px 0;
+      padding: 14px 0;
       transition: all 0.2s ease;
     }
 
@@ -74,34 +74,39 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 16px;
     }
 
     .brand {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
       text-decoration: none;
       color: var(--wa-text-main);
+      white-space: nowrap;
+      flex-shrink: 0;
     }
 
     .brand-icon {
-      width: 42px;
-      height: 42px;
+      width: 40px;
+      height: 40px;
       background: linear-gradient(135deg, var(--wa-green-light), var(--wa-green-dark));
       border-radius: var(--radius-md);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 24px;
+      font-size: 22px;
       color: white;
       box-shadow: 0 4px 14px rgba(0, 168, 132, 0.35);
+      flex-shrink: 0;
     }
 
     .brand-title {
       font-family: 'Outfit', sans-serif;
-      font-size: 20px;
+      font-size: 19px;
       font-weight: 700;
       letter-spacing: -0.5px;
+      white-space: nowrap;
     }
 
     .brand-badge {
@@ -109,20 +114,23 @@
       color: var(--wa-pill-active-text);
       font-size: 10px;
       font-weight: 800;
-      padding: 2px 8px;
-      border-radius: 10px;
+      padding: 2px 7px;
+      border-radius: 8px;
       text-transform: uppercase;
       margin-left: 6px;
+      white-space: nowrap;
     }
 
     .nav-menu {
       display: flex;
       align-items: center;
-      gap: 28px;
+      gap: clamp(10px, 1.5vw, 24px);
       list-style: none;
+      margin: 0;
+      padding: 0;
     }
 
-    @media (max-width: 992px) {
+    @media (max-width: 1080px) {
       .nav-menu {
         display: none;
       }
@@ -131,8 +139,9 @@
     .nav-link {
       text-decoration: none;
       color: var(--wa-text-sub);
-      font-size: 14.5px;
+      font-size: 14px;
       font-weight: 600;
+      white-space: nowrap;
       transition: color 0.2s ease;
     }
 
@@ -143,15 +152,17 @@
     .nav-actions {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
 
     .btn-login {
       text-decoration: none;
       color: var(--wa-text-main);
-      padding: 10px 18px;
+      padding: 9px 16px;
       border-radius: var(--radius-md);
-      font-size: 14px;
+      font-size: 13.5px;
       font-weight: 600;
       border: 1px solid var(--wa-card-border);
       background: #ffffff;
@@ -159,6 +170,8 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
 
     .btn-login:hover {
@@ -171,15 +184,17 @@
       text-decoration: none;
       background: var(--wa-green);
       color: white;
-      padding: 11px 22px;
+      padding: 10px 18px;
       border-radius: var(--radius-md);
-      font-size: 14px;
+      font-size: 13.5px;
       font-weight: 700;
       border: none;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 8px;
+      gap: 7px;
+      white-space: nowrap;
+      flex-shrink: 0;
       transition: all 0.2s ease;
       box-shadow: 0 4px 14px rgba(0, 168, 132, 0.3);
     }
@@ -1231,7 +1246,7 @@
     <div class="container nav-container">
       <a href="/" class="brand">
         <div class="brand-icon"><i class="fa-brands fa-whatsapp"></i></div>
-        <div>
+        <div style="display: flex; align-items: center; white-space: nowrap;">
           <span class="brand-title">WhatsApp Atendente</span>
           <span class="brand-badge">SaaS IA</span>
         </div>
@@ -1731,7 +1746,7 @@
         <div class="footer-col">
           <a href="/" class="brand" style="margin-bottom: 16px; display: inline-flex;">
             <div class="brand-icon"><i class="fa-brands fa-whatsapp"></i></div>
-            <div>
+            <div style="display: flex; align-items: center; white-space: nowrap;">
               <span class="brand-title">WhatsApp Atendente</span>
               <span class="brand-badge">SaaS IA</span>
             </div>
