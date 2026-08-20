@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Planos & Cadastro - SaaS Atendente & Agendamento IA</title>
+  
+  <!-- Fontes Google & FontAwesome Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <style>
+    :root {
+      --bg-dark: #090d16;
+      --bg-card: #131b2e;
+      --bg-card-hover: #1e293b;
+      --bg-card-border: #24324d;
+      --primary: #25D366;
+      --primary-hover: #20ba5a;
+      --primary-dark: #008069;
+      --accent-blue: #3b82f6;
+      --accent-purple: #8b5cf6;
+      --accent-amber: #f59e0b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --radius-xl: 20px;
+      --radius-lg: 14px;
+      --radius-md: 10px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(37, 211, 102, 0.08) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(59, 130, 246, 0.08) 0px, transparent 50%),
+        radial-gradient(at 50% 100%, rgba(139, 92, 246, 0.06) 0px, transparent 50%);
+    }
+
+    /* Top Navigation */
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 40px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(10px);
+      background: rgba(9, 13, 22, 0.7);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: white;
+    }
+
+    .brand-icon {
+      width: 42px;
+      height: 42px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      color: white;
+      box-shadow: 0 4px 14px rgba(37, 211, 102, 0.35);
+    }
+
+    .brand-text {
+      font-family: 'Outfit', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .nav-link {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition: color 0.2s ease;
+    }
+
+    .nav-link:hover {
+      color: white;
+    }
+
+    .btn-outline-login {
+      border: 1px solid var(--bg-card-border);
+      background: transparent;
+      color: white;
+      padding: 8px 18px;
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-outline-login:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--text-muted);
+    }
+
+    /* Container Principal */
+    .main-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 20px 80px 20px;
+      width: 100%;
+    }
+
+    /* Hero Header */
+    .hero-header {
+      text-align: center;
+      max-width: 780px;
+      margin: 0 auto 40px auto;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(37, 211, 102, 0.12);
+      border: 1px solid rgba(37, 211, 102, 0.3);
+      color: var(--primary);
+      padding: 6px 14px;
+      border-radius: 50px;
+      font-size: 12.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 16px;
+    }
+
+    .hero-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 40px;
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -1px;
+      margin-bottom: 14px;
+    }
+
+    .hero-title span {
+      background: linear-gradient(135deg, #25D366, #60a5fa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-subtitle {
+      font-size: 16px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* Billing Toggle Switch */
+    .billing-toggle-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 40px;
+    }
+
+    .toggle-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .toggle-label.active {
+      color: white;
+    }
+
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 54px;
+      height: 28px;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: var(--bg-card);
+      border: 1px solid var(--bg-card-border);
+      transition: .3s;
+      border-radius: 34px;
+    }
+
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: 4px;
+      bottom: 3px;
+      background-color: var(--primary);
+      transition: .3s;
+      border-radius: 50%;
+    }
+
+    input:checked + .toggle-slider {
+      background-color: #1e293b;
+      border-color: var(--primary);
+    }
+
+    input:checked + .toggle-slider:before {
+      transform: translateX(24px);
+    }
+
+    .discount-badge {
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      color: var(--accent-amber);
+      font-size: 11px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 20px;
+      text-transform: uppercase;
+    }
+
+    /* Cards de Planos */
+    .plans-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-bottom: 60px;
+    }
+
+    @media (max-width: 960px) {
+      .plans-grid {
+        grid-template-columns: 1fr;
+        max-width: 500px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+    }
+
+    .plan-card {
+      background: var(--bg-card);
+      border: 1px solid var(--bg-card-border);
+      border-radius: var(--radius-xl);
+      padding: 32px 28px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      cursor: pointer;
+    }
+
+    .plan-card:hover {
+      transform: translateY(-6px);
+      border-color: rgba(37, 211, 102, 0.4);
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4);
+    }
+
+    .plan-card.selected {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px var(--primary), 0 16px 40px rgba(37, 211, 102, 0.2);
+      background: #152238;
+    }
+
+    .plan-card.popular {
+      border-color: var(--primary);
+      background: linear-gradient(180deg, rgba(37, 211, 102, 0.05) 0%, rgba(19, 27, 46, 1) 100%);
+    }
+
+    .plan-badge {
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--primary);
+      color: #090d16;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 4px 14px;
+      border-radius: 50px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      box-shadow: 0 4px 12px rgba(37, 211, 102, 0.4);
+    }
+
+    .plan-header {
+      margin-bottom: 20px;
+    }
+
+    .plan-name {
+      font-family: 'Outfit', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .plan-tagline {
+      font-size: 13px;
+      color: var(--text-muted);
+      min-height: 38px;
+    }
+
+    .plan-price-wrapper {
+      margin-bottom: 24px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--bg-card-border);
+    }
+
+    .price-currency {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-muted);
+      vertical-align: top;
+      margin-right: 2px;
+    }
+
+    .price-amount {
+      font-family: 'Outfit', sans-serif;
+      font-size: 42px;
+      font-weight: 800;
+      letter-spacing: -1px;
+    }
+
+    .price-period {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .price-subtext {
+      font-size: 11.5px;
+      color: var(--primary);
+      margin-top: 4px;
+      font-weight: 600;
+    }
+
+    .plan-features {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 30px;
+      flex-grow: 1;
+    }
+
+    .plan-feature-item {
+      font-size: 13.5px;
+      color: #cbd5e1;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      line-height: 1.4;
+    }
+
+    .plan-feature-item i {
+      color: var(--primary);
+      font-size: 14px;
+      margin-top: 2px;
+      flex-shrink: 0;
+    }
+
+    .btn-select-plan {
+      width: 100%;
+      padding: 14px;
+      border-radius: var(--radius-md);
+      font-weight: 700;
+      font-size: 14px;
+      border: 1px solid var(--bg-card-border);
+      background: var(--bg-card-hover);
+      color: white;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-select-plan:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: var(--text-muted);
+    }
+
+    .plan-card.selected .btn-select-plan,
+    .plan-card.popular .btn-select-plan {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #090d16;
+    }
+
+    .plan-card.selected .btn-select-plan:hover,
+    .plan-card.popular .btn-select-plan:hover {
+      background: var(--primary-hover);
+    }
+
+    /* Registration Section (Multi-Step Form) */
+    .register-section {
+      background: var(--bg-card);
+      border: 1px solid var(--bg-card-border);
+      border-radius: var(--radius-xl);
+      padding: 40px;
+      max-width: 760px;
+      margin: 0 auto;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Steps Progress Bar */
+    .steps-indicator {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 36px;
+      position: relative;
+    }
+
+    .steps-indicator::before {
+      content: '';
+      position: absolute;
+      top: 18px;
+      left: 30px;
+      right: 30px;
+      height: 2px;
+      background: var(--bg-card-border);
+      z-index: 1;
+    }
+
+    .step-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      z-index: 2;
+      cursor: pointer;
+    }
+
+    .step-bubble {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: var(--bg-dark);
+      border: 2px solid var(--bg-card-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--text-muted);
+      transition: all 0.3s ease;
+      margin-bottom: 8px;
+    }
+
+    .step-item.active .step-bubble {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #090d16;
+      box-shadow: 0 0 16px rgba(37, 211, 102, 0.4);
+    }
+
+    .step-item.completed .step-bubble {
+      background: var(--primary-dark);
+      border-color: var(--primary);
+      color: white;
+    }
+
+    .step-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    .step-item.active .step-label {
+      color: white;
+    }
+
+    /* Form Fields Styling */
+    .form-step {
+      display: none;
+    }
+
+    .form-step.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .step-title-header {
+      margin-bottom: 24px;
+    }
+
+    .step-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .step-desc {
+      font-size: 13.5px;
+      color: var(--text-muted);
+    }
+
+    .form-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 600px) {
+      .form-grid-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #cbd5e1;
+      margin-bottom: 8px;
+    }
+
+    .form-control {
+      width: 100%;
+      background: #0b111e;
+      border: 1px solid var(--bg-card-border);
+      border-radius: var(--radius-md);
+      padding: 13px 16px;
+      color: white;
+      font-size: 14px;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    .form-control:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 211, 102, 0.15);
+    }
+
+    select.form-control {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%2394a3b8' viewBox='0 0 24 24'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      background-size: 20px;
+      cursor: pointer;
+    }
+
+    /* Selected Plan Summary Banner */
+    .selected-plan-summary {
+      background: rgba(37, 211, 102, 0.08);
+      border: 1px solid rgba(37, 211, 102, 0.25);
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .summary-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .summary-icon {
+      width: 36px;
+      height: 36px;
+      background: var(--primary);
+      color: #090d16;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    .summary-title {
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .summary-details {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .btn-change-plan {
+      background: transparent;
+      border: none;
+      color: var(--primary);
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    /* Action Buttons */
+    .form-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid var(--bg-card-border);
+    }
+
+    .btn-back {
+      background: transparent;
+      border: 1px solid var(--bg-card-border);
+      color: var(--text-muted);
+      padding: 12px 22px;
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-back:hover {
+      color: white;
+      border-color: var(--text-muted);
+    }
+
+    .btn-primary-action {
+      background: var(--primary);
+      color: #090d16;
+      border: none;
+      padding: 14px 28px;
+      border-radius: var(--radius-md);
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 16px rgba(37, 211, 102, 0.35);
+    }
+
+    .btn-primary-action:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+
+    .btn-primary-action:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Alert Message */
+    .alert-box {
+      padding: 14px 18px;
+      border-radius: var(--radius-md);
+      font-size: 13.5px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      display: none;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .alert-danger {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      color: #f87171;
+    }
+
+    .alert-success {
+      background: rgba(37, 211, 102, 0.15);
+      border: 1px solid rgba(37, 211, 102, 0.35);
+      color: var(--primary);
+    }
+
+    /* Security Trust Row */
+    .trust-row {
+      display: flex;
+      justify-content: center;
+      gap: 28px;
+      margin-top: 30px;
+      padding-top: 24px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      font-size: 12.5px;
+      color: var(--text-muted);
+    }
+
+    .trust-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .trust-item i {
+      color: var(--primary);
+    }
+
+    /* Loading Spinner */
+    .spinner {
+      border: 2px solid rgba(0, 0, 0, 0.2);
+      border-top: 2px solid #090d16;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      animation: spin 0.8s linear infinite;
+      display: inline-block;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navbar -->
+  <nav class="navbar">
+    <a href="/" class="brand">
+      <div class="brand-icon"><i class="fa-brands fa-whatsapp"></i></div>
+      <span class="brand-text">SaaS Atendente IA</span>
+    </a>
+    <div class="nav-actions">
+      <a href="/login.html" class="nav-link">Já é cliente?</a>
+      <a href="/login.html" class="btn-outline-login"><i class="fa-solid fa-right-to-bracket"></i> Acessar Painel</a>
+    </div>
+  </nav>
+
+  <!-- Main Container -->
+  <div class="main-container">
+    
+    <!-- Hero Header -->
+    <header class="hero-header">
+      <div class="hero-badge"><i class="fa-solid fa-bolt"></i> 7 Dias de Teste Grátis Sem Compromisso</div>
+      <h1 class="hero-title">Automatize seu WhatsApp com <span>Inteligência Artificial</span></h1>
+      <p class="hero-subtitle">Atenda seus clientes 24h por dia, tire dúvidas e agende horários automaticamente sem você precisar digitar uma única palavra.</p>
+    </header>
+
+    <!-- Billing Switch (Mensal / Anual) -->
+    <div class="billing-toggle-wrapper">
+      <span class="toggle-label active" id="label-monthly" onclick="setBillingPeriod('monthly')">Faturamento Mensal</span>
+      <label class="toggle-switch">
+        <input type="checkbox" id="billing-period-toggle" onchange="handlePeriodToggle(this.checked)">
+        <span class="toggle-slider"></span>
+      </label>
+      <span class="toggle-label" id="label-annual" onclick="setBillingPeriod('annual')">
+        Faturamento Anual <span class="discount-badge">20% OFF</span>
+      </span>
+    </div>
+
+    <!-- Cards de Planos -->
+    <div class="plans-grid" id="plans-container">
+      
+      <!-- Plano Starter -->
+      <div class="plan-card" id="plan-card-SINGLE_USER" onclick="selectPlan('SINGLE_USER')">
+        <div class="plan-header">
+          <h3 class="plan-name">Starter Individual</h3>
+          <p class="plan-tagline">Ideal para autônomos e profissionais independentes.</p>
+        </div>
+        <div class="plan-price-wrapper">
+          <span class="price-currency">R$</span>
+          <span class="price-amount" id="price-SINGLE_USER">97</span>
+          <span class="price-period">/mês</span>
+          <div class="price-subtext" id="subtext-SINGLE_USER">✨ 7 dias de teste grátis</div>
+        </div>
+        <ul class="plan-features">
+          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> <strong>1 Profissional</strong> / 1 Usuário</li>
+          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Atendente IA 24/7 no WhatsApp</li>
+          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Agendamentos Ilimitados</li>
+          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Lembretes automáticos 24h e 1h antes</li>
+          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Catálogo de serviços e produtos</li>
+          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Painel de gestão e agenda online</li>
+        </ul>
+        <button type="button" class="btn-select-plan" id="btn-SINGLE_USER">
+          Escolher Starter
+        </button>
+      </div>
+
+      <!-- Plano Pro (Mais Popular) -->
+      <div class="plan-card popular selected" id="plan-card-MULTI_USER" onclick="selectPlan('MULTI_USER')">
+        <div class="plan-badge">Mais Escolhido ⭐</div>
+        <div class="plan-header">
+          <h3 class="plan-name">Pro Negócios</h3>
+          <p class="plan-tagline">Perfeito para salões, barbearias e clínicas em crescimento.</p>
+        </div>
+        <div class="plan-price-wrapper">
+          <span class="price-currency">R$</span>
+          <span class="price-amount" id="price-MULTI_USER">197</span>
+          <span class="price-period">/mês</span>
+          <div class="price-subtext" id="subtext-MULTI_USER">✨ 7 dias de teste grátis</div>
+        </div>
+        <ul class="plan-features">
+          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> <strong>Até 5 Profissionais</strong> com agendas independentes</li>
+          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Atendente IA com Respostas Naturais</li>
+          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> <strong>Envio de Áudio por Voz Ultra-Realista (TTS)</strong></li>
+          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> <strong>Lista de Espera Inteligente com aviso automático</strong></li>
+          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Bloqueio de Folgas e Intervalos</li>
+          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Painel de Métricas Financeiras e Faturamento</li>
+          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Suporte Prioritário</li>
+        </ul>
+        <button type="button" class="btn-select-plan" id="btn-MULTI_USER">
+          Escolher Pro
+        </button>
+      </div>
+
+      <!-- Plano Enterprise -->
+      <div class="plan-card" id="plan-card-ENTERPRISE" onclick="selectPlan('ENTERPRISE')">
+        <div class="plan-header">
+          <h3 class="plan-name">Enterprise / Redes</h3>
+          <p class="plan-tagline">Para grandes estabelecimentos, franquias e redes.</p>
+        </div>
+        <div class="plan-price-wrapper">
+          <span class="price-currency">R$</span>
+          <span class="price-amount" id="price-ENTERPRISE">397</span>
+          <span class="price-period">/mês</span>
+          <div class="price-subtext" id="subtext-ENTERPRISE">✨ 7 dias de teste grátis</div>
+        </div>
+        <ul class="plan-features">
+          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> <strong>Profissionais e Usuários Ilimitados</strong></li>
+          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Todas as funcionalidades do Plano Pro</li>
+          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Personalização avançada de Prompt da IA</li>
+          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Integrações via Webhook externo</li>
+          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Treinamento e Onboarding dedicado</li>
+          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> SLA de atendimento VIP 24h</li>
+        </ul>
+        <button type="button" class="btn-select-plan" id="btn-ENTERPRISE">
+          Escolher Enterprise
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Registration Multi-Step Box -->
+    <div class="register-section" id="register-flow-box">
+      
+      <!-- Steps Progress -->
+      <div class="steps-indicator">
+        <div class="step-item completed" id="step-nav-1" onclick="goToStep(1)">
+          <div class="step-bubble"><i class="fa-solid fa-check"></i></div>
+          <span class="step-label">1. Plano</span>
+        </div>
+        <div class="step-item active" id="step-nav-2" onclick="goToStep(2)">
+          <div class="step-bubble">2</div>
+          <span class="step-label">2. Acesso</span>
+        </div>
+        <div class="step-item" id="step-nav-3" onclick="goToStep(3)">
+          <div class="step-bubble">3</div>
+          <span class="step-label">3. Empresa</span>
+        </div>
+        <div class="step-item" id="step-nav-4">
+          <div class="step-bubble">4</div>
+          <span class="step-label">4. Início</span>
+        </div>
+      </div>
+
+      <!-- Alert Box -->
+      <div class="alert-box alert-danger" id="register-alert"></div>
+
+      <!-- Resumo do Plano Selecionado -->
+      <div class="selected-plan-summary">
+        <div class="summary-left">
+          <div class="summary-icon"><i class="fa-solid fa-gem"></i></div>
+          <div>
+            <div class="summary-title" id="summary-plan-name">Plano Pro Negócios</div>
+            <div class="summary-details" id="summary-plan-details">R$ 197/mês • 7 Dias Grátis • Até 5 profissionais</div>
+          </div>
+        </div>
+        <button type="button" class="btn-change-plan" onclick="scrollToPlans()">Mudar Plano</button>
+      </div>
+
+      <form id="register-form" onsubmit="handleRegisterSubmit(event)">
+        
+        <!-- STEP 2: DADOS PESSOAIS & ACESSO -->
+        <div class="form-step active" id="form-step-2">
+          <div class="step-title-header">
+            <h2 class="step-title">Criar sua Conta de Administrador</h2>
+            <p class="step-desc">Estes dados serão usados para acessar o seu painel de controle.</p>
+          </div>
+
+          <div class="form-group">
+            <label>Seu Nome Completo *</label>
+            <input type="text" id="reg-owner-name" class="form-control" placeholder="Ex: Roberto Silva" required>
+          </div>
+
+          <div class="form-group">
+            <label>E-mail Comercial *</label>
+            <input type="email" id="reg-email" class="form-control" placeholder="seu@email.com.br" required>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label>Senha de Acesso *</label>
+              <input type="password" id="reg-password" class="form-control" placeholder="Mínimo 6 caracteres" minlength="6" required>
+            </div>
+            <div class="form-group">
+              <label>Confirmar Senha *</label>
+              <input type="password" id="reg-password-confirm" class="form-control" placeholder="Repita a senha" minlength="6" required>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <div></div>
+            <button type="button" class="btn-primary-action" onclick="validateStep2AndProceed()">
+              Continuar <i class="fa-solid fa-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- STEP 3: DADOS DO ESTABELECIMENTO -->
+        <div class="form-step" id="form-step-3">
+          <div class="step-title-header">
+            <h2 class="step-title">Dados do seu Estabelecimento</h2>
+            <p class="step-desc">Configure o seu negócio para a atendente IA começar a trabalhar.</p>
+          </div>
+
+          <div class="form-group">
+            <label>Nome do Estabelecimento / Empresa *</label>
+            <input type="text" id="reg-company-name" class="form-control" placeholder="Ex: Studio Bella / Barbearia VIP / Clínica Estética" required>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label>Segmento de Atuação *</label>
+              <select id="reg-segment" class="form-control" required>
+                <option value="barbearia">Barbearia & Cuidados Masculinos</option>
+                <option value="salao" selected>Salão de Beleza & Cabelos</option>
+                <option value="clinica">Clínica Médica / Odontológica</option>
+                <option value="estetica">Estética & Bem-Estar</option>
+                <option value="outro">Outros Segmentos de Atendimento</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>WhatsApp Comercial *</label>
+              <input type="tel" id="reg-phone" class="form-control" placeholder="(11) 99999-8888" required oninput="maskPhone(this)">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Endereço do Local (Opcional - a IA informará aos clientes)</label>
+            <input type="text" id="reg-address" class="form-control" placeholder="Ex: Av. Paulista, 1000 - Sala 42">
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn-back" onclick="goToStep(2)">
+              <i class="fa-solid fa-arrow-left"></i> Voltar
+            </button>
+            <button type="submit" class="btn-primary-action" id="btn-submit-register">
+              <i class="fa-solid fa-rocket"></i> Criar Conta & Ativar Teste Grátis
+            </button>
+          </div>
+        </div>
+
+        <!-- STEP 4: CARREGAMENTO / FINALIZAÇÃO -->
+        <div class="form-step" id="form-step-4">
+          <div style="text-align: center; padding: 40px 20px;">
+            <div class="spinner" style="width: 48px; height: 48px; border-width: 4px; border-top-color: var(--primary); margin-bottom: 24px;"></div>
+            <h2 class="step-title">Preparando seu Estabelecimento...</h2>
+            <p class="step-desc" style="max-width: 460px; margin: 10px auto;">Estamos configurando seu banco de dados, catálogo de serviços e a sua Atendente Inteligente. Você será redirecionado em instantes!</p>
+          </div>
+        </div>
+
+      </form>
+
+      <!-- Trust Badges -->
+      <div class="trust-row">
+        <div class="trust-item"><i class="fa-solid fa-shield-halved"></i> 100% Seguro</div>
+        <div class="trust-item"><i class="fa-solid fa-clock"></i> Ativação em 1 minuto</div>
+        <div class="trust-item"><i class="fa-solid fa-credit-card"></i> Cancele a qualquer momento</div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    const baseUrl = window.location.protocol.startsWith('http') ? '' : 'http://localhost:3001';
+
+    let currentPlan = 'MULTI_USER';
+    let currentPeriod = 'monthly'; // 'monthly' | 'annual'
+
+    const planPrices = {
+      SINGLE_USER: { monthly: 97, annual: 77, name: 'Starter Individual', usersText: '1 profissional' },
+      MULTI_USER: { monthly: 197, annual: 157, name: 'Pro Negócios', usersText: 'Até 5 profissionais' },
+      ENTERPRISE: { monthly: 397, annual: 317, name: 'Enterprise / Redes', usersText: 'Profissionais ilimitados' }
+    };
+
+    function handlePeriodToggle(isAnnual) {
+      currentPeriod = isAnnual ? 'annual' : 'monthly';
+      updatePricingUI();
+    }
+
+    function setBillingPeriod(period) {
+      currentPeriod = period;
+      document.getElementById('billing-period-toggle').checked = (period === 'annual');
+      updatePricingUI();
+    }
+
+    function updatePricingUI() {
+      const isAnnual = currentPeriod === 'annual';
+      document.getElementById('label-monthly').classList.toggle('active', !isAnnual);
+      document.getElementById('label-annual').classList.toggle('active', isAnnual);
+
+      Object.keys(planPrices).forEach(planKey => {
+        const priceEl = document.getElementById(`price-${planKey}`);
+        const subtextEl = document.getElementById(`subtext-${planKey}`);
+        const price = isAnnual ? planPrices[planKey].annual : planPrices[planKey].monthly;
+        if (priceEl) priceEl.textContent = price;
+        if (subtextEl) {
+          subtextEl.textContent = isAnnual 
+            ? `Cobrado anualmente (Economize R$ ${(planPrices[planKey].monthly - planPrices[planKey].annual) * 12}/ano)` 
+            : '✨ 7 dias de teste grátis';
+        }
+      });
+
+      updateSummaryBanner();
+    }
+
+    function selectPlan(planKey) {
+      currentPlan = planKey;
+      document.querySelectorAll('.plan-card').forEach(card => card.classList.remove('selected'));
+      const selectedCard = document.getElementById(`plan-card-${planKey}`);
+      if (selectedCard) selectedCard.classList.add('selected');
+
+      document.querySelectorAll('.btn-select-plan').forEach(btn => {
+        btn.textContent = 'Escolher ' + (btn.id.replace('btn-', '').replace('_USER', ''));
+      });
+      const currentBtn = document.getElementById(`btn-${planKey}`);
+      if (currentBtn) currentBtn.textContent = '✓ Selecionado';
+
+      updateSummaryBanner();
+
+      // Rola suavemente até o formulário de cadastro
+      document.getElementById('register-flow-box').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function updateSummaryBanner() {
+      const planInfo = planPrices[currentPlan];
+      const price = currentPeriod === 'annual' ? planInfo.annual : planInfo.monthly;
+      document.getElementById('summary-plan-name').textContent = `Plano ${planInfo.name}`;
+      document.getElementById('summary-plan-details').textContent = `R$ ${price}/mês (${currentPeriod === 'annual' ? 'Plano Anual' : 'Plano Mensal'}) • 7 Dias Grátis • ${planInfo.usersText}`;
+    }
+
+    function scrollToPlans() {
+      document.getElementById('plans-container').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function goToStep(stepNumber) {
+      // Esconde todos os passos
+      document.querySelectorAll('.form-step').forEach(el => el.classList.remove('active'));
+      
+      // Atualiza o passo ativo
+      const targetStep = document.getElementById(`form-step-${stepNumber}`);
+      if (targetStep) targetStep.classList.add('active');
+
+      // Atualiza os indicadores visuais
+      for (let i = 1; i <= 4; i++) {
+        const navEl = document.getElementById(`step-nav-${i}`);
+        if (!navEl) continue;
+        navEl.classList.remove('active', 'completed');
+        if (i < stepNumber) {
+          navEl.classList.add('completed');
+        } else if (i === stepNumber) {
+          navEl.classList.add('active');
+        }
+      }
+    }
+
+    function showAlert(msg, isSuccess = false) {
+      const alertBox = document.getElementById('register-alert');
+      alertBox.textContent = msg;
+      alertBox.className = `alert-box ${isSuccess ? 'alert-success' : 'alert-danger'}`;
+      alertBox.style.display = 'flex';
+    }
+
+    function hideAlert() {
+      document.getElementById('register-alert').style.display = 'none';
+    }
+
+    function validateStep2AndProceed() {
+      hideAlert();
+      const name = document.getElementById('reg-owner-name').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      const password = document.getElementById('reg-password').value;
+      const passwordConfirm = document.getElementById('reg-password-confirm').value;
+
+      if (!name) {
+        showAlert('Por favor, informe o seu nome completo.');
+        return;
+      }
+      if (!email || !email.includes('@')) {
+        showAlert('Por favor, informe um endereço de e-mail válido.');
+        return;
+      }
+      if (!password || password.length < 6) {
+        showAlert('A senha deve conter no mínimo 6 caracteres.');
+        return;
+      }
+      if (password !== passwordConfirm) {
+        showAlert('As senhas não coincidem. Por favor, verifique.');
+        return;
+      }
+
+      goToStep(3);
+    }
+
+    function maskPhone(input) {
+      let v = input.value.replace(/\D/g, '');
+      if (v.length > 11) v = v.substring(0, 11);
+      if (v.length > 10) {
+        input.value = `(${v.substring(0,2)}) ${v.substring(2,7)}-${v.substring(7)}`;
+      } else if (v.length > 6) {
+        input.value = `(${v.substring(0,2)}) ${v.substring(2,6)}-${v.substring(6)}`;
+      } else if (v.length > 2) {
+        input.value = `(${v.substring(0,2)}) ${v.substring(2)}`;
+      } else if (v.length > 0) {
+        input.value = `(${v}`;
+      } else {
+        input.value = '';
+      }
+    }
+
+    async function handleRegisterSubmit(e) {
+      e.preventDefault();
+      hideAlert();
+
+      const ownerName = document.getElementById('reg-owner-name').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      const password = document.getElementById('reg-password').value;
+      const companyName = document.getElementById('reg-company-name').value.trim();
+      const segment = document.getElementById('reg-segment').value;
+      const phone = document.getElementById('reg-phone').value.trim();
+      const businessAddress = document.getElementById('reg-address').value.trim();
+
+      if (!companyName) {
+        showAlert('Por favor, informe o nome do seu estabelecimento.');
+        return;
+      }
+      if (!phone || phone.replace(/\D/g, '').length < 10) {
+        showAlert('Por favor, informe um WhatsApp comercial com DDD válido.');
+        return;
+      }
+
+      const submitBtn = document.getElementById('btn-submit-register');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<div class="spinner"></div> Criando sua Conta...';
+
+      goToStep(4);
+
+      try {
+        const res = await fetch(`${baseUrl}/api/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ownerName,
+            email,
+            password,
+            companyName,
+            phone,
+            planTier: currentPlan,
+            segment,
+            businessAddress
+          })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          goToStep(2);
+          showAlert(data.error || 'Erro ao criar conta. Tente novamente.');
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="fa-solid fa-rocket"></i> Criar Conta & Ativar Teste Grátis';
+          return;
+        }
+
+        // Salva dados de autenticação no localStorage para login automático instantâneo
+        localStorage.setItem('saas_token', data.token);
+        localStorage.setItem('saas_user', JSON.stringify(data.user));
+        localStorage.setItem('saas_tenant', JSON.stringify(data.tenant));
+
+        // Redireciona diretamente para o painel de controle com boas-vindas
+        setTimeout(() => {
+          window.location.href = '/?welcome=true';
+        }, 1200);
+
+      } catch (err) {
+        goToStep(2);
+        showAlert('Falha na conexão com o servidor. Verifique sua conexão e tente novamente.');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fa-solid fa-rocket"></i> Criar Conta & Ativar Teste Grátis';
+      }
+    }
+
+    // Inicialização
+    updatePricingUI();
+    selectPlan('MULTI_USER');
+  </script>
+
+</body>
+</html>

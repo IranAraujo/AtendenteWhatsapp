@@ -728,6 +728,122 @@ class DbRepository {
         return appts.filter(a => a.status !== 'CANCELLED').length;
     }
     // -------------------------------------------------------
+    // CADASTRO DE NOVO TENANT & PROPRIETÁRIO (SAAS ONBOARDING)
+    // -------------------------------------------------------
+    async registerTenantAndOwner(data) {
+        const cleanEmail = data.email.toLowerCase().trim();
+        const existing = await this.findUserByEmail(cleanEmail);
+        if (existing) {
+            throw new Error('Este e-mail já está cadastrado em nossa plataforma. Por favor, faça login ou use outro e-mail.');
+        }
+        const timestamp = Date.now();
+        const tenantId = `tenant-${timestamp}`;
+        const userId = `usr-${timestamp}`;
+        const profId = `prof-${timestamp}`;
+        let baseSlug = data.companyName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+        if (!baseSlug)
+            baseSlug = `empresa-${timestamp}`;
+        let slug = baseSlug;
+        if (this.tenants.some(t => t.slug === slug)) {
+            slug = `${baseSlug}-${Math.floor(100 + Math.random() * 900)}`;
+        }
+        const plan = data.planTier || 'MULTI_USER';
+        const maxUsers = plan === 'SINGLE_USER' ? 1 : plan === 'MULTI_USER' ? 5 : 99;
+        let systemPrompt = `Somos a ${data.companyName}. Atenda os clientes com profissionalismo, agilidade e excelência no agendamento de horários.`;
+        if (data.segment === 'barbearia') {
+            systemPrompt = `Somos a ${data.companyName}, uma barbearia moderna. Atenda o cliente com agilidade, simpatia e foco na excelência dos cortes masculinos e barba.`;
+        }
+        else if (data.segment === 'salao') {
+            systemPrompt = `Somos a ${data.companyName}, um salão de beleza completo. Atenda os clientes com muito acolhimento, simpatia e foco em cortes, penteados e estética.`;
+        }
+        else if (data.segment === 'clinica' || data.segment === 'estetica') {
+            systemPrompt = `Somos a ${data.companyName}, clínica de estética e saúde. Atenda os pacientes com extrema cordialidade, profissionalismo e atenção aos procedimentos.`;
+        }
+        const businessInfo = `Horário de Atendimento: Segunda a Sábado das 08h às 19h.${data.businessAddress ? ` Endereço: ${data.businessAddress}.` : ''}`;
+        const ownerUser = {
+            id: userId,
+            tenantId,
+            name: data.ownerName.trim(),
+            email: cleanEmail,
+            passwordHash: hashPassword(data.password),
+            role: 'OWNER',
+            professionalId: profId
+        };
+        const newTenant = {
+            id: tenantId,
+            name: data.companyName.trim(),
+            slug,
+            ownerEmail: cleanEmail,
+            planTier: plan,
+            maxUsers,
+            status: 'ACTIVE',
+            aiConfig: {
+                systemPrompt,
+                businessInfo,
+                voiceId: 'pt-BR-FranciscaNeural',
+                voiceReplyMode: 'WHEN_AUDIO_RECEIVED',
+                faqItems: [
+                    { question: 'Quais as formas de pagamento aceitas?', answer: 'Aceitamos Pix, cartão de débito, crédito e dinheiro.' },
+                    { question: 'Onde fica o estabelecimento?', answer: data.businessAddress ? `Ficamos localizados em: ${data.businessAddress}` : 'Consulte nosso endereço diretamente no painel ou com a nossa equipe.' }
+                ]
+            },
+            bookingRules: {
+                bufferTimeMinutes: 10,
+                minimumNoticeMinutes: 0,
+                maxFutureDays: 30,
+                roundRobinEnabled: true
+            },
+            remindersConfig: {
+                enable24hReminder: true,
+                enable1hReminder: true
+            },
+            users: [ownerUser]
+        };
+        // Gera serviços iniciais padrão com base no segmento
+        const initialServicesData = [];
+        if (data.segment === 'barbearia') {
+            initialServicesData.push({ name: 'Corte de Cabelo', price: 45.0, durationMinutes: 30, description: 'Corte tradicional ou degradê na tesoura/máquina' }, { name: 'Barba Completa', price: 35.0, durationMinutes: 30, description: 'Modelagem de barba com toalha quente e navalha' }, { name: 'Combo Cabelo + Barba', price: 70.0, durationMinutes: 50, description: 'Corte completo com tratamento de barba' });
+        }
+        else if (data.segment === 'salao') {
+            initialServicesData.push({ name: 'Corte & Escova', price: 70.0, durationMinutes: 45, description: 'Corte personalizado e finalização com escova' }, { name: 'Hidratação Profunda', price: 90.0, durationMinutes: 40, description: 'Tratamento capilar intensivo' }, { name: 'Manicure & Pedicure', price: 55.0, durationMinutes: 45, description: 'Cuidado completo para mãos e pés' });
+        }
+        else if (data.segment === 'clinica' || data.segment === 'estetica') {
+            initialServicesData.push({ name: 'Avaliação Inicial', price: 80.0, durationMinutes: 30, description: 'Avaliação clínica e plano de tratamento' }, { name: 'Limpeza de Pele Profunda', price: 130.0, durationMinutes: 60, description: 'Higienização, esfoliação e hidratação facial' }, { name: 'Sessão de Atendimento', price: 150.0, durationMinutes: 45, description: 'Sessão de procedimento especializado' });
+        }
+        else {
+            initialServicesData.push({ name: 'Atendimento Padrão', price: 60.0, durationMinutes: 30, description: 'Sessão padrão de atendimento' }, { name: 'Consulta Especializada', price: 120.0, durationMinutes: 60, description: 'Atendimento aprofundado e completo' });
+        }
+        const createdServices = [];
+        for (const s of initialServicesData) {
+            const created = await this.addService(tenantId, s);
+            createdServices.push(created);
+        }
+        // Cria o primeiro profissional (o próprio proprietário)
+        const initialProfessional = {
+            id: profId,
+            tenantId,
+            name: data.ownerName.trim(),
+            userId,
+            phone: data.phone ? data.phone.replace(/\D/g, '') : undefined,
+            workSchedule: {
+                startTime: '08:00',
+                endTime: '18:00',
+                lunchStartTime: '12:00',
+                lunchEndTime: '13:00',
+                workDays: [1, 2, 3, 4, 5, 6]
+            }
+        };
+        this.professionals.push(initialProfessional);
+        this.tenants.push(newTenant);
+        this.saveData();
+        return {
+            tenant: newTenant,
+            user: ownerUser,
+            initialServices: createdServices,
+            initialProfessional
+        };
+    }
+    // -------------------------------------------------------
     // REGRAS DE AGENDAMENTO & ACESSO PÚBLICO
     // -------------------------------------------------------
     async getTenantBySlug(slug) {
@@ -739,7 +855,7 @@ class DbRepository {
             return undefined;
         tenant.bookingRules = {
             bufferTimeMinutes: 10,
-            minimumNoticeMinutes: 60,
+            minimumNoticeMinutes: 0,
             maxFutureDays: 30,
             roundRobinEnabled: true,
             ...(tenant.bookingRules || {}),

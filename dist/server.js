@@ -82,13 +82,144 @@ app.get('/api/health', (req, res) => {
         }
     });
 });
-// Rota dedicada para o Painel Super-Admin Master
+// Rotas públicas do Frontend
 app.get('/admin', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/admin.html'));
 });
+app.get(['/register', '/cadastro', '/planos', '/assinar'], (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/register.html'));
+});
 // -------------------------------------------------------------
-// API DE AUTENTICAÇÃO (LOGIN DE PROPRIETÁRIOS E PROFISSIONAIS)
+// METADADOS DE PLANOS SAAS
 // -------------------------------------------------------------
+app.get('/api/plans', (req, res) => {
+    res.json({
+        success: true,
+        plans: [
+            {
+                id: 'SINGLE_USER',
+                name: 'Starter Individual',
+                tagline: 'Ideal para autônomos e profissionais independentes',
+                monthlyPrice: 97,
+                annualPriceMonthly: 77, // R$ 924/ano
+                maxUsers: 1,
+                maxProfessionals: 1,
+                badge: 'Início Rápido',
+                popular: false,
+                features: [
+                    '1 Profissional / 1 Usuário',
+                    'Atendente IA 24/7 no WhatsApp',
+                    'Agendamentos ilimitados',
+                    'Lembretes automáticos (24h e 1h antes)',
+                    'Catálogo de serviços e produtos',
+                    'Painel de gestão e agenda online',
+                    'Suporte via WhatsApp'
+                ]
+            },
+            {
+                id: 'MULTI_USER',
+                name: 'Pro Negócios',
+                tagline: 'Perfeito para salões, barbearias e clínicas em crescimento',
+                monthlyPrice: 197,
+                annualPriceMonthly: 157, // R$ 1.884/ano
+                maxUsers: 5,
+                maxProfessionals: 5,
+                badge: 'Mais Popular',
+                popular: true,
+                features: [
+                    'Até 5 Profissionais com agendas independentes',
+                    'Atendente IA com Respostas Naturais e Áudio Whisper',
+                    'Envio de Resposta por Voz Ultra-Realista (TTS)',
+                    'Lista de Espera Inteligente com aviso automático',
+                    'Bloqueio de Folgas e Intervalos',
+                    'Painel de Métricas Financeiras e Faturamento',
+                    'Controle de Acesso por Permissões',
+                    'Suporte Prioritário'
+                ]
+            },
+            {
+                id: 'ENTERPRISE',
+                name: 'Enterprise / Redes',
+                tagline: 'Para grandes estabelecimentos, franquias e redes',
+                monthlyPrice: 397,
+                annualPriceMonthly: 317, // R$ 3.804/ano
+                maxUsers: 99,
+                maxProfessionals: 99,
+                badge: 'Completo',
+                popular: false,
+                features: [
+                    'Profissionais e Usuários Ilimitados',
+                    'Todas as funções do Plano Pro inclusas',
+                    'Personalização avançada de Prompt da IA',
+                    'Integrações via Webhook externo',
+                    'Treinamento e Onboarding dedicado',
+                    'SLA de atendimento VIP 24h'
+                ]
+            }
+        ]
+    });
+});
+// -------------------------------------------------------------
+// API DE AUTENTICAÇÃO (CADASTRO E LOGIN)
+// -------------------------------------------------------------
+app.post('/api/auth/register', loginLimiter, async (req, res) => {
+    try {
+        const { ownerName, email, password, companyName, phone, planTier, segment, businessAddress } = req.body;
+        if (!ownerName || !email || !password || !companyName) {
+            return res.status(400).json({
+                success: false,
+                error: 'Campos obrigatórios: Nome do Responsável, Email, Senha e Nome do Estabelecimento.'
+            });
+        }
+        if (password.length < 6) {
+            return res.status(400).json({
+                success: false,
+                error: 'A senha deve conter no mínimo 6 caracteres.'
+            });
+        }
+        const { tenant, user, initialServices, initialProfessional } = await dbRepository.registerTenantAndOwner({
+            ownerName,
+            email,
+            password,
+            companyName,
+            phone,
+            planTier: planTier || 'MULTI_USER',
+            segment: segment || 'barbearia',
+            businessAddress
+        });
+        const token = generateJwtToken({
+            userId: user.id,
+            tenantId: user.tenantId,
+            role: user.role,
+            email: user.email
+        });
+        res.status(201).json({
+            success: true,
+            message: 'Conta e estabelecimento criados com sucesso!',
+            token,
+            user: {
+                id: user.id,
+                tenantId: user.tenantId,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                professionalId: user.professionalId
+            },
+            tenant: {
+                id: tenant.id,
+                name: tenant.name,
+                slug: tenant.slug,
+                planTier: tenant.planTier,
+                maxUsers: tenant.maxUsers
+            },
+            initialServicesCount: initialServices.length,
+            initialProfessionalName: initialProfessional.name
+        });
+    }
+    catch (error) {
+        res.status(400).json({ success: false, error: error.message });
+    }
+});
 app.post('/api/auth/login', loginLimiter, async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -119,6 +250,7 @@ app.post('/api/auth/login', loginLimiter, async (req, res) => {
             tenant: {
                 id: found.tenant.id,
                 name: found.tenant.name,
+                slug: found.tenant.slug,
                 planTier: found.tenant.planTier,
                 maxUsers: found.tenant.maxUsers
             }

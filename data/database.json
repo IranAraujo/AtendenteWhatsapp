@@ -86,6 +86,52 @@
         "enable1hReminder": true,
         "custom1hText": "Olá {nome}! Seu atendimento é daqui a 1 hora às {horario} com {profissional}. \n\nResponda *1* para *CONFIRMAR* ou *2* para *CANCELAR*."
       }
+    },
+    {
+      "id": "tenant-1787252050908",
+      "name": "Studio Carlos Cabelo & Barba",
+      "slug": "studio-carlos-cabelo-barba",
+      "ownerEmail": "novo.cliente.1787252050662@testeempresa.com.br",
+      "planTier": "MULTI_USER",
+      "maxUsers": 5,
+      "status": "ACTIVE",
+      "aiConfig": {
+        "systemPrompt": "Somos a Studio Carlos Cabelo & Barba, um salão de beleza completo. Atenda os clientes com muito acolhimento, simpatia e foco em cortes, penteados e estética.",
+        "businessInfo": "Horário de Atendimento: Segunda a Sábado das 08h às 19h. Endereço: Rua das Flores, 123 - Jardins.",
+        "voiceId": "pt-BR-FranciscaNeural",
+        "voiceReplyMode": "WHEN_AUDIO_RECEIVED",
+        "faqItems": [
+          {
+            "question": "Quais as formas de pagamento aceitas?",
+            "answer": "Aceitamos Pix, cartão de débito, crédito e dinheiro."
+          },
+          {
+            "question": "Onde fica o estabelecimento?",
+            "answer": "Ficamos localizados em: Rua das Flores, 123 - Jardins"
+          }
+        ]
+      },
+      "bookingRules": {
+        "bufferTimeMinutes": 10,
+        "minimumNoticeMinutes": 0,
+        "maxFutureDays": 30,
+        "roundRobinEnabled": true
+      },
+      "remindersConfig": {
+        "enable24hReminder": true,
+        "enable1hReminder": true
+      },
+      "users": [
+        {
+          "id": "usr-1787252050908",
+          "tenantId": "tenant-1787252050908",
+          "name": "Carlos Eduardo Santos",
+          "email": "novo.cliente.1787252050662@testeempresa.com.br",
+          "passwordHash": "$2b$10$m89gcQZ82HXnBGSrG888Z.v6l6c.bC.Q4kdP6GwXLogmnvX1S6gcW",
+          "role": "OWNER",
+          "professionalId": "prof-1787252050908"
+        }
+      ]
     }
   ],
   "services": [
@@ -120,6 +166,30 @@
       "price": 50,
       "durationMinutes": 30,
       "description": ""
+    },
+    {
+      "id": "srv-1787252050960",
+      "tenantId": "tenant-1787252050908",
+      "name": "Corte & Escova",
+      "price": 70,
+      "durationMinutes": 45,
+      "description": "Corte personalizado e finalização com escova"
+    },
+    {
+      "id": "srv-1787252050962",
+      "tenantId": "tenant-1787252050908",
+      "name": "Hidratação Profunda",
+      "price": 90,
+      "durationMinutes": 40,
+      "description": "Tratamento capilar intensivo"
+    },
+    {
+      "id": "srv-1787252050963",
+      "tenantId": "tenant-1787252050908",
+      "name": "Manicure & Pedicure",
+      "price": 55,
+      "durationMinutes": 45,
+      "description": "Cuidado completo para mãos e pés"
     }
   ],
   "products": [
@@ -203,6 +273,27 @@
       "workSchedule": {
         "startTime": "08:00",
         "endTime": "20:00",
+        "lunchStartTime": "12:00",
+        "lunchEndTime": "13:00",
+        "workDays": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ]
+      }
+    },
+    {
+      "id": "prof-1787252050908",
+      "tenantId": "tenant-1787252050908",
+      "name": "Carlos Eduardo Santos",
+      "userId": "usr-1787252050908",
+      "phone": "11988887777",
+      "workSchedule": {
+        "startTime": "08:00",
+        "endTime": "18:00",
         "lunchStartTime": "12:00",
         "lunchEndTime": "13:00",
         "workDays": [
