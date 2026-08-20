@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login - SaaS Atendente & Agendamento IA</title>
+  <title>Login - WhatsApp Atendente & Agendamento IA</title>
   
   <!-- Fontes Google & FontAwesome Icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,15 +13,20 @@
 
   <style>
     :root {
-      --bg-dark: #090d16;
-      --bg-card: #1e293b;
-      --bg-card-border: #334155;
-      --primary: #3b82f6;
-      --primary-hover: #2563eb;
-      --accent-purple: #8b5cf6;
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-      --radius-lg: 16px;
+      /* TEMA WHATSAPP WEB CLARO */
+      --wa-green: #00a884;
+      --wa-green-light: #25D366;
+      --wa-green-hover: #06cf9c;
+      --wa-green-dark: #008069;
+      --wa-light-bg: #f0f2f5;
+      --wa-card-bg: #ffffff;
+      --wa-card-border: #e9edef;
+      --wa-text-main: #111b21;
+      --wa-text-muted: #667781;
+      --wa-text-sub: #54656f;
+      --wa-pill-active: #d9fdd3;
+      --wa-pill-active-text: #008069;
+      --radius-lg: 14px;
       --radius-md: 10px;
     }
 
@@ -33,23 +38,24 @@
     }
 
     body {
-      background-color: var(--bg-dark);
-      color: var(--text-main);
+      background-color: var(--wa-light-bg);
+      color: var(--wa-text-main);
       display: flex;
       align-items: center;
       justify-content: center;
       min-height: 100vh;
       padding: 20px;
+      background-image: radial-gradient(circle at 50% 0%, rgba(0, 168, 132, 0.08) 0%, transparent 60%);
     }
 
     .login-card {
-      background: var(--bg-card);
-      border: 1px solid var(--bg-card-border);
+      background: var(--wa-card-bg);
+      border: 1px solid var(--wa-card-border);
       border-radius: var(--radius-lg);
-      width: 420px;
+      width: 440px;
       max-width: 100%;
-      padding: 36px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      padding: 40px 36px;
+      box-shadow: 0 10px 30px rgba(11, 20, 26, 0.08);
     }
 
     .brand-header {
@@ -58,9 +64,9 @@
     }
 
     .brand-icon {
-      width: 56px;
-      height: 56px;
-      background: linear-gradient(135deg, var(--primary), var(--accent-purple));
+      width: 58px;
+      height: 58px;
+      background: linear-gradient(135deg, var(--wa-green-light), var(--wa-green-dark));
       border-radius: var(--radius-md);
       display: flex;
       align-items: center;
@@ -68,19 +74,34 @@
       font-size: 28px;
       color: white;
       margin: 0 auto 16px auto;
-      box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
+      box-shadow: 0 6px 18px rgba(0, 168, 132, 0.3);
     }
 
     .brand-title {
       font-family: 'Outfit', sans-serif;
       font-size: 24px;
       font-weight: 700;
+      color: var(--wa-text-main);
+      letter-spacing: -0.5px;
+    }
+
+    .brand-tag {
+      display: inline-block;
+      background: var(--wa-pill-active);
+      color: var(--wa-pill-active-text);
+      font-size: 10.5px;
+      font-weight: 800;
+      padding: 3px 10px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 6px;
     }
 
     .brand-subtitle {
-      font-size: 13px;
-      color: var(--text-muted);
-      margin-top: 4px;
+      font-size: 13.5px;
+      color: var(--wa-text-muted);
+      margin-top: 8px;
     }
 
     .form-group {
@@ -91,29 +112,34 @@
       display: block;
       font-size: 13px;
       font-weight: 600;
-      color: var(--text-muted);
+      color: var(--wa-text-main);
       margin-bottom: 8px;
     }
 
     .form-control {
       width: 100%;
-      background: #0f172a;
-      border: 1px solid var(--bg-card-border);
+      background: #ffffff;
+      border: 1px solid var(--wa-card-border);
       border-radius: var(--radius-md);
-      padding: 14px 16px;
-      color: white;
+      padding: 13px 16px;
+      color: var(--wa-text-main);
       font-size: 14px;
       outline: none;
-      transition: border 0.2s ease;
+      transition: all 0.2s ease;
     }
 
     .form-control:focus {
-      border-color: var(--primary);
+      border-color: var(--wa-green);
+      box-shadow: 0 0 0 3px rgba(0, 168, 132, 0.15);
+    }
+
+    .form-control::placeholder {
+      color: #94a3b8;
     }
 
     .btn-login {
       width: 100%;
-      background: var(--primary);
+      background: var(--wa-green);
       color: white;
       border: none;
       padding: 14px;
@@ -125,38 +151,84 @@
       align-items: center;
       justify-content: center;
       gap: 10px;
-      transition: background 0.2s ease;
+      transition: all 0.2s ease;
       margin-top: 10px;
+      box-shadow: 0 4px 14px rgba(0, 168, 132, 0.3);
     }
 
     .btn-login:hover {
-      background: var(--primary-hover);
+      background: var(--wa-green-dark);
+      transform: translateY(-1px);
     }
 
     .alert-error {
-      background: rgba(239, 68, 68, 0.15);
-      border: 1px solid rgba(239, 68, 68, 0.3);
-      color: #ef4444;
-      padding: 12px;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #dc2626;
+      padding: 12px 16px;
       border-radius: var(--radius-md);
       font-size: 13px;
+      font-weight: 500;
       margin-bottom: 20px;
       display: none;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .register-link-box {
+      text-align: center;
+      margin-top: 22px;
+      padding-top: 18px;
+      border-top: 1px solid var(--wa-card-border);
+    }
+
+    .register-link-box span {
+      font-size: 13px;
+      color: var(--wa-text-muted);
+    }
+
+    .register-link-box a {
+      color: var(--wa-green-dark);
+      text-decoration: none;
+      font-size: 13.5px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 6px;
+      transition: color 0.2s ease;
+    }
+
+    .register-link-box a:hover {
+      color: var(--wa-green);
     }
 
     .demo-credentials {
       margin-top: 24px;
-      padding-top: 20px;
-      border-top: 1px solid var(--bg-card-border);
+      padding: 16px;
+      background: #f8fafc;
+      border: 1px solid var(--wa-card-border);
+      border-radius: var(--radius-md);
       font-size: 12px;
-      color: var(--text-muted);
+      color: var(--wa-text-sub);
+      line-height: 1.6;
+    }
+
+    .demo-credentials strong {
+      color: var(--wa-text-main);
+      display: block;
+      margin-bottom: 6px;
+      font-size: 12.5px;
     }
 
     .demo-credentials code {
-      background: #0f172a;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
       padding: 2px 6px;
       border-radius: 4px;
-      color: #60a5fa;
+      color: var(--wa-green-dark);
+      font-weight: 600;
+      font-family: 'Inter', monospace;
     }
   </style>
 </head>
@@ -164,12 +236,13 @@
 
   <div class="login-card">
     <div class="brand-header">
-      <div class="brand-icon"><i class="fa-solid fa-robot"></i></div>
-      <h1 class="brand-title">SaaS Atendente IA</h1>
+      <div class="brand-icon"><i class="fa-brands fa-whatsapp"></i></div>
+      <h1 class="brand-title">WhatsApp Atendente</h1>
+      <div><span class="brand-tag">Painel de Atendimento</span></div>
       <p class="brand-subtitle">Acesse o painel do seu estabelecimento</p>
     </div>
 
-    <div class="alert-error" id="login-alert"></div>
+    <div class="alert-error" id="login-alert"><i class="fa-solid fa-circle-exclamation"></i> <span id="login-alert-text"></span></div>
 
     <form onsubmit="handleLoginSubmit(event)">
       <div class="form-group">
@@ -178,7 +251,7 @@
       </div>
 
       <div class="form-group">
-        <label>Senha</label>
+        <label>Senha de Acesso</label>
         <input type="password" id="login-password" class="form-control" placeholder="••••••••" required value="123456">
       </div>
 
@@ -187,15 +260,15 @@
       </button>
     </form>
 
-    <div style="text-align: center; margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--bg-card-border);">
-      <span style="font-size: 13px; color: var(--text-muted);">Ainda não tem uma conta?</span><br>
-      <a href="/register" style="color: var(--primary); text-decoration: none; font-size: 13.5px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; margin-top: 6px;">
+    <div class="register-link-box">
+      <span>Ainda não tem uma conta?</span><br>
+      <a href="/register">
         <i class="fa-solid fa-bolt"></i> Ver Planos & Cadastre-se Grátis
       </a>
     </div>
 
     <div class="demo-credentials">
-      <strong>Contas de Demonstração Rápidas:</strong><br>
+      <strong>Contas de Demonstração Rápidas:</strong>
       • Dono Estilo & Beleza: <code>dono@estilobeleza.com.br</code> / <code>123456</code><br>
       • Profissional Matheus: <code>matheus@estilobeleza.com.br</code> / <code>123456</code><br>
       • Clínica Saúde: <code>contato@clinicasaude.com.br</code> / <code>123456</code>
@@ -210,6 +283,7 @@
       const email = document.getElementById('login-email').value.trim();
       const password = document.getElementById('login-password').value.trim();
       const alertBox = document.getElementById('login-alert');
+      const alertText = document.getElementById('login-alert-text');
       const btn = document.getElementById('btn-login-submit');
 
       alertBox.style.display = 'none';
@@ -228,22 +302,24 @@
           localStorage.setItem('saas_user', JSON.stringify(data.user));
           localStorage.setItem('saas_tenant', JSON.stringify(data.tenant));
 
-          if (data.user.role === 'SUPER_ADMIN') {
-            window.location.href = '/admin';
-          } else {
-            window.location.href = '/dashboard';
-          }
+          btn.innerHTML = '<i class="fa-solid fa-check"></i> Sucesso! Redirecionando...';
+          btn.style.background = '#25D366';
+
+          setTimeout(() => {
+            window.location.href = '/';
+          }, 600);
         } else {
+          alertText.textContent = data.error || 'Credenciais inválidas. Verifique seu e-mail e senha.';
+          alertBox.style.display = 'flex';
           btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Entrar no Painel';
-          alertBox.textContent = data.error || 'Credenciais inválidas. Verifique seu email e senha.';
-          alertBox.style.display = 'block';
         }
       } catch (err) {
+        alertText.textContent = 'Erro ao conectar ao servidor. Tente novamente.';
+        alertBox.style.display = 'flex';
         btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Entrar no Painel';
-        alertBox.textContent = 'Erro ao conectar ao servidor.';
-        alertBox.style.display = 'block';
       }
     }
   </script>
+
 </body>
 </html>

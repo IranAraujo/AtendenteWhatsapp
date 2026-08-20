@@ -11,14 +11,29 @@
 
   <style>
     :root {
-      --bg: #090a0f;
-      --card-bg: #11131a;
-      --card-border: #232733;
-      --text-main: #f1f5f9;
-      --text-muted: #94a3b8;
-      --primary: #2563eb;
-      --primary-hover: #1d4ed8;
-      --accent-green: #10b981;
+      /* TEMA WHATSAPP WEB CLARO */
+      --wa-green: #00a884;
+      --wa-green-light: #25D366;
+      --wa-green-hover: #06cf9c;
+      --wa-green-dark: #008069;
+      --wa-light-bg: #f0f2f5;
+      --wa-card-bg: #ffffff;
+      --wa-sidebar-bg: #f8fafc;
+      --wa-card-border: #e9edef;
+      --wa-text-main: #111b21;
+      --wa-text-muted: #667781;
+      --wa-text-sub: #54656f;
+      --wa-pill-active: #d9fdd3;
+      --wa-pill-active-text: #008069;
+      
+      --bg: var(--wa-light-bg);
+      --card-bg: var(--wa-card-bg);
+      --card-border: var(--wa-card-border);
+      --text-main: var(--wa-text-main);
+      --text-muted: var(--wa-text-muted);
+      --primary: var(--wa-green);
+      --primary-hover: var(--wa-green-dark);
+      --accent-green: var(--wa-green);
       --radius-sm: 8px;
       --radius-md: 12px;
       --radius-lg: 16px;
@@ -40,6 +55,7 @@
       align-items: center;
       justify-content: center;
       padding: 24px 16px;
+      background-image: radial-gradient(circle at 50% 0%, rgba(0, 168, 132, 0.08) 0%, transparent 60%);
     }
 
     .booking-wrapper {
@@ -48,7 +64,7 @@
       background: var(--card-bg);
       border: 1px solid var(--card-border);
       border-radius: var(--radius-lg);
-      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+      box-shadow: 0 10px 30px rgba(11, 20, 26, 0.08);
       overflow: hidden;
       display: grid;
       grid-template-columns: 320px 1fr;
@@ -63,7 +79,7 @@
 
     /* Left Sidebar: Host / Business Info */
     .booking-sidebar {
-      background: #0d0f15;
+      background: var(--wa-sidebar-bg);
       padding: 32px 24px;
       border-right: 1px solid var(--card-border);
       display: flex;
@@ -75,14 +91,14 @@
       width: 56px;
       height: 56px;
       border-radius: 50%;
-      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      background: linear-gradient(135deg, var(--wa-green-light), var(--wa-green-dark));
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 22px;
       font-weight: 700;
       color: white;
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+      box-shadow: 0 4px 14px rgba(0, 168, 132, 0.3);
     }
 
     .business-title {
@@ -99,8 +115,8 @@
     }
 
     .selected-summary {
-      background: rgba(255,255,255,0.03);
-      border: 1px solid var(--card-border);
+      background: var(--wa-pill-active);
+      border: 1px solid rgba(0, 168, 132, 0.25);
       border-radius: var(--radius-md);
       padding: 16px;
       display: flex;
@@ -113,11 +129,11 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      color: var(--text-muted);
+      color: var(--wa-text-sub);
     }
 
     .summary-item i {
-      color: var(--primary);
+      color: var(--wa-green-dark);
       width: 16px;
       text-align: center;
     }
@@ -132,11 +148,13 @@
       display: flex;
       flex-direction: column;
       position: relative;
+      background: #ffffff;
     }
 
     .step-title {
       font-size: 20px;
       font-weight: 700;
+      color: var(--text-main);
       margin-bottom: 8px;
     }
 
@@ -154,7 +172,7 @@
     }
 
     .service-card {
-      background: rgba(255,255,255,0.02);
+      background: #ffffff;
       border: 1px solid var(--card-border);
       border-radius: var(--radius-md);
       padding: 18px 20px;
@@ -167,18 +185,19 @@
 
     .service-card:hover {
       border-color: var(--primary);
-      background: rgba(37, 99, 235, 0.05);
+      background: #f0fdf4;
       transform: translateY(-1px);
     }
 
     .service-card.active {
       border-color: var(--primary);
-      background: rgba(37, 99, 235, 0.1);
+      background: var(--wa-pill-active);
     }
 
     .service-info h4 {
       font-size: 15px;
       font-weight: 600;
+      color: var(--text-main);
       margin-bottom: 4px;
     }
 
@@ -199,7 +218,7 @@
     .badge-price {
       font-size: 14px;
       font-weight: 700;
-      color: #38bdf8;
+      color: var(--wa-green-dark);
     }
 
     /* Step 2: Calendar & Slots Split View */
@@ -218,7 +237,7 @@
 
     /* Interactive Calendar */
     .calendar-card {
-      background: #0d0f15;
+      background: #f8fafc;
       border: 1px solid var(--card-border);
       border-radius: var(--radius-md);
       padding: 18px;
@@ -234,10 +253,11 @@
     .cal-month-title {
       font-size: 15px;
       font-weight: 600;
+      color: var(--text-main);
     }
 
     .cal-nav-btn {
-      background: transparent;
+      background: #ffffff;
       border: 1px solid var(--card-border);
       color: var(--text-main);
       width: 32px;
@@ -251,8 +271,8 @@
     }
 
     .cal-nav-btn:hover {
-      background: rgba(255,255,255,0.05);
-      border-color: var(--text-muted);
+      background: #e2e8f0;
+      border-color: #cbd5e1;
     }
 
     .cal-grid {
@@ -280,23 +300,24 @@
       cursor: pointer;
       transition: all 0.15s ease;
       position: relative;
+      color: var(--text-main);
     }
 
     .cal-day.disabled {
-      color: #334155;
+      color: #cbd5e1;
       cursor: not-allowed;
     }
 
     .cal-day.available:hover {
-      background: rgba(37, 99, 235, 0.2);
-      color: #60a5fa;
+      background: var(--wa-pill-active);
+      color: var(--wa-green-dark);
     }
 
     .cal-day.selected {
       background: var(--primary) !important;
       color: white !important;
       font-weight: 700;
-      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
+      box-shadow: 0 2px 8px rgba(0, 168, 132, 0.35);
     }
 
     .cal-day.today::after {
@@ -306,7 +327,7 @@
       width: 4px;
       height: 4px;
       border-radius: 50%;
-      background: #38bdf8;
+      background: var(--wa-green);
     }
 
     /* Vertical Time Slots */
@@ -329,7 +350,7 @@
     }
 
     .slot-btn {
-      background: rgba(255,255,255,0.03);
+      background: #ffffff;
       border: 1px solid var(--card-border);
       border-radius: var(--radius-sm);
       padding: 10px 14px;
@@ -351,6 +372,7 @@
       background: var(--primary);
       border-color: var(--primary);
       color: white;
+      box-shadow: 0 2px 8px rgba(0, 168, 132, 0.3);
     }
 
     /* Form Step */
@@ -362,24 +384,25 @@
       display: block;
       font-size: 12.5px;
       font-weight: 600;
-      color: var(--text-muted);
+      color: var(--text-main);
       margin-bottom: 6px;
     }
 
     .form-input {
       width: 100%;
-      background: #0d0f15;
+      background: #ffffff;
       border: 1px solid var(--card-border);
       border-radius: var(--radius-sm);
       padding: 12px 14px;
       color: var(--text-main);
       font-size: 14px;
       outline: none;
-      transition: border-color 0.2s;
+      transition: all 0.2s;
     }
 
     .form-input:focus {
       border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(0, 168, 132, 0.15);
     }
 
     .btn-primary {
@@ -390,21 +413,23 @@
       border-radius: var(--radius-sm);
       padding: 14px;
       font-size: 14.5px;
-      font-weight: 600;
+      font-weight: 700;
       cursor: pointer;
-      transition: background 0.2s;
+      transition: all 0.2s;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
+      box-shadow: 0 4px 14px rgba(0, 168, 132, 0.3);
     }
 
     .btn-primary:hover {
       background: var(--primary-hover);
+      transform: translateY(-1px);
     }
 
     .btn-back {
-      background: transparent;
+      background: #ffffff;
       border: 1px solid var(--card-border);
       color: var(--text-muted);
       border-radius: var(--radius-sm);
@@ -415,11 +440,13 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
+      transition: all 0.2s;
     }
 
     .btn-back:hover {
       color: var(--text-main);
-      border-color: var(--text-muted);
+      border-color: #cbd5e1;
+      background: #f8fafc;
     }
 
     /* Success State */
@@ -436,8 +463,8 @@
       width: 64px;
       height: 64px;
       border-radius: 50%;
-      background: rgba(16, 185, 129, 0.15);
-      color: var(--accent-green);
+      background: var(--wa-pill-active);
+      color: var(--wa-green-dark);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -446,14 +473,14 @@
     }
 
     .calendar-sync-btn {
-      background: #1e293b;
+      background: #f8fafc;
       border: 1px solid var(--card-border);
-      color: white;
+      color: var(--text-main);
       text-decoration: none;
       padding: 10px 18px;
       border-radius: var(--radius-sm);
       font-size: 13px;
-      font-weight: 500;
+      font-weight: 600;
       display: inline-flex;
       align-items: center;
       gap: 8px;
@@ -462,7 +489,8 @@
     }
 
     .calendar-sync-btn:hover {
-      background: #334155;
+      background: #e2e8f0;
+      border-color: var(--wa-green);
     }
   </style>
 </head>
@@ -492,7 +520,7 @@
         </div>
         <div class="summary-item" id="sum-price" style="display: none;">
           <i class="fa-solid fa-tag"></i>
-          <div><span style="font-size: 11px; display:block;">Valor</span><strong id="sum-price-val" style="color: #38bdf8;">-</strong></div>
+          <div><span style="font-size: 11px; display:block;">Valor</span><strong id="sum-price-val" style="color: var(--wa-green-dark);">-</strong></div>
         </div>
       </div>
 
