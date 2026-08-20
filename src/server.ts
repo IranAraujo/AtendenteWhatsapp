@@ -119,6 +119,25 @@ app.get('/api/plans', (req: Request, res: Response) => {
     success: true,
     plans: [
       {
+        id: 'FREE',
+        name: 'Plano Grátis',
+        tagline: 'Ideal para conhecer e começar sem nenhum custo',
+        monthlyPrice: 0,
+        annualPriceMonthly: 0,
+        maxUsers: 1,
+        maxProfessionals: 1,
+        badge: '100% Gratuito',
+        popular: false,
+        features: [
+          '1 Profissional / 1 Usuário',
+          'Atendente IA no WhatsApp',
+          'Agendamentos básicos',
+          'Catálogo de serviços e produtos',
+          'Agenda online pública',
+          'Acesso vitalício gratuito'
+        ]
+      },
+      {
         id: 'SINGLE_USER',
         name: 'Starter Individual',
         tagline: 'Ideal para autônomos e profissionais independentes',

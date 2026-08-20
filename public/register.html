@@ -39,6 +39,10 @@
       font-family: 'Inter', sans-serif;
     }
 
+    html, body {
+      scroll-behavior: smooth;
+    }
+
     body {
       background-color: var(--wa-light-bg);
       color: var(--wa-text-main);
@@ -112,7 +116,7 @@
     }
 
     .nav-link {
-      color: var(--wa-text-muted);
+      color: var(--text-muted);
       text-decoration: none;
       font-size: 14px;
       font-weight: 500;
@@ -146,17 +150,17 @@
 
     /* Container Principal */
     .main-container {
-      max-width: 1200px;
+      max-width: 1260px;
       margin: 0 auto;
-      padding: 40px 20px 80px 20px;
+      padding: 36px 20px 80px 20px;
       width: 100%;
     }
 
     /* Hero Header */
     .hero-header {
       text-align: center;
-      max-width: 780px;
-      margin: 0 auto 36px auto;
+      max-width: 840px;
+      margin: 0 auto 32px auto;
     }
 
     .hero-badge {
@@ -171,7 +175,7 @@
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
       border: 1px solid rgba(0, 168, 132, 0.2);
     }
 
@@ -181,7 +185,7 @@
       font-weight: 800;
       line-height: 1.18;
       letter-spacing: -0.8px;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
       color: var(--wa-text-main);
     }
 
@@ -274,20 +278,27 @@
       border: 1px solid #fde68a;
     }
 
-    /* Cards de Planos */
+    /* Cards de Planos (4 Grid) */
     .plans-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 24px;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
       margin-bottom: 50px;
     }
 
-    @media (max-width: 960px) {
+    @media (max-width: 1100px) {
       .plans-grid {
-        grid-template-columns: 1fr;
-        max-width: 480px;
+        grid-template-columns: repeat(2, 1fr);
+        max-width: 780px;
         margin-left: auto;
         margin-right: auto;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .plans-grid {
+        grid-template-columns: 1fr;
+        max-width: 440px;
       }
     }
 
@@ -295,7 +306,7 @@
       background: var(--wa-card-bg);
       border: 1px solid var(--wa-card-border);
       border-radius: var(--radius-xl);
-      padding: 32px 28px;
+      padding: 28px 22px;
       display: flex;
       flex-direction: column;
       position: relative;
@@ -328,42 +339,43 @@
       transform: translateX(-50%);
       background: var(--wa-green);
       color: white;
-      font-size: 11px;
+      font-size: 10.5px;
       font-weight: 800;
-      padding: 4px 14px;
+      padding: 4px 12px;
       border-radius: 50px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
       box-shadow: 0 4px 10px rgba(0, 168, 132, 0.35);
+      white-space: nowrap;
     }
 
     .plan-header {
-      margin-bottom: 16px;
+      margin-bottom: 14px;
     }
 
     .plan-name {
       font-family: 'Outfit', sans-serif;
-      font-size: 22px;
+      font-size: 20px;
       font-weight: 700;
       color: var(--wa-text-main);
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
 
     .plan-tagline {
-      font-size: 13px;
+      font-size: 12.5px;
       color: var(--wa-text-muted);
-      min-height: 38px;
+      min-height: 36px;
       line-height: 1.4;
     }
 
     .plan-price-wrapper {
-      margin-bottom: 24px;
-      padding-bottom: 20px;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
       border-bottom: 1px solid var(--wa-card-border);
     }
 
     .price-currency {
-      font-size: 18px;
+      font-size: 16px;
       font-weight: 600;
       color: var(--wa-text-muted);
       vertical-align: top;
@@ -372,19 +384,19 @@
 
     .price-amount {
       font-family: 'Outfit', sans-serif;
-      font-size: 42px;
+      font-size: 38px;
       font-weight: 800;
       letter-spacing: -1px;
       color: var(--wa-text-main);
     }
 
     .price-period {
-      font-size: 13px;
+      font-size: 12.5px;
       color: var(--wa-text-muted);
     }
 
     .price-subtext {
-      font-size: 12px;
+      font-size: 11.5px;
       color: var(--wa-green-dark);
       margin-top: 4px;
       font-weight: 700;
@@ -394,33 +406,33 @@
       list-style: none;
       display: flex;
       flex-direction: column;
-      gap: 12px;
-      margin-bottom: 30px;
+      gap: 10px;
+      margin-bottom: 26px;
       flex-grow: 1;
     }
 
     .plan-feature-item {
-      font-size: 13.5px;
+      font-size: 13px;
       color: var(--wa-text-sub);
       display: flex;
       align-items: flex-start;
-      gap: 10px;
-      line-height: 1.4;
+      gap: 8px;
+      line-height: 1.35;
     }
 
     .plan-feature-item i {
       color: var(--wa-green);
-      font-size: 14px;
+      font-size: 13px;
       margin-top: 2px;
       flex-shrink: 0;
     }
 
     .btn-select-plan {
       width: 100%;
-      padding: 13px;
+      padding: 12px;
       border-radius: var(--radius-md);
       font-weight: 700;
-      font-size: 14px;
+      font-size: 13.5px;
       border: 1px solid var(--wa-card-border);
       background: #f8fafc;
       color: var(--wa-text-main);
@@ -810,9 +822,9 @@
     
     <!-- Hero Header -->
     <header class="hero-header">
-      <div class="hero-badge"><i class="fa-solid fa-bolt"></i> 7 Dias de Teste Grátis Sem Compromisso</div>
+      <div class="hero-badge"><i class="fa-solid fa-bolt"></i> Escolha o Plano Ideal para seu Negócio</div>
       <h1 class="hero-title">Automatize seu WhatsApp com <span>Inteligência Artificial</span></h1>
-      <p class="hero-subtitle">Atenda seus clientes 24h por dia, tire dúvidas e agende horários automaticamente sem você precisar digitar uma única palavra.</p>
+      <p class="hero-subtitle">Atenda seus clientes 24h por dia, tire dúvidas e agende horários automaticamente sem precisar digitar uma única palavra.</p>
     </header>
 
     <!-- Billing Switch (Mensal / Anual) -->
@@ -827,14 +839,38 @@
       </span>
     </div>
 
-    <!-- Cards de Planos -->
+    <!-- Cards de Planos (4 Grid) -->
     <div class="plans-grid" id="plans-container">
+
+      <!-- Plano Free / Grátis -->
+      <div class="plan-card" id="plan-card-FREE" onclick="selectPlan('FREE', true)">
+        <div class="plan-header">
+          <h3 class="plan-name">Plano Grátis</h3>
+          <p class="plan-tagline">Para conhecer e começar sem custos.</p>
+        </div>
+        <div class="plan-price-wrapper">
+          <span class="price-currency">R$</span>
+          <span class="price-amount" id="price-FREE">0</span>
+          <span class="price-period">/mês</span>
+          <div class="price-subtext" id="subtext-FREE">✨ 100% Gratuito Para Sempre</div>
+        </div>
+        <ul class="plan-features">
+          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> <strong>1 Profissional</strong> / 1 Usuário</li>
+          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Atendente IA no WhatsApp</li>
+          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Agendamentos básicos</li>
+          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Catálogo de serviços e produtos</li>
+          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Página pública de agendamento</li>
+        </ul>
+        <button type="button" class="btn-select-plan" id="btn-FREE" data-plan="FREE">
+          Começar Grátis
+        </button>
+      </div>
       
       <!-- Plano Starter -->
-      <div class="plan-card" id="plan-card-SINGLE_USER" onclick="selectPlan('SINGLE_USER')">
+      <div class="plan-card" id="plan-card-SINGLE_USER" onclick="selectPlan('SINGLE_USER', true)">
         <div class="plan-header">
           <h3 class="plan-name">Starter Individual</h3>
-          <p class="plan-tagline">Ideal para autônomos e profissionais independentes.</p>
+          <p class="plan-tagline">Para autônomos e profissionais independentes.</p>
         </div>
         <div class="plan-price-wrapper">
           <span class="price-currency">R$</span>
@@ -846,21 +882,21 @@
           <li class="plan-feature-item"><i class="fa-solid fa-check"></i> <strong>1 Profissional</strong> / 1 Usuário</li>
           <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Atendente IA 24/7 no WhatsApp</li>
           <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Agendamentos Ilimitados</li>
-          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Lembretes automáticos 24h e 1h antes</li>
-          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Catálogo de serviços e produtos</li>
-          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Painel de gestão e agenda online</li>
+          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Lembretes automáticos 24h e 1h</li>
+          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Catálogo completo & agenda online</li>
+          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Suporte WhatsApp</li>
         </ul>
-        <button type="button" class="btn-select-plan" id="btn-SINGLE_USER">
+        <button type="button" class="btn-select-plan" id="btn-SINGLE_USER" data-plan="SINGLE_USER">
           Escolher Starter
         </button>
       </div>
 
       <!-- Plano Pro (Mais Popular) -->
-      <div class="plan-card popular selected" id="plan-card-MULTI_USER" onclick="selectPlan('MULTI_USER')">
+      <div class="plan-card popular selected" id="plan-card-MULTI_USER" onclick="selectPlan('MULTI_USER', true)">
         <div class="plan-badge">Mais Escolhido ⭐</div>
         <div class="plan-header">
           <h3 class="plan-name">Pro Negócios</h3>
-          <p class="plan-tagline">Perfeito para salões, barbearias e clínicas em crescimento.</p>
+          <p class="plan-tagline">Para salões, barbearias e clínicas em crescimento.</p>
         </div>
         <div class="plan-price-wrapper">
           <span class="price-currency">R$</span>
@@ -869,24 +905,24 @@
           <div class="price-subtext" id="subtext-MULTI_USER">✨ 7 dias de teste grátis</div>
         </div>
         <ul class="plan-features">
-          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> <strong>Até 5 Profissionais</strong> com agendas independentes</li>
+          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> <strong>Até 5 Profissionais</strong> independentes</li>
           <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Atendente IA com Respostas Naturais</li>
-          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> <strong>Envio de Áudio por Voz Ultra-Realista (TTS)</strong></li>
-          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> <strong>Lista de Espera Inteligente com aviso automático</strong></li>
+          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> <strong>Envio de Áudio por Voz (TTS)</strong></li>
+          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> <strong>Lista de Espera Inteligente</strong></li>
           <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Bloqueio de Folgas e Intervalos</li>
-          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Painel de Métricas Financeiras e Faturamento</li>
+          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Métricas Financeiras e Faturamento</li>
           <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Suporte Prioritário</li>
         </ul>
-        <button type="button" class="btn-select-plan" id="btn-MULTI_USER">
+        <button type="button" class="btn-select-plan" id="btn-MULTI_USER" data-plan="MULTI_USER">
           Escolher Pro
         </button>
       </div>
 
       <!-- Plano Enterprise -->
-      <div class="plan-card" id="plan-card-ENTERPRISE" onclick="selectPlan('ENTERPRISE')">
+      <div class="plan-card" id="plan-card-ENTERPRISE" onclick="selectPlan('ENTERPRISE', true)">
         <div class="plan-header">
           <h3 class="plan-name">Enterprise / Redes</h3>
-          <p class="plan-tagline">Para grandes estabelecimentos, franquias e redes.</p>
+          <p class="plan-tagline">Para grandes redes, franquias e clínicas.</p>
         </div>
         <div class="plan-price-wrapper">
           <span class="price-currency">R$</span>
@@ -896,13 +932,13 @@
         </div>
         <ul class="plan-features">
           <li class="plan-feature-item"><i class="fa-solid fa-check"></i> <strong>Profissionais e Usuários Ilimitados</strong></li>
-          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Todas as funcionalidades do Plano Pro</li>
-          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Personalização avançada de Prompt da IA</li>
+          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Todas as funções do Plano Pro</li>
+          <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Personalização avançada de Prompt</li>
           <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Integrações via Webhook externo</li>
           <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Treinamento e Onboarding dedicado</li>
           <li class="plan-feature-item"><i class="fa-solid fa-check"></i> SLA de atendimento VIP 24h</li>
         </ul>
-        <button type="button" class="btn-select-plan" id="btn-ENTERPRISE">
+        <button type="button" class="btn-select-plan" id="btn-ENTERPRISE" data-plan="ENTERPRISE">
           Escolher Enterprise
         </button>
       </div>
@@ -1024,7 +1060,7 @@
               <i class="fa-solid fa-arrow-left"></i> Voltar
             </button>
             <button type="submit" class="btn-primary-action" id="btn-submit-register">
-              <i class="fa-solid fa-rocket"></i> Criar Conta & Ativar Teste Grátis
+              <i class="fa-solid fa-rocket"></i> Criar Conta & Começar
             </button>
           </div>
         </div>
@@ -1058,6 +1094,7 @@
     let currentPeriod = 'monthly'; // 'monthly' | 'annual'
 
     const planPrices = {
+      FREE: { monthly: 0, annual: 0, name: 'Grátis', usersText: '1 profissional' },
       SINGLE_USER: { monthly: 97, annual: 77, name: 'Starter Individual', usersText: '1 profissional' },
       MULTI_USER: { monthly: 197, annual: 157, name: 'Pro Negócios', usersText: 'Até 5 profissionais' },
       ENTERPRISE: { monthly: 397, annual: 317, name: 'Enterprise / Redes', usersText: 'Profissionais ilimitados' }
@@ -1085,38 +1122,56 @@
         const price = isAnnual ? planPrices[planKey].annual : planPrices[planKey].monthly;
         if (priceEl) priceEl.textContent = price;
         if (subtextEl) {
-          subtextEl.textContent = isAnnual 
-            ? `Cobrado anualmente (Economize R$ ${(planPrices[planKey].monthly - planPrices[planKey].annual) * 12}/ano)` 
-            : '✨ 7 dias de teste grátis';
+          if (planKey === 'FREE') {
+            subtextEl.textContent = '✨ 100% Gratuito Para Sempre';
+          } else {
+            subtextEl.textContent = isAnnual 
+              ? `Cobrado anualmente (Economize R$ ${(planPrices[planKey].monthly - planPrices[planKey].annual) * 12}/ano)` 
+              : '✨ 7 dias de teste grátis';
+          }
         }
       });
 
       updateSummaryBanner();
     }
 
-    function selectPlan(planKey) {
+    function selectPlan(planKey, shouldScroll = false) {
       currentPlan = planKey;
       document.querySelectorAll('.plan-card').forEach(card => card.classList.remove('selected'));
       const selectedCard = document.getElementById(`plan-card-${planKey}`);
       if (selectedCard) selectedCard.classList.add('selected');
 
       document.querySelectorAll('.btn-select-plan').forEach(btn => {
-        btn.textContent = 'Escolher ' + (btn.id.replace('btn-', '').replace('_USER', ''));
+        const key = btn.getAttribute('data-plan');
+        if (key === 'FREE') {
+          btn.textContent = 'Começar Grátis';
+        } else if (key === 'SINGLE_USER') {
+          btn.textContent = 'Escolher Starter';
+        } else if (key === 'MULTI_USER') {
+          btn.textContent = 'Escolher Pro';
+        } else if (key === 'ENTERPRISE') {
+          btn.textContent = 'Escolher Enterprise';
+        }
       });
+
       const currentBtn = document.getElementById(`btn-${planKey}`);
       if (currentBtn) currentBtn.textContent = '✓ Selecionado';
 
       updateSummaryBanner();
 
-      // Rola suavemente até o formulário de cadastro
-      document.getElementById('register-flow-box').scrollIntoView({ behavior: 'smooth' });
+      // Somente rola para o formulário se o usuário tiver clicado explicitamente no card ou botão
+      if (shouldScroll) {
+        document.getElementById('register-flow-box').scrollIntoView({ behavior: 'smooth' });
+      }
     }
 
     function updateSummaryBanner() {
       const planInfo = planPrices[currentPlan];
       const price = currentPeriod === 'annual' ? planInfo.annual : planInfo.monthly;
+      const periodLabel = currentPlan === 'FREE' ? 'Gratuito Vitalício' : (currentPeriod === 'annual' ? 'Plano Anual' : 'Plano Mensal');
+      const testLabel = currentPlan === 'FREE' ? 'Sem Mensalidade' : '7 Dias Grátis';
       document.getElementById('summary-plan-name').textContent = `Plano ${planInfo.name}`;
-      document.getElementById('summary-plan-details').textContent = `R$ ${price}/mês (${currentPeriod === 'annual' ? 'Plano Anual' : 'Plano Mensal'}) • 7 Dias Grátis • ${planInfo.usersText}`;
+      document.getElementById('summary-plan-details').textContent = `R$ ${price}/mês (${periodLabel}) • ${testLabel} • ${planInfo.usersText}`;
     }
 
     function scrollToPlans() {
@@ -1247,7 +1302,7 @@
           goToStep(2);
           showAlert(data.error || 'Erro ao criar conta. Tente novamente.');
           submitBtn.disabled = false;
-          submitBtn.innerHTML = '<i class="fa-solid fa-rocket"></i> Criar Conta & Ativar Teste Grátis';
+          submitBtn.innerHTML = '<i class="fa-solid fa-rocket"></i> Criar Conta & Começar';
           return;
         }
 
@@ -1265,13 +1320,16 @@
         goToStep(2);
         showAlert('Falha na conexão com o servidor. Verifique sua conexão e tente novamente.');
         submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i class="fa-solid fa-rocket"></i> Criar Conta & Ativar Teste Grátis';
+        submitBtn.innerHTML = '<i class="fa-solid fa-rocket"></i> Criar Conta & Começar';
       }
     }
 
-    // Inicialização
-    updatePricingUI();
-    selectPlan('MULTI_USER');
+    // Garante que ao carregar a página o usuário veja os planos no topo sem scroll automático
+    window.addEventListener('DOMContentLoaded', () => {
+      window.scrollTo(0, 0);
+      updatePricingUI();
+      selectPlan('MULTI_USER', false); // sem rolagem automática
+    });
   </script>
 
 </body>

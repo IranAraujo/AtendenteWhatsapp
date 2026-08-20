@@ -116,7 +116,7 @@ export interface DbTenantItem {
   name: string;
   slug: string;
   ownerEmail: string;
-  planTier: 'SINGLE_USER' | 'MULTI_USER' | 'ENTERPRISE';
+  planTier: 'FREE' | 'SINGLE_USER' | 'MULTI_USER' | 'ENTERPRISE';
   maxUsers: number;
   status: 'ACTIVE' | 'SUSPENDED';
   aiConfig: {
@@ -387,8 +387,8 @@ class DbRepository {
     if (!tenant) return { success: false, message: 'Estabelecimento não encontrado.' };
 
     const currentUsers = tenant.users || [];
-    if (tenant.planTier === 'SINGLE_USER' && currentUsers.length >= 1) {
-      return { success: false, message: 'O plano Single-User permite apenas 1 usuário. Faça o upgrade para o plano Multi-User para adicionar mais membros da equipe.' };
+    if ((tenant.planTier === 'FREE' || tenant.planTier === 'SINGLE_USER') && currentUsers.length >= 1) {
+      return { success: false, message: 'O plano Grátis/Individual permite apenas 1 usuário. Faça o upgrade para o plano Multi-User para adicionar mais membros da equipe.' };
     }
 
     if (tenant.planTier === 'MULTI_USER' && currentUsers.length >= tenant.maxUsers) {
@@ -755,7 +755,7 @@ class DbRepository {
     return false;
   }
 
-  async updateTenantPlan(tenantId: string, planTier: 'SINGLE_USER' | 'MULTI_USER' | 'ENTERPRISE'): Promise<{ success: boolean; maxUsers: number }> {
+  async updateTenantPlan(tenantId: string, planTier: 'FREE' | 'SINGLE_USER' | 'MULTI_USER' | 'ENTERPRISE'): Promise<{ success: boolean; maxUsers: number }> {
     const tenant = await this.getTenantById(tenantId);
     if (!tenant) return { success: false, maxUsers: 1 };
 
@@ -903,7 +903,7 @@ class DbRepository {
     password: string;
     companyName: string;
     phone?: string;
-    planTier?: 'SINGLE_USER' | 'MULTI_USER' | 'ENTERPRISE';
+    planTier?: 'FREE' | 'SINGLE_USER' | 'MULTI_USER' | 'ENTERPRISE';
     segment?: 'barbearia' | 'salao' | 'clinica' | 'estetica' | 'outro';
     businessAddress?: string;
   }): Promise<{ tenant: DbTenantItem; user: DbTenantUser; initialServices: DbServiceItem[]; initialProfessional: DbProfessionalItem }> {
@@ -925,8 +925,8 @@ class DbRepository {
       slug = `${baseSlug}-${Math.floor(100 + Math.random() * 900)}`;
     }
 
-    const plan = data.planTier || 'MULTI_USER';
-    const maxUsers = plan === 'SINGLE_USER' ? 1 : plan === 'MULTI_USER' ? 5 : 99;
+    const plan = data.planTier || 'FREE';
+    const maxUsers = plan === 'FREE' || plan === 'SINGLE_USER' ? 1 : plan === 'MULTI_USER' ? 5 : 999;
 
     let systemPrompt = `Somos a ${data.companyName}. Atenda os clientes com profissionalismo, agilidade e excelência no agendamento de horários.`;
     if (data.segment === 'barbearia') {

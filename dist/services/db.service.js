@@ -235,8 +235,8 @@ class DbRepository {
         if (!tenant)
             return { success: false, message: 'Estabelecimento não encontrado.' };
         const currentUsers = tenant.users || [];
-        if (tenant.planTier === 'SINGLE_USER' && currentUsers.length >= 1) {
-            return { success: false, message: 'O plano Single-User permite apenas 1 usuário. Faça o upgrade para o plano Multi-User para adicionar mais membros da equipe.' };
+        if ((tenant.planTier === 'FREE' || tenant.planTier === 'SINGLE_USER') && currentUsers.length >= 1) {
+            return { success: false, message: 'O plano Grátis/Individual permite apenas 1 usuário. Faça o upgrade para o plano Multi-User para adicionar mais membros da equipe.' };
         }
         if (tenant.planTier === 'MULTI_USER' && currentUsers.length >= tenant.maxUsers) {
             return { success: false, message: `Limite máximo de ${tenant.maxUsers} usuários atingido para este plano.` };
@@ -747,8 +747,8 @@ class DbRepository {
         if (this.tenants.some(t => t.slug === slug)) {
             slug = `${baseSlug}-${Math.floor(100 + Math.random() * 900)}`;
         }
-        const plan = data.planTier || 'MULTI_USER';
-        const maxUsers = plan === 'SINGLE_USER' ? 1 : plan === 'MULTI_USER' ? 5 : 99;
+        const plan = data.planTier || 'FREE';
+        const maxUsers = plan === 'FREE' || plan === 'SINGLE_USER' ? 1 : plan === 'MULTI_USER' ? 5 : 999;
         let systemPrompt = `Somos a ${data.companyName}. Atenda os clientes com profissionalismo, agilidade e excelência no agendamento de horários.`;
         if (data.segment === 'barbearia') {
             systemPrompt = `Somos a ${data.companyName}, uma barbearia moderna. Atenda o cliente com agilidade, simpatia e foco na excelência dos cortes masculinos e barba.`;

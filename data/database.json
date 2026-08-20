@@ -132,6 +132,52 @@
           "professionalId": "prof-1787252050908"
         }
       ]
+    },
+    {
+      "id": "tenant-1787253359216",
+      "name": "Ana Estética Express",
+      "slug": "ana-est-tica-express",
+      "ownerEmail": "free.user.1787253359186@testeempresa.com.br",
+      "planTier": "FREE",
+      "maxUsers": 1,
+      "status": "ACTIVE",
+      "aiConfig": {
+        "systemPrompt": "Somos a Ana Estética Express, clínica de estética e saúde. Atenda os pacientes com extrema cordialidade, profissionalismo e atenção aos procedimentos.",
+        "businessInfo": "Horário de Atendimento: Segunda a Sábado das 08h às 19h.",
+        "voiceId": "pt-BR-FranciscaNeural",
+        "voiceReplyMode": "WHEN_AUDIO_RECEIVED",
+        "faqItems": [
+          {
+            "question": "Quais as formas de pagamento aceitas?",
+            "answer": "Aceitamos Pix, cartão de débito, crédito e dinheiro."
+          },
+          {
+            "question": "Onde fica o estabelecimento?",
+            "answer": "Consulte nosso endereço diretamente no painel ou com a nossa equipe."
+          }
+        ]
+      },
+      "bookingRules": {
+        "bufferTimeMinutes": 10,
+        "minimumNoticeMinutes": 0,
+        "maxFutureDays": 30,
+        "roundRobinEnabled": true
+      },
+      "remindersConfig": {
+        "enable24hReminder": true,
+        "enable1hReminder": true
+      },
+      "users": [
+        {
+          "id": "usr-1787253359216",
+          "tenantId": "tenant-1787253359216",
+          "name": "Ana Paula Free",
+          "email": "free.user.1787253359186@testeempresa.com.br",
+          "passwordHash": "$2b$10$t4qsxbsGVY5n130jKpUKcupGlUjE11wAbTFecanPuNuyorvpycsxK",
+          "role": "OWNER",
+          "professionalId": "prof-1787253359216"
+        }
+      ]
     }
   ],
   "services": [
@@ -190,6 +236,30 @@
       "price": 55,
       "durationMinutes": 45,
       "description": "Cuidado completo para mãos e pés"
+    },
+    {
+      "id": "srv-1787253359384",
+      "tenantId": "tenant-1787253359216",
+      "name": "Avaliação Inicial",
+      "price": 80,
+      "durationMinutes": 30,
+      "description": "Avaliação clínica e plano de tratamento"
+    },
+    {
+      "id": "srv-1787253359390",
+      "tenantId": "tenant-1787253359216",
+      "name": "Limpeza de Pele Profunda",
+      "price": 130,
+      "durationMinutes": 60,
+      "description": "Higienização, esfoliação e hidratação facial"
+    },
+    {
+      "id": "srv-1787253359392",
+      "tenantId": "tenant-1787253359216",
+      "name": "Sessão de Atendimento",
+      "price": 150,
+      "durationMinutes": 45,
+      "description": "Sessão de procedimento especializado"
     }
   ],
   "products": [
@@ -291,6 +361,27 @@
       "name": "Carlos Eduardo Santos",
       "userId": "usr-1787252050908",
       "phone": "11988887777",
+      "workSchedule": {
+        "startTime": "08:00",
+        "endTime": "18:00",
+        "lunchStartTime": "12:00",
+        "lunchEndTime": "13:00",
+        "workDays": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ]
+      }
+    },
+    {
+      "id": "prof-1787253359216",
+      "tenantId": "tenant-1787253359216",
+      "name": "Ana Paula Free",
+      "userId": "usr-1787253359216",
+      "phone": "11977778888",
       "workSchedule": {
         "startTime": "08:00",
         "endTime": "18:00",
