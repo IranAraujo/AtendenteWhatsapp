@@ -105,12 +105,175 @@
     /* Sidebar Styles - Estilo WhatsApp Web Lateral Claro */
     .sidebar {
       width: 280px;
+      min-width: 280px;
       background-color: var(--wa-sidebar-bg);
       border-right: 1px solid var(--wa-card-border);
       display: flex;
       flex-direction: column;
       padding: 20px 16px;
       box-shadow: 2px 0 8px rgba(11, 20, 26, 0.04);
+      overflow-y: auto;
+      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 100;
+    }
+
+    /* Sidebar collapse animation */
+    .sidebar.collapsed {
+      width: 68px;
+      min-width: 68px;
+      padding: 20px 10px;
+    }
+
+    .sidebar.collapsed .brand-title,
+    .sidebar.collapsed .brand-subtitle,
+    .sidebar.collapsed .user-profile-box,
+    .sidebar.collapsed .nav-item span,
+    .sidebar.collapsed .sidebar-footer-link span,
+    .sidebar.collapsed .nav-submenu {
+      display: none !important;
+    }
+
+    .sidebar.collapsed .nav-item {
+      justify-content: center;
+      padding: 11px 8px;
+    }
+
+    .sidebar.collapsed .nav-item i {
+      width: auto;
+      font-size: 18px;
+    }
+
+    .sidebar.collapsed .sidebar-footer-link {
+      justify-content: center;
+      padding: 9px 8px;
+    }
+
+    /* Hamburguer toggle button */
+    .sidebar-toggle-btn {
+      display: none;
+      position: fixed;
+      top: 14px;
+      left: 14px;
+      z-index: 200;
+      width: 38px;
+      height: 38px;
+      background: var(--wa-green);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(0, 168, 132, 0.3);
+      transition: all 0.2s;
+    }
+
+    .sidebar-toggle-btn:hover {
+      background: var(--wa-green-dark);
+    }
+
+    /* Mobile overlay */
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.4);
+      z-index: 99;
+    }
+
+    .sidebar-overlay.active {
+      display: block;
+    }
+
+    /* Responsive breakpoints */
+    @media (max-width: 1100px) {
+      .sidebar:not(.mobile-open) {
+        width: 68px;
+        min-width: 68px;
+        padding: 20px 10px;
+      }
+
+      .sidebar:not(.mobile-open) .brand-title,
+      .sidebar:not(.mobile-open) .brand-subtitle,
+      .sidebar:not(.mobile-open) .user-profile-box,
+      .sidebar:not(.mobile-open) .nav-item span,
+      .sidebar:not(.mobile-open) .sidebar-footer-link span,
+      .sidebar:not(.mobile-open) .nav-submenu {
+        display: none !important;
+      }
+
+      .sidebar:not(.mobile-open) .nav-item {
+        justify-content: center;
+        padding: 11px 8px;
+      }
+
+      .sidebar:not(.mobile-open) .nav-item i {
+        width: auto;
+        font-size: 18px;
+      }
+
+      .sidebar:not(.mobile-open) .sidebar-footer-link {
+        justify-content: center;
+        padding: 9px 8px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .sidebar-toggle-btn {
+        display: flex;
+      }
+
+      .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100vh;
+        width: 280px !important;
+        min-width: 280px !important;
+        transform: translateX(-100%);
+        z-index: 150;
+        padding: 20px 16px !important;
+      }
+
+      .sidebar .brand-title,
+      .sidebar .brand-subtitle,
+      .sidebar .user-profile-box,
+      .sidebar .nav-item span,
+      .sidebar .sidebar-footer-link span,
+      .sidebar .nav-submenu {
+        display: flex !important;
+      }
+
+      .sidebar .nav-item span { display: inline !important; }
+      .sidebar .sidebar-footer-link span { display: inline !important; }
+      .sidebar .brand-title { display: block !important; }
+      .sidebar .brand-subtitle { display: block !important; }
+      .sidebar .user-profile-box { display: flex !important; }
+      .sidebar .nav-submenu { display: flex !important; }
+
+      .sidebar.mobile-open {
+        transform: translateX(0);
+      }
+
+      .sidebar .nav-item {
+        justify-content: flex-start !important;
+        padding: 11px 14px !important;
+      }
+
+      .sidebar .nav-item i {
+        width: 20px !important;
+        font-size: 16px !important;
+      }
+
+      .sidebar .sidebar-footer-link {
+        justify-content: flex-start !important;
+        padding: 9px 12px !important;
+      }
+
+      .main-content {
+        padding-left: 0;
+      }
     }
 
     .brand-logo {
@@ -3350,7 +3513,16 @@
       servicesGrid.innerHTML = '';
 
       if (!services || services.length === 0) {
-        servicesGrid.innerHTML = '<p style="color: var(--wa-text-muted); grid-column: 1 / -1; padding: 20px 0;">Nenhum serviço cadastrado ainda. Clique em "Adicionar Novo Serviço" para criar seu primeiro serviço!</p>';
+        servicesGrid.innerHTML = `
+          <div style="grid-column: 1 / -1; text-align: center; padding: 40px 20px; background: #ffffff; border: 1px dashed var(--wa-card-border); border-radius: 12px;">
+            <div style="width: 52px; height: 52px; background: #d9fdd3; color: var(--wa-green-dark); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 12px auto;">
+              <i class="fa-solid fa-scissors"></i>
+            </div>
+            <div style="font-weight: 700; font-size: 16px; color: var(--wa-text-main); margin-bottom: 6px;">Nenhum serviço cadastrado ainda</div>
+            <div style="font-size: 13.5px; color: var(--wa-text-muted); max-width: 420px; margin: 0 auto 16px auto;">Cadastre seus serviços (como Corte, Barba, Massagem) para que a IA e os clientes possam agendar automaticamente.</div>
+            <button class="btn-primary" onclick="openCreateItemModal('service')" style="padding: 9px 18px; font-size: 13.5px;"><i class="fa-solid fa-plus"></i> Adicionar Primeiro Serviço</button>
+          </div>
+        `;
         return;
       }
 
@@ -3384,7 +3556,16 @@
       productsGrid.innerHTML = '';
 
       if (!products || products.length === 0) {
-        productsGrid.innerHTML = '<p style="color: var(--wa-text-muted); grid-column: 1 / -1; padding: 20px 0;">Nenhum produto cadastrado ainda. Clique em "Adicionar Novo Produto" para cadastrar!</p>';
+        productsGrid.innerHTML = `
+          <div style="grid-column: 1 / -1; text-align: center; padding: 40px 20px; background: #ffffff; border: 1px dashed var(--wa-card-border); border-radius: 12px;">
+            <div style="width: 52px; height: 52px; background: #f0f2f5; color: var(--wa-text-muted); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 12px auto;">
+              <i class="fa-solid fa-box-open"></i>
+            </div>
+            <div style="font-weight: 700; font-size: 16px; color: var(--wa-text-main); margin-bottom: 6px;">Nenhum produto cadastrado ainda</div>
+            <div style="font-size: 13.5px; color: var(--wa-text-muted); max-width: 420px; margin: 0 auto 16px auto;">Cadastre produtos vendidos no seu estabelecimento (pomadas, shampoos, óleos) com estoque e preço.</div>
+            <button class="btn-primary" onclick="openCreateItemModal('product')" style="padding: 9px 18px; font-size: 13.5px;"><i class="fa-solid fa-plus"></i> Adicionar Primeiro Produto</button>
+          </div>
+        `;
         return;
       }
 
@@ -3893,7 +4074,15 @@
             .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
 
       if (displayAppts.length === 0) {
-        container.innerHTML = '<p style="color: var(--text-muted); font-size: 13px; padding: 10px;">Nenhum agendamento cadastrado.</p>';
+        container.innerHTML = `
+          <div style="text-align: center; padding: 28px 16px; background: #ffffff; border: 1px dashed var(--wa-card-border); border-radius: 12px;">
+            <div style="width: 44px; height: 44px; background: #f0f2f5; color: var(--wa-text-muted); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; margin: 0 auto 10px auto;">
+              <i class="fa-regular fa-calendar-check"></i>
+            </div>
+            <div style="font-weight: 700; font-size: 14px; color: var(--wa-text-main); margin-bottom: 4px;">Nenhum agendamento para exibir</div>
+            <div style="font-size: 12.5px; color: var(--wa-text-muted);">Os agendamentos feitos pela atendente virtual aparecerão aqui em tempo real.</div>
+          </div>
+        `;
         return;
       }
 

@@ -409,22 +409,6 @@
       "description": "Sessão de procedimento especializado"
     },
     {
-      "id": "srv-1787254628790",
-      "tenantId": "tenant-1787254628618",
-      "name": "Atendimento Padrão",
-      "price": 60,
-      "durationMinutes": 30,
-      "description": "Sessão padrão de atendimento"
-    },
-    {
-      "id": "srv-1787254628796",
-      "tenantId": "tenant-1787254628618",
-      "name": "Consulta Especializada",
-      "price": 120,
-      "durationMinutes": 60,
-      "description": "Atendimento aprofundado e completo"
-    },
-    {
       "id": "srv-1787257078887",
       "tenantId": "tenant-1787257078718",
       "name": "Corte de Cabelo",
@@ -479,6 +463,14 @@
       "price": 150,
       "durationMinutes": 45,
       "description": "Sessão de procedimento especializado"
+    },
+    {
+      "id": "srv-1787257364104",
+      "tenantId": "tenant-1787254628618",
+      "name": "Cesa para 4 pessoas",
+      "price": 0,
+      "durationMinutes": 30,
+      "description": ""
     }
   ],
   "products": [
@@ -623,8 +615,8 @@
       "userId": "usr-1787254628618",
       "phone": "84988234441",
       "workSchedule": {
-        "startTime": "08:00",
-        "endTime": "18:00",
+        "startTime": "18:00",
+        "endTime": "22:00",
         "lunchStartTime": "12:00",
         "lunchEndTime": "13:00",
         "workDays": [
@@ -635,7 +627,10 @@
           5,
           6
         ]
-      }
+      },
+      "servicesHandled": [
+        "srv-1787257364104"
+      ]
     },
     {
       "id": "prof-1787257078718",
@@ -713,10 +708,10 @@
     {
       "phone": "5511999998888",
       "tenantId": "tenant-demo-estilo",
-      "visitCount": 1,
+      "visitCount": 4,
       "preferredProfId": "prof-1",
       "preferredServiceId": "srv-1",
-      "lastVisitDate": "2026-08-17"
+      "lastVisitDate": "2026-08-21"
     },
     {
       "phone": "5511988887777",
@@ -741,6 +736,14 @@
       "preferredProfId": "prof-1",
       "preferredServiceId": "srv-1",
       "lastVisitDate": "2026-08-18"
+    },
+    {
+      "phone": "84988234441",
+      "tenantId": "tenant-1787254628618",
+      "visitCount": 1,
+      "preferredProfId": "prof-1787254628618",
+      "preferredServiceId": "srv-1787257364104",
+      "lastVisitDate": "2026-08-20"
     }
   ],
   "waitlist": [],
@@ -1010,7 +1013,7 @@
       "customerPhone": "5511999998888",
       "startTime": "2026-08-18T17:00:00.000Z",
       "endTime": "2026-08-18T17:45:00.000Z",
-      "status": "CONFIRMED"
+      "status": "CANCELLED"
     },
     {
       "id": "appt-1787072195931",
@@ -1032,6 +1035,50 @@
       "customerPhone": "5511999990001",
       "startTime": "2026-08-19T12:00:00.000Z",
       "endTime": "2026-08-19T12:45:00.000Z",
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "appt-1787258506425",
+      "tenantId": "tenant-1787254628618",
+      "professionalId": "prof-1787254628618",
+      "serviceId": "srv-1787257364104",
+      "customerName": "Iran Araujo",
+      "customerPhone": "84988234441",
+      "startTime": "2026-08-21T21:00:00.000Z",
+      "endTime": "2026-08-21T21:30:00.000Z",
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "appt-1787314904132",
+      "tenantId": "tenant-demo-estilo",
+      "professionalId": "prof-1",
+      "serviceId": "srv-1",
+      "customerName": "Gabriel Martins",
+      "customerPhone": "5511999998888",
+      "startTime": "2026-08-22T17:00:00.000Z",
+      "endTime": "2026-08-22T17:45:00.000Z",
+      "status": "CANCELLED"
+    },
+    {
+      "id": "appt-1787315014514",
+      "tenantId": "tenant-demo-estilo",
+      "professionalId": "prof-1",
+      "serviceId": "srv-1",
+      "customerName": "Gabriel Martins",
+      "customerPhone": "5511999998888",
+      "startTime": "2026-08-22T17:00:00.000Z",
+      "endTime": "2026-08-22T17:45:00.000Z",
+      "status": "CANCELLED"
+    },
+    {
+      "id": "appt-1787315056677",
+      "tenantId": "tenant-demo-estilo",
+      "professionalId": "prof-1",
+      "serviceId": "srv-1",
+      "customerName": "Gabriel Martins",
+      "customerPhone": "5511999998888",
+      "startTime": "2026-08-22T17:00:00.000Z",
+      "endTime": "2026-08-22T17:45:00.000Z",
       "status": "CONFIRMED"
     }
   ]
