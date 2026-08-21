@@ -708,7 +708,7 @@
     {
       "phone": "5511999998888",
       "tenantId": "tenant-demo-estilo",
-      "visitCount": 4,
+      "visitCount": 5,
       "preferredProfId": "prof-1",
       "preferredServiceId": "srv-1",
       "lastVisitDate": "2026-08-21"
@@ -1079,7 +1079,18 @@
       "customerPhone": "5511999998888",
       "startTime": "2026-08-22T17:00:00.000Z",
       "endTime": "2026-08-22T17:45:00.000Z",
-      "status": "CONFIRMED"
+      "status": "CANCELLED"
+    },
+    {
+      "id": "appt-1787319780085",
+      "tenantId": "tenant-demo-estilo",
+      "professionalId": "prof-1",
+      "serviceId": "srv-1",
+      "customerName": "Gabriel Martins",
+      "customerPhone": "5511999998888",
+      "startTime": "2026-08-22T18:00:00.000Z",
+      "endTime": "2026-08-22T18:45:00.000Z",
+      "status": "CANCELLED"
     }
   ]
 }

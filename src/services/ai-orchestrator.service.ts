@@ -692,7 +692,7 @@ export class AiOrchestratorService {
         customerPhone,
         startTime,
         endTime,
-        status: 'CONFIRMED'
+        status: 'PENDING'
       });
 
       // #3/#16: Atualiza perfil do cliente com preferências aprendidas
@@ -708,7 +708,7 @@ export class AiOrchestratorService {
         const apptDateForNotif = `${String(apptStartForNotif.getDate()).padStart(2,'0')}/${String(apptStartForNotif.getMonth()+1).padStart(2,'0')}`;
         const apptTimeForNotif = `${String(apptStartForNotif.getHours()).padStart(2,'0')}:${String(apptStartForNotif.getMinutes()).padStart(2,'0')}`;
         const srvForNotif = services.find((s: any) => s.id === newAppt.serviceId);
-        const notifMsg = `🔔 *Novo agendamento!*\n\nCliente: *${cleanName}*\nServiço: *${srvForNotif?.name || 'Atendimento'}*\nData: *${apptDateForNotif}*\nHorário: *${apptTimeForNotif}*\n\nBoa sorte! 😊`;
+        const notifMsg = `*Novo agendamento (Pendente de confirmação)*\n\nCliente: *${cleanName}*\nServiço: *${srvForNotif?.name || 'Atendimento'}*\nData: *${apptDateForNotif}*\nHorário: *${apptTimeForNotif}*`;
         try {
           const { whatsappService } = await import('./whatsapp.service.js');
           await whatsappService.sendMessage(tenantId, (notifProf as any).phone, notifMsg);
@@ -721,7 +721,7 @@ export class AiOrchestratorService {
       return {
         result: {
           status: 'SUCESSO',
-          mensagem: `Novo agendamento criado com sucesso para ${cleanName} às ${timeStr} do dia ${apptD}/${apptM}/${apptY}!`,
+          mensagem: `Agendamento pré-reservado para ${cleanName} às ${timeStr} do dia ${apptD}/${apptM}/${apptY} com status PENDENTE de confirmação. Solicite que o cliente responda com 1 para Confirmar ou 2 para Cancelar.`,
           agendamentoId: newAppt.id
         },
         appointmentCreated: newAppt
@@ -899,6 +899,30 @@ export class AiOrchestratorService {
         profName: profObj ? profObj.name : 'Lucas',
         serviceName: srvObj ? srvObj.name : 'Serviço'
       };
+
+      // Se o cliente tem um agendamento PENDENTE e responde confirmando ou cancelando
+      const lowerTrim = userMessage.trim().toLowerCase();
+      const isConfirmWord = lowerTrim === '1' || lowerTrim === 'sim' || lowerTrim === 'confirmo' || lowerTrim === 'confirmar' || lowerTrim === 'está confirmado' || lowerTrim === 'esta confirmado' || lowerTrim === 'pode confirmar' || lowerTrim === 'ok';
+      const isCancelWord = lowerTrim === '2' || lowerTrim === 'cancelar' || lowerTrim === 'não' || lowerTrim === 'nao' || lowerTrim === 'cancela' || lowerTrim === 'desistir';
+
+      if (existingAppt.status === 'PENDING') {
+        const clientName = existingAppt.customerName || session.customerName || 'Cliente';
+        if (isConfirmWord) {
+          await dbRepository.updateAppointmentDetails(existingAppt.id, { status: 'CONFIRMED' });
+          existingAppt.status = 'CONFIRMED';
+          const replyText = `Excelente, *${clientName}*! Seu agendamento com *${profObj?.name || 'nosso profissional'}* para o dia *${d}/${m} às ${h}:${min}* está *Confirmado com sucesso*. Te esperamos lá!`;
+          session.history.push({ role: 'user', text: userMessage });
+          session.history.push({ role: 'model', text: replyText });
+          return { replyText, functionCallsExecuted: [], engine: 'LLAMA_LIVE_LLM' };
+        } else if (isCancelWord) {
+          await dbRepository.updateAppointmentDetails(existingAppt.id, { status: 'CANCELLED' });
+          existingAppt.status = 'CANCELLED';
+          const replyText = `Entendido, *${clientName}*. Seu agendamento para o dia *${d}/${m} às ${h}:${min}* foi cancelado e o horário liberado. Se precisar marcar outro horário, estamos à sua disposição.`;
+          session.history.push({ role: 'user', text: userMessage });
+          session.history.push({ role: 'model', text: replyText });
+          return { replyText, functionCallsExecuted: [], engine: 'LLAMA_LIVE_LLM' };
+        }
+      }
     }
 
     // 1. Atualiza dados de sessão a partir do texto do usuário
@@ -1194,7 +1218,7 @@ export class AiOrchestratorService {
             const sH = parts.find(p => p.type === 'hour')?.value || '09';
             const sMin = parts.find(p => p.type === 'minute')?.value || '00';
             const cName = appointmentCreated.customerName || session.customerName || 'você';
-            finalReply = `Prontinho, *${cName}*! Seu agendamento com o *${profObj?.name || 'nosso profissional'}* está confirmado para o dia *${sD}/${sM} às ${sH}:${sMin}*. Te esperamos lá!`;
+            finalReply = `Prontinho, *${cName}*! Seu agendamento com *${profObj?.name || 'nosso profissional'}* está pré-agendado para o dia *${sD}/${sM} às ${sH}:${sMin}* (Status: Pendente de confirmação).\n\nPor favor, responda com *1* para Confirmar ou *2* para Cancelar.`;
           } else if (appointmentCancelledId) {
             finalReply = `Seu agendamento foi cancelado com sucesso no sistema. Horário liberado! Se precisar reagendar ou tiver alguma dúvida, estou à disposição.`;
           } else {
@@ -1406,7 +1430,7 @@ export class AiOrchestratorService {
       const tomM = String(tomorrow.getMonth() + 1).padStart(2, '0');
       const tomD = String(tomorrow.getDate()).padStart(2, '0');
       return {
-        replyText: `Poxa, a nossa agenda ${dateLabel} está bem cheinha! Mas para *Amanhã (${tomD}/${tomM})* eu consigo te encaixar. Quer dar uma olhada nos horários livres de amanhã?`,
+        replyText: `No momento nossa agenda ${dateLabel} está com todos os horários preenchidos. Para *Amanhã (${tomD}/${tomM})* temos vagas disponíveis. Gostaria de verificar os horários de amanhã?`,
         functionCallsExecuted: []
       };
     }
@@ -1452,7 +1476,7 @@ export class AiOrchestratorService {
     if (isAddressQuestion || isPaymentQuestion || isHoursQuestion) {
       const info = businessInfo || tenant?.aiConfig?.businessInfo;
       if (info && info.length > 10) {
-        return { replyText: `Claro! Olha as informações sobre a gente:\n\n${info}\n\nPrecisa de mais alguma coisa?`, functionCallsExecuted: [] };
+        return { replyText: `Com certeza! Aqui estão as informações sobre o estabelecimento:\n\n${info}\n\nPosso ajudar em algo mais?`, functionCallsExecuted: [] };
       }
     }
 
@@ -1470,7 +1494,7 @@ export class AiOrchestratorService {
 
       const namePart = session?.customerName ? `, *${session.customerName}*` : '';
       return {
-        replyText: `${greetingTime}${namePart}! Tudo bem por aqui. Como posso te ajudar hoje? Se quiser ver os horários disponíveis, serviços ou fazer um agendamento, é só me avisar.`,
+        replyText: `${greetingTime}${namePart}! Como posso ajudar você hoje? Se desejar consultar nossos serviços, horários disponíveis ou realizar um agendamento, estou à disposição.`,
         functionCallsExecuted: []
       };
     }
@@ -1478,7 +1502,7 @@ export class AiOrchestratorService {
     // 1. Agradecimento e Despedida
     if (lower.includes('obrigad') || lower.includes('valeu') || lower.includes('tmj') || lower.includes('muito obrigado') || lower.includes('flw')) {
       const name = session?.customerName ? `, ${session.customerName}` : '';
-      return { replyText: `Por nada${name}! Tamo junto. Qualquer coisa só me chamar aqui.`, functionCallsExecuted: [] };
+      return { replyText: `Por nada${name}! Estamos à sua disposição. Tenha um excelente dia!`, functionCallsExecuted: [] };
     }
 
     // 2. Pergunta de Identidade ("como é seu nome?", "quem é você?", "quem fala?")
@@ -1504,14 +1528,14 @@ export class AiOrchestratorService {
 
         if (!clientName) {
           return {
-            replyText: `Certo! Agendamento com o *${profName}* para as *${targetTimeStr}* anotado. O agendamento é em seu nome mesmo ou para outra pessoa?`,
+            replyText: `Perfeito! Horário com *${profName}* às *${targetTimeStr}* anotado. O agendamento é em seu nome ou para outra pessoa?`,
             functionCallsExecuted: []
           };
         }
 
         if (!hasRealPhone) {
           return {
-            replyText: `Perfeito, *${clientName}*! Agendamento com o *${profName}* às *${targetTimeStr}*. Me manda por favor o seu número de WhatsApp com DDD para eu confirmar e te mandar os lembretes.`,
+            replyText: `Perfeito, *${clientName}*! Horário pré-reservado com *${profName}* às *${targetTimeStr}*. Por favor, informe seu número de WhatsApp com DDD para envio da confirmação e lembretes.`,
             functionCallsExecuted: []
           };
         }
@@ -1538,7 +1562,7 @@ export class AiOrchestratorService {
         const [y, m, d] = targetDateStr.split('-');
         if (availableSlots.length > 0) {
           return {
-            replyText: `Ótimo! Para o *${profName}*, temos estes horários livres para *${targetDateFormatted} (${d}/${m})*:\n\n${formatHumanSlots(availableSlots)}\n\nQual desses horários fica melhor para você?`,
+            replyText: `Com certeza! Para o profissional *${profName}*, temos os seguintes horários disponíveis para *${targetDateFormatted} (${d}/${m})*:\n\n${formatHumanSlots(availableSlots)}\n\nQual desses horários é mais conveniente para você?`,
             functionCallsExecuted: ['get_available_slots']
           };
         } else {
@@ -1546,7 +1570,7 @@ export class AiOrchestratorService {
             session.pendingWaitlist = { dateStr: targetDateStr, professionalId: matchedProf?.id || profs[0]?.id, serviceId: defaultServiceId };
           }
           return {
-            replyText: `O *${profName}* está com a agenda cheia para *${targetDateFormatted} (${d}/${m})*.\n\nQuer entrar na *lista de espera*? Se abrir um horário, você será avisado automaticamente. Responda *sim* para entrar na lista ou me diga outro dia que prefere.`,
+            replyText: `O profissional *${profName}* está com a agenda completa para *${targetDateFormatted} (${d}/${m})*.\n\nGostaria de entrar na *lista de espera*? Caso surja uma desistência, você será notificado imediatamente. Responda *sim* para entrar na lista ou informe outra data de sua preferência.`,
             functionCallsExecuted: []
           };
         }
@@ -1594,10 +1618,10 @@ export class AiOrchestratorService {
       session.pendingBookingDateStr = undefined;
 
       const profObj = profs.find(p => p.id === targetProfId) || profs[0];
-      const profName = profObj ? ` com o *${profObj.name}*` : '';
+      const profName = profObj ? ` com *${profObj.name}*` : '';
       const [y, m, d] = targetDateStr.split('-');
       return {
-        replyText: `Prontinho, *${clientName}*! Seu horário${profName} para *${savedDateLabel || `${d}/${m}/${y}`}* às *${targetTimeStr}* está confirmado. Te esperamos aqui!`,
+        replyText: `Prontinho, *${clientName}*! Seu horário${profName} para *${savedDateLabel || `${d}/${m}/${y}`}* às *${targetTimeStr}* foi registrado e está *Pendente de confirmação*.\n\nPor favor, responda com *1* para Confirmar ou *2* para Cancelar.`,
         functionCallsExecuted: executedTools,
         appointmentCreated: exec.appointmentCreated
       };
@@ -1623,7 +1647,7 @@ export class AiOrchestratorService {
         }
 
         return {
-          replyText: `Vi que você já tem um agendamento para *${existD}/${existM} às ${apptTimeStr}*. Quer *mudar esse horário* para *${dateFormattedLabel} às ${timeStr}* ou criar um *novo agendamento*?`,
+          replyText: `Identifiquei que você já possui um agendamento para *${existD}/${existM} às ${apptTimeStr}*. Deseja *reagendar esse horário* para *${dateFormattedLabel} às ${timeStr}* ou criar um *novo agendamento adicional*?`,
           functionCallsExecuted: []
         };
       }
@@ -1641,12 +1665,12 @@ export class AiOrchestratorService {
         if (!session?.customerName) {
           if (session?.suggestedPushName) {
             return {
-              replyText: `Horário das *${timeStr}* para *${dateFormattedLabel}* está disponível. O agendamento é em seu nome mesmo, *${session.suggestedPushName}*, ou para outra pessoa?`,
+              replyText: `O horário das *${timeStr}* para *${dateFormattedLabel}* está disponível. O agendamento é em seu nome, *${session.suggestedPushName}*, ou para outra pessoa?`,
               functionCallsExecuted: executedTools
             };
           }
           return {
-            replyText: `Horário das *${timeStr}* para *${dateFormattedLabel}* está disponível. Me fala seu nome completo para eu colocar na agenda.`,
+            replyText: `O horário das *${timeStr}* para *${dateFormattedLabel}* está disponível. Por favor, informe seu nome completo para registrarmos o agendamento.`,
             functionCallsExecuted: executedTools
           };
         }
@@ -1654,7 +1678,7 @@ export class AiOrchestratorService {
         const hasValidRealPhone = isValidRealPhoneNumber(phoneInText || session?.customerPhone || customerPhone);
         if (!hasValidRealPhone) {
           return {
-            replyText: `Perfeito, *${session.customerName}*! O horário das *${timeStr}* para *${dateFormattedLabel}* é seu. Me envia o seu número de WhatsApp com DDD para eu confirmar e te mandar os lembretes.`,
+            replyText: `Perfeito, *${session.customerName}*! O horário das *${timeStr}* para *${dateFormattedLabel}* está reservado. Por favor, informe seu número de WhatsApp com DDD para envio da confirmação e lembretes.`,
             functionCallsExecuted: executedTools
           };
         }
@@ -1674,8 +1698,8 @@ export class AiOrchestratorService {
         const [y, m, d] = dateStr.split('-');
 
         const replyMsg = existingAppt 
-          ? `Prontinho, *${clientName}*! Seu horário foi alterado com sucesso para *${dateFormattedLabel} (${d}/${m}/${y})* às *${timeStr}*. O horário anterior foi liberado.`
-          : `Confirmado, *${clientName}*! Seu horário para *${dateFormattedLabel} (${d}/${m}/${y})* às *${timeStr}* está garantido.`;
+          ? `Prontinho, *${clientName}*! Seu horário foi alterado para *${dateFormattedLabel} (${d}/${m}/${y})* às *${timeStr}* (Status: Pendente de confirmação).\n\nPor favor, responda com *1* para Confirmar ou *2* para Cancelar.`
+          : `Prontinho, *${clientName}*! Seu horário para *${dateFormattedLabel} (${d}/${m}/${y})* às *${timeStr}* foi registrado e está *Pendente de confirmação*.\n\nPor favor, responda com *1* para Confirmar ou *2* para Cancelar.`;
 
         if (session) {
           session.pendingBookingTime = undefined;

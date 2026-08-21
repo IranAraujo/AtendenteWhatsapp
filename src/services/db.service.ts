@@ -56,7 +56,7 @@ export interface DbAppointmentItem {
   customerPhone: string;
   startTime: Date;
   endTime: Date;
-  status: 'CONFIRMED' | 'PENDING_PAYMENT' | 'CANCELLED' | 'COMPLETED';
+  status: 'PENDING' | 'CONFIRMED' | 'PENDING_PAYMENT' | 'CANCELLED' | 'COMPLETED';
   pixQrCode?: string;
   reminder24hSent?: boolean;
   reminder1hSent?: boolean;
@@ -691,7 +691,7 @@ class DbRepository {
       existingAppt.startTime = validStart;
       existingAppt.endTime = validEnd;
       if (data.customerName) existingAppt.customerName = data.customerName;
-      existingAppt.status = 'CONFIRMED';
+      existingAppt.status = data.status || 'PENDING';
       this.saveData();
       return existingAppt;
     }
@@ -699,6 +699,7 @@ class DbRepository {
     const newAppointment: DbAppointmentItem = {
       id: `appt-${Date.now()}`,
       ...data,
+      status: data.status || 'PENDING',
       startTime: validStart,
       endTime: validEnd
     };
@@ -714,6 +715,7 @@ class DbRepository {
     const newAppointment: DbAppointmentItem = {
       id: `appt-${Date.now()}`,
       ...data,
+      status: data.status || 'PENDING',
       startTime: validStart,
       endTime: validEnd
     };
