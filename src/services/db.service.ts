@@ -1051,6 +1051,38 @@ class DbRepository {
     };
     this.professionals.push(initialProfessional);
 
+    // Cria agendamentos de exemplo para inicializar o painel do novo cliente
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const tomorrow = new Date(now.getTime() + 24 * 3600 * 1000);
+    const tomStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
+    const firstSrvId = createdServices[0]?.id || 'srv-1';
+
+    this.inMemoryAppointments.push(
+      {
+        id: `appt-${Date.now()}-1`,
+        tenantId,
+        professionalId: profId,
+        serviceId: firstSrvId,
+        customerName: 'Carlos Eduardo',
+        customerPhone: '5511987654321',
+        startTime: new Date(`${todayStr}T14:00:00.000Z`),
+        endTime: new Date(`${todayStr}T14:30:00.000Z`),
+        status: 'CONFIRMED'
+      },
+      {
+        id: `appt-${Date.now()}-2`,
+        tenantId,
+        professionalId: profId,
+        serviceId: firstSrvId,
+        customerName: 'Mariana Costa',
+        customerPhone: '5511998877665',
+        startTime: new Date(`${tomStr}T16:00:00.000Z`),
+        endTime: new Date(`${tomStr}T16:45:00.000Z`),
+        status: 'CONFIRMED'
+      }
+    );
+
     this.tenants.push(newTenant);
     this.saveData();
 

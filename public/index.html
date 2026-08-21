@@ -3193,16 +3193,16 @@
       const filter = document.getElementById('calendar-professional-filter');
       if (!filter) return;
       const prev = filter.value;
-      filter.innerHTML = '<option value="ALL"> Todos os Profissionais</option>';
+      filter.innerHTML = '<option value="ALL">Todos os Profissionais</option>';
 
-      professionals.forEach(p => {
+      (professionals || []).forEach(p => {
         const opt = document.createElement('option');
         opt.value = p.id;
-        opt.textContent = ` ${p.name}`;
+        opt.textContent = `✂️ ${p.name}`;
         filter.appendChild(opt);
       });
 
-      if (prev && prev !== 'undefined' && prev !== 'null' && prev !== '') {
+      if (prev && prev !== 'undefined' && prev !== 'null' && prev !== '' && (professionals || []).some(p => p.id === prev)) {
         filter.value = prev;
       } else {
         filter.value = 'ALL';
@@ -5320,20 +5320,17 @@
       loadAppointmentsFromServer();
     }, 3000);
 
-    document.addEventListener('DOMContentLoaded', () => {
+    async function initDashboard() {
       loadVoicesList();
       if (checkAuthOnBoot()) {
-        renderGoogleCalendar();
-        loadTenantData();
+        await loadTenantData();
+        await loadAppointmentsFromServer();
+        loadServicesAndProducts();
+        loadTeamUsers();
       }
-    });
-    window.onload = () => {
-      loadVoicesList();
-      if (checkAuthOnBoot()) {
-        renderGoogleCalendar();
-        loadTenantData();
-      }
-    };
+    }
+
+    document.addEventListener('DOMContentLoaded', initDashboard);
   </script>
 </body>
 </html>
