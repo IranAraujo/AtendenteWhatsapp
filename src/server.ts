@@ -488,6 +488,69 @@ app.post('/api/whatsapp/disconnect', async (req: Request, res: Response) => {
 // API MULTI-TENANT CONTEXT & DETALHES
 // -------------------------------------------------------------
 
+app.get('/api/tenants', async (req: Request, res: Response) => {
+  try {
+    const tenants = await dbRepository.getAllTenants();
+    const formatted = tenants.map(t => ({
+      id: t.id,
+      name: t.name,
+      slug: t.slug,
+      ownerEmail: t.ownerEmail,
+      planTier: t.planTier,
+      maxUsers: t.maxUsers,
+      userCount: (t.users || []).length,
+      ownerName: (t.users || []).find(u => u.role === 'OWNER')?.name || t.name
+    }));
+    res.json({ success: true, tenants: formatted });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/auth/switch-tenant', async (req: Request, res: Response) => {
+  try {
+    const { tenantId } = req.body;
+    const tenant = await dbRepository.getTenantById(tenantId);
+    if (!tenant) {
+      return res.status(404).json({ success: false, error: 'Estabelecimento não encontrado.' });
+    }
+    const owner = (tenant.users || [])[0] || {
+      id: `usr-${tenant.id}`,
+      tenantId: tenant.id,
+      name: tenant.name,
+      email: tenant.ownerEmail,
+      role: 'OWNER'
+    };
+    const token = generateJwtToken({
+      userId: owner.id,
+      tenantId: tenant.id,
+      role: owner.role,
+      email: owner.email
+    });
+    res.json({
+      success: true,
+      token,
+      user: {
+        id: owner.id,
+        tenantId: tenant.id,
+        name: owner.name,
+        email: owner.email,
+        role: owner.role,
+        professionalId: owner.professionalId
+      },
+      tenant: {
+        id: tenant.id,
+        name: tenant.name,
+        slug: tenant.slug,
+        planTier: tenant.planTier,
+        maxUsers: tenant.maxUsers
+      }
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 app.get('/api/tenants/:id', async (req: Request, res: Response) => {
   try {
     const tenant = await dbRepository.getTenantById(req.params.id);

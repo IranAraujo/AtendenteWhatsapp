@@ -2319,6 +2319,7 @@
       <!-- ABAS NAVEGÁVEIS DO PERFIL -->
       <div style="display: flex; border-bottom: 1px solid var(--bg-card-border); margin-bottom: 20px; gap: 8px; flex-wrap: wrap;">
         <button type="button" class="btn-view active" id="pnav-account" onclick="switchProfileTab('account')"><i class="fa-solid fa-user"></i> Meus Dados & Plano</button>
+        <button type="button" class="btn-view" id="pnav-switch" onclick="switchProfileTab('switch')"><i class="fa-solid fa-repeat"></i> Trocar Estabelecimento</button>
         <button type="button" class="btn-view" id="pnav-security" onclick="switchProfileTab('security')"><i class="fa-solid fa-key"></i> Segurança</button>
         <button type="button" class="btn-view" id="pnav-upgrade" onclick="switchProfileTab('upgrade')"><i class="fa-solid fa-rocket"></i> Upgrade de Plano</button>
         <button type="button" class="btn-view" id="pnav-billing" onclick="switchProfileTab('billing')"><i class="fa-solid fa-credit-card"></i> Pagamento</button>
@@ -2469,6 +2470,15 @@
             </div>
             <span style="color: #166534; font-weight: 700;">R$ 197,00 (Pago)</span>
           </div>
+        </div>
+      </div>
+
+      <!-- CONTEÚDO 5: TROCA RÁPIDA DE ESTABELECIMENTO -->
+      <div id="ptab-switch" class="profile-tab-content" style="display: none;">
+        <h4 style="font-size: 14px; font-weight: 700; color: white; margin-bottom: 8px;"><i class="fa-solid fa-store" style="color: var(--primary);"></i> Alternar entre Estabelecimentos Cadastrados</h4>
+        <p style="font-size: 12.5px; color: var(--text-muted); margin-bottom: 16px;">Selecione qualquer conta para visualizar e gerenciar seus agendamentos, serviços e equipe:</p>
+        <div id="tenant-switcher-list" style="display: flex; flex-direction: column; gap: 10px; max-height: 320px; overflow-y: auto;">
+          <!-- Renderizado dinamicamente via JS -->
         </div>
       </div>
 
@@ -2697,26 +2707,60 @@
       return new Date();
     }
 
+    function getActiveTenantId() {
+      if (currentTenantId && currentTenantId !== 'null' && currentTenantId !== 'undefined' && currentTenantId.trim() !== '') {
+        return currentTenantId;
+      }
+      try {
+        const userRaw = localStorage.getItem('saas_user');
+        if (userRaw) {
+          const u = JSON.parse(userRaw);
+          if (u && u.tenantId && u.tenantId !== 'null' && u.tenantId !== 'undefined') {
+            currentTenantId = u.tenantId;
+            return currentTenantId;
+          }
+        }
+      } catch (e) {}
+      try {
+        const tenantRaw = localStorage.getItem('saas_tenant');
+        if (tenantRaw) {
+          const t = JSON.parse(tenantRaw);
+          if (t && t.id && t.id !== 'null' && t.id !== 'undefined') {
+            currentTenantId = t.id;
+            return currentTenantId;
+          }
+        }
+      } catch (e) {}
+      currentTenantId = 'tenant-demo-estilo';
+      return currentTenantId;
+    }
+
     function checkAuthOnBoot() {
       const userRaw = localStorage.getItem('saas_user');
       const tenantRaw = localStorage.getItem('saas_tenant');
 
-      if (!userRaw || !tenantRaw) {
+      if (!userRaw && !tenantRaw) {
         window.location.href = '/login';
         return false;
       }
 
-      currentUser = JSON.parse(userRaw);
-      const tenant = JSON.parse(tenantRaw);
-      currentTenantId = currentUser.tenantId || tenant.id;
+      try {
+        if (userRaw) currentUser = JSON.parse(userRaw);
+        let tenant = tenantRaw ? JSON.parse(tenantRaw) : null;
+        currentTenantId = (currentUser && currentUser.tenantId) ? currentUser.tenantId : (tenant && tenant.id ? tenant.id : 'tenant-demo-estilo');
 
-      document.getElementById('user-display-name').textContent = currentUser.name;
-      document.getElementById('user-avatar-initial').textContent = currentUser.name.charAt(0).toUpperCase();
+        if (currentUser) {
+          document.getElementById('user-display-name').textContent = currentUser.name || 'Usuário';
+          document.getElementById('user-avatar-initial').textContent = (currentUser.name ? currentUser.name.charAt(0) : 'U').toUpperCase();
 
-      const roleLabels = { OWNER: 'Proprietário(a)', PROFESSIONAL: 'Profissional', RECEPTIONIST: 'Recepcionista', SUPER_ADMIN: 'Super Admin' };
-      document.getElementById('user-display-role').textContent = roleLabels[currentUser.role] || currentUser.role;
-
-      return true;
+          const roleLabels = { OWNER: 'Proprietário(a)', PROFESSIONAL: 'Profissional', RECEPTIONIST: 'Recepcionista', SUPER_ADMIN: 'Super Admin' };
+          document.getElementById('user-display-role').textContent = roleLabels[currentUser.role] || currentUser.role || 'Proprietário(a)';
+        }
+        return true;
+      } catch (err) {
+        console.error('Erro na autenticação de boot:', err);
+        return true;
+      }
     }
 
     function showToast(message, type = 'success') {
@@ -2881,7 +2925,7 @@
         const roundRobin = document.getElementById('cfg-round-robin').checked;
         const webhookUrl = document.getElementById('cfg-webhook-url').value.trim();
 
-        const res = await fetch(`${baseUrl}/api/tenants/${currentTenantId}/booking-rules`, {
+        const res = await fetch(`${baseUrl}/api/tenants/${getActiveTenantId()}/booking-rules`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -2918,7 +2962,7 @@
       feedback.style.display = 'none';
 
       try {
-        const res = await fetch(`${baseUrl}/api/tenants/${currentTenantId}/webhook-test`, {
+        const res = await fetch(`${baseUrl}/api/tenants/${getActiveTenantId()}/webhook-test`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ webhookUrl })
@@ -2964,9 +3008,10 @@
 
     async function loadTenantData() {
       try {
-        const response = await fetch(`${baseUrl}/api/tenants/${currentTenantId}`);
+        const tId = getActiveTenantId();
+        const response = await fetch(`${baseUrl}/api/tenants/${tId}`);
         const data = await response.json();
-        if (!data.success) return;
+        if (!data.success || !data.tenant) return;
 
         const tenant = data.tenant;
 
@@ -3074,6 +3119,67 @@
 
       const targetBtn = document.getElementById(`pnav-${tabId}`);
       if (targetBtn) targetBtn.classList.add('active');
+
+      if (tabId === 'switch') {
+        loadTenantsForSwitcher();
+      }
+    }
+
+    async function loadTenantsForSwitcher() {
+      const container = document.getElementById('tenant-switcher-list');
+      if (!container) return;
+      container.innerHTML = '<div style="text-align: center; color: var(--text-muted); font-size: 13px; padding: 16px;"><i class="fa-solid fa-spinner fa-spin"></i> Carregando estabelecimentos...</div>';
+      try {
+        const res = await fetch(`${baseUrl}/api/tenants`);
+        const data = await res.json();
+        if (!data.success || !data.tenants) return;
+        const currentTId = getActiveTenantId();
+        container.innerHTML = '';
+        data.tenants.forEach(t => {
+          const isCurrent = t.id === currentTId;
+          const planLabel = t.planTier === 'FREE' ? 'Grátis' : (t.planTier === 'SINGLE_USER' ? 'Starter' : 'Pro');
+          const div = document.createElement('div');
+          div.style.cssText = `background: ${isCurrent ? '#064e3b' : '#0f172a'}; border: 1px solid ${isCurrent ? '#25D366' : 'var(--bg-card-border)'}; border-radius: 10px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; gap: 12px;`;
+          div.innerHTML = `
+            <div>
+              <div style="font-weight: 700; font-size: 14.5px; color: white; display: flex; align-items: center; gap: 8px;">
+                ${t.name}
+                ${isCurrent ? '<span style="background: #25D366; color: #064e3b; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 10px;">ATIVO</span>' : ''}
+              </div>
+              <div style="font-size: 12px; color: var(--text-muted); margin-top: 3px;">Plano: <strong style="color: #60a5fa;">${planLabel}</strong> · Responsável: ${t.ownerName || t.ownerEmail}</div>
+            </div>
+            ${!isCurrent ? `<button class="btn-primary" onclick="switchTenantSubmit('${t.id}')" style="padding: 7px 14px; font-size: 12.5px;"><i class="fa-solid fa-arrow-right-to-bracket"></i> Acessar</button>` : '<span style="font-size: 12.5px; color: #4ade80; font-weight: 700;"><i class="fa-solid fa-circle-check"></i> Conectado</span>'}
+          `;
+          container.appendChild(div);
+        });
+      } catch (e) {
+        container.innerHTML = '<div style="color: #f87171; font-size: 12px; padding: 10px;">Erro ao carregar lista de estabelecimentos.</div>';
+      }
+    }
+
+    async function switchTenantSubmit(tenantId) {
+      try {
+        const res = await fetch(`${baseUrl}/api/auth/switch-tenant`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tenantId })
+        });
+        const data = await res.json();
+        if (data.success) {
+          localStorage.setItem('saas_token', data.token);
+          localStorage.setItem('saas_user', JSON.stringify(data.user));
+          localStorage.setItem('saas_tenant', JSON.stringify(data.tenant));
+          currentTenantId = data.tenant.id;
+          currentUser = data.user;
+          closeUserProfileModal();
+          showToast(`Conectado com sucesso a ${data.tenant.name}!`);
+          await initDashboard();
+        } else {
+          alert('Erro ao trocar estabelecimento: ' + (data.error || 'Erro desconhecido.'));
+        }
+      } catch (err) {
+        alert('Erro ao conectar ao servidor para trocar de conta.');
+      }
     }
 
     async function submitChangePassword() {
@@ -3132,7 +3238,7 @@
     async function submitUpgradePlan(planTier) {
       if (confirm(`Deseja confirmar a migração do seu plano para ${planTier}?`)) {
         try {
-          const response = await fetch(`${baseUrl}/api/tenants/${currentTenantId}/upgrade-plan`, {
+          const response = await fetch(`${baseUrl}/api/tenants/${getActiveTenantId()}/upgrade-plan`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ planTier })
@@ -3162,7 +3268,7 @@
       }
 
       try {
-        const response = await fetch(`${baseUrl}/api/tenants/${currentTenantId}/billing`, {
+        const response = await fetch(`${baseUrl}/api/tenants/${getActiveTenantId()}/billing`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -3211,7 +3317,8 @@
 
     async function loadTeamUsers() {
       try {
-        const response = await fetch(`${baseUrl}/api/tenants/${currentTenantId}/users`);
+        const tId = getActiveTenantId();
+        const response = await fetch(`${baseUrl}/api/tenants/${tId}/users`);
         const data = await response.json();
         if (!data.success) return;
 
@@ -3219,9 +3326,13 @@
         teamUsersState = data.users || [];
 
         const planNameLabel = data.planTier === 'FREE' ? 'Grátis' : (data.planTier === 'SINGLE_USER' ? 'Starter Individual' : 'Pro Negócios');
-        document.getElementById('team-quota-info').textContent = `Plano ${planNameLabel} (${data.users.length} / ${data.maxUsers} Profissionais cadastrados)`;
+        const quotaEl = document.getElementById('team-quota-info');
+        if (quotaEl) {
+          quotaEl.textContent = `Plano ${planNameLabel} (${(data.users || []).length} / ${data.maxUsers || 1} Profissionais cadastrados)`;
+        }
 
         const teamContainer = document.getElementById('team-cards-container');
+        if (!teamContainer) return;
         teamContainer.innerHTML = '';
 
         if (data.planTier === 'FREE' || data.planTier === 'SINGLE_USER') {
@@ -3332,7 +3443,8 @@
       }
 
       try {
-        const response = await fetch(`${baseUrl}/api/tenants/${currentTenantId}/users/${userId}`, {
+        const tId = getActiveTenantId();
+        const response = await fetch(`${baseUrl}/api/tenants/${tId}/users/${userId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name, email, role, password: password || undefined })
@@ -3405,7 +3517,7 @@
       const workDays = Array.from(document.querySelectorAll('.work-day-cb:checked')).map(cb => parseInt(cb.value, 10));
 
       try {
-        const response = await fetch(`${baseUrl}/api/tenants/${currentTenantId}/professionals/${profId}`, {
+        const response = await fetch(`${baseUrl}/api/tenants/${getActiveTenantId()}/professionals/${profId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -3449,7 +3561,7 @@
       }
 
       try {
-        const response = await fetch(`${baseUrl}/api/tenants/${currentTenantId}/users`, {
+        const response = await fetch(`${baseUrl}/api/tenants/${getActiveTenantId()}/users`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name, email, password, role })
@@ -3471,7 +3583,8 @@
     async function deleteUserConfirm(userId) {
       if (confirm('Tem certeza que deseja remover este profissional da equipe?')) {
         try {
-          const response = await fetch(`${baseUrl}/api/tenants/${currentTenantId}/users/${userId}`, { method: 'DELETE' });
+          const tId = getActiveTenantId();
+          const response = await fetch(`${baseUrl}/api/tenants/${tId}/users/${userId}`, { method: 'DELETE' });
           const data = await response.json();
           if (data.success) {
             showToast('Profissional removido com sucesso.');
@@ -3485,7 +3598,8 @@
 
     async function loadServicesAndProducts() {
       try {
-        const response = await fetch(`${baseUrl}/api/tenants/${currentTenantId}`);
+        const tId = getActiveTenantId();
+        const response = await fetch(`${baseUrl}/api/tenants/${tId}`);
         const data = await response.json();
         if (data.success) {
           servicesState = data.services || [];
@@ -3687,7 +3801,7 @@
         btnEl.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Enviando...`;
         feedbackEl.style.display = 'none';
 
-        const response = await fetch(`${baseUrl}/api/tenants/${currentTenantId}/whatsapp/send-direct`, {
+        const response = await fetch(`${baseUrl}/api/tenants/${getActiveTenantId()}/whatsapp/send-direct`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ phone: rawPhone, message })
@@ -3848,7 +3962,7 @@
       }
 
       try {
-        let endpoint = `${baseUrl}/api/tenants/${currentTenantId}/${type}`;
+        let endpoint = `${baseUrl}/api/tenants/${getActiveTenantId()}/${type}`;
         let method = 'POST';
         let bodyData = { name, price, description };
 
@@ -3885,7 +3999,8 @@
     async function deleteServiceConfirm(serviceId) {
       if (confirm('Deseja excluir este serviço?')) {
         try {
-          const response = await fetch(`${baseUrl}/api/tenants/${currentTenantId}/services/${serviceId}`, { method: 'DELETE' });
+          const tId = getActiveTenantId();
+          const response = await fetch(`${baseUrl}/api/tenants/${tId}/services/${serviceId}`, { method: 'DELETE' });
           const data = await response.json();
           if (data.success) loadServicesAndProducts();
         } catch (err) {
@@ -3897,7 +4012,8 @@
     async function deleteProductConfirm(productId) {
       if (confirm('Deseja excluir este produto?')) {
         try {
-          const response = await fetch(`${baseUrl}/api/tenants/${currentTenantId}/products/${productId}`, { method: 'DELETE' });
+          const tId = getActiveTenantId();
+          const response = await fetch(`${baseUrl}/api/tenants/${tId}/products/${productId}`, { method: 'DELETE' });
           const data = await response.json();
           if (data.success) loadServicesAndProducts();
         } catch (err) {
@@ -3908,7 +4024,7 @@
 
     async function loadAppointmentsFromServer() {
       try {
-        const tenantToUse = (currentTenantId && currentTenantId !== 'null' && currentTenantId !== 'undefined') ? currentTenantId : 'tenant-demo-estilo';
+        const tenantToUse = getActiveTenantId();
         const profFilterEl = document.getElementById('calendar-professional-filter');
         const profFilter = (profFilterEl && profFilterEl.value && profFilterEl.value !== 'undefined' && profFilterEl.value !== 'null') ? profFilterEl.value : 'ALL';
         const response = await fetch(`${baseUrl}/api/appointments?tenantId=${encodeURIComponent(tenantToUse)}&professionalId=${encodeURIComponent(profFilter)}`);
@@ -4156,7 +4272,7 @@
 
     async function checkRealWhatsAppStatus() {
       try {
-        const response = await fetch(`${baseUrl}/api/whatsapp/qr?tenantId=${currentTenantId}`);
+        const response = await fetch(`${baseUrl}/api/whatsapp/qr?tenantId=${getActiveTenantId()}`);
         const data = await response.json();
 
         const badge = document.getElementById('whatsapp-header-badge');
@@ -4278,7 +4394,7 @@
       const validFaq = faqItemsState.filter(f => f.question.trim() && f.answer.trim());
 
       try {
-        const response = await fetch(`${baseUrl}/api/tenants/${currentTenantId}/ai`, {
+        const response = await fetch(`${baseUrl}/api/tenants/${getActiveTenantId()}/ai`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ systemPrompt, businessInfo, faqItems: validFaq, voiceId, voiceReplyMode })
@@ -4400,7 +4516,7 @@
       }
 
       try {
-        const response = await fetch(`${baseUrl}/api/tenants/${currentTenantId}/blocks`, {
+        const response = await fetch(`${baseUrl}/api/tenants/${getActiveTenantId()}/blocks`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ professionalId, dateStr, startTime, endTime, reason })
@@ -4421,7 +4537,7 @@
 
     async function loadScheduleBlocks() {
       try {
-        const response = await fetch(`${baseUrl}/api/tenants/${currentTenantId}/blocks`);
+        const response = await fetch(`${baseUrl}/api/tenants/${getActiveTenantId()}/blocks`);
         const data = await response.json();
         if (data.success) {
           scheduleBlocksState = data.blocks || [];
@@ -4460,7 +4576,7 @@
     async function deleteScheduleBlock(blockId) {
       if (!confirm('Deseja remover este bloqueio de agenda?')) return;
       try {
-        const response = await fetch(`${baseUrl}/api/tenants/${currentTenantId}/blocks/${blockId}`, { method: 'DELETE' });
+        const response = await fetch(`${baseUrl}/api/tenants/${getActiveTenantId()}/blocks/${blockId}`, { method: 'DELETE' });
         const data = await response.json();
         if (data.success) {
           loadScheduleBlocks();
@@ -4474,7 +4590,7 @@
     // LISTA DE ESPERA (#1)
     async function loadWaitlist() {
       try {
-        const response = await fetch(`${baseUrl}/api/tenants/${currentTenantId}/waitlist`);
+        const response = await fetch(`${baseUrl}/api/tenants/${getActiveTenantId()}/waitlist`);
         const data = await response.json();
         if (data.success) {
           waitlistState = data.waitlist || [];
@@ -4514,7 +4630,7 @@
     async function deleteWaitlist(waitlistId) {
       if (!confirm('Deseja remover este cliente da lista de espera?')) return;
       try {
-        const response = await fetch(`${baseUrl}/api/tenants/${currentTenantId}/waitlist/${waitlistId}`, { method: 'DELETE' });
+        const response = await fetch(`${baseUrl}/api/tenants/${getActiveTenantId()}/waitlist/${waitlistId}`, { method: 'DELETE' });
         const data = await response.json();
         if (data.success) {
           loadWaitlist();
@@ -5262,7 +5378,7 @@
 
       try {
         const token = localStorage.getItem('saas_token');
-        const response = await fetch(`${baseUrl}/api/tenants/${currentTenantId}/reminders`, {
+        const response = await fetch(`${baseUrl}/api/tenants/${getActiveTenantId()}/reminders`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -5295,7 +5411,7 @@
 
       try {
         const token = localStorage.getItem('saas_token');
-        const response = await fetch(`${baseUrl}/api/tenants/${currentTenantId}/reminders/test`, {
+        const response = await fetch(`${baseUrl}/api/tenants/${getActiveTenantId()}/reminders/test`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
