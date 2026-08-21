@@ -278,13 +278,21 @@
       border: 1px solid #fde68a;
     }
 
-    /* Cards de Planos em Lista Vertical */
+    /* Cards de Planos em Grade Vertical (3 colunas lado a lado como na landing page) */
     .plans-grid {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-      max-width: 680px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      max-width: 1080px;
       margin: 0 auto 40px auto;
+      align-items: stretch;
+    }
+
+    @media (max-width: 992px) {
+      .plans-grid {
+        grid-template-columns: 1fr;
+        max-width: 440px;
+      }
     }
 
     .plan-card {
@@ -823,6 +831,9 @@
         Faturamento Anual <span class="discount-badge">20% OFF</span>
       </span>
     </div>
+
+    <!-- Grade de Planos (3 colunas verticais lado a lado) -->
+    <div class="plans-grid" id="plans-container">
 
       <!-- Plano Free / Grátis -->
       <div class="plan-card" id="plan-card-FREE" onclick="selectPlan('FREE', true)">
