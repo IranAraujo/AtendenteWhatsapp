@@ -15,6 +15,15 @@ export async function seedDatabase() {
   
   const defaultPasswordHash = hash('123456');
 
+  // Marca todas as contas existentes como verificadas para liberar login direto
+  await prisma.user.updateMany({
+    data: {
+      isEmailVerified: true,
+      verificationCode: null,
+      verificationToken: null
+    }
+  });
+
   // 1. Iran Araujo (Main Admin / User)
   const iranEmail = 'iran.s.araujo@gmail.com';
   let iranTenant = await prisma.tenant.findFirst({ where: { ownerEmail: iranEmail } });

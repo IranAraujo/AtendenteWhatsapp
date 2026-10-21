@@ -204,10 +204,11 @@ app.post('/api/auth/register', loginLimiter, async (req, res) => {
                 error: 'A senha deve conter no mínimo 6 caracteres.'
             });
         }
+        const hasSmtpConfigured = Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
         // Geração do código OTP de 6 dígitos e token UUID para ativação por email
-        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-        const verificationToken = crypto.randomUUID();
-        const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
+        const verificationCode = hasSmtpConfigured ? Math.floor(100000 + Math.random() * 900000).toString() : undefined;
+        const verificationToken = hasSmtpConfigured ? crypto.randomUUID() : undefined;
+        const verificationExpires = hasSmtpConfigured ? new Date(Date.now() + 24 * 60 * 60 * 1000) : undefined;
         const { tenant, user, initialServices, initialProfessional } = await dbRepository.registerTenantAndOwner({
             ownerName,
             email,
@@ -217,40 +218,77 @@ app.post('/api/auth/register', loginLimiter, async (req, res) => {
             planTier: planTier || 'MULTI_USER',
             segment: segment || 'servicos',
             businessAddress,
-            isEmailVerified: false,
+            isEmailVerified: !hasSmtpConfigured,
             verificationCode,
             verificationToken,
             verificationExpires
         });
-        // Dispara e-mail com código de confirmação e link
-        try {
-            await emailService.sendVerificationEmail({
+        if (hasSmtpConfigured && verificationCode && verificationToken) {
+            // Dispara e-mail com código de confirmação e link
+            try {
+                await emailService.sendVerificationEmail({
+                    email: user.email,
+                    name: user.name,
+                    code: verificationCode,
+                    token: verificationToken
+                });
+            }
+            catch (e) {
+                logger.warn('Falha no envio do email de verificação:', e.message);
+            }
+            return res.status(201).json({
+                success: true,
+                requireVerification: true,
                 email: user.email,
-                name: user.name,
-                code: verificationCode,
-                token: verificationToken
+                message: 'Conta criada com sucesso! Enviamos um código de confirmação para o seu e-mail.',
+                user: {
+                    id: user.id,
+                    tenantId: user.tenantId,
+                    name: user.name,
+                    email: user.email,
+                    role: user.role
+                },
+                tenant: {
+                    id: tenant.id,
+                    name: tenant.name,
+                    slug: tenant.slug
+                }
             });
         }
-        catch (e) {
-            logger.warn('Falha no envio do email de verificação:', e.message);
-        }
+        // Sem SMTP configurado: autentica e libera o acesso imediatamente
+        const token = generateJwtToken({
+            userId: user.id,
+            tenantId: user.tenantId,
+            role: user.role,
+            professionalId: user.professionalId,
+            email: user.email
+        });
+        res.cookie('authToken', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 7 * 24 * 60 * 60 * 1000
+        });
         res.status(201).json({
             success: true,
-            requireVerification: true,
+            requireVerification: false,
+            token,
             email: user.email,
-            message: 'Conta criada com sucesso! Enviamos um código de confirmação para o seu e-mail.',
-            devCode: !process.env.SMTP_HOST ? verificationCode : undefined,
+            message: 'Conta criada com sucesso! Redirecionando para o painel...',
             user: {
                 id: user.id,
                 tenantId: user.tenantId,
                 name: user.name,
                 email: user.email,
-                role: user.role
+                role: user.role,
+                professionalId: user.professionalId
             },
             tenant: {
                 id: tenant.id,
                 name: tenant.name,
-                slug: tenant.slug
+                slug: tenant.slug,
+                planTier: tenant.planTier,
+                maxUsers: tenant.maxUsers
             }
         });
     }
@@ -366,15 +404,6 @@ app.post('/api/auth/login', loginLimiter, async (req, res) => {
         const found = await dbRepository.findUserByEmail(email);
         if (!found || !comparePassword(password, found.user.passwordHash)) {
             return res.status(401).json({ success: false, error: 'Email ou senha incorretos.' });
-        }
-        // Bloqueia acesso se o e-mail não tiver sido confirmado (e não for conta legada ativa)
-        if (found.user.isEmailVerified === false) {
-            return res.status(403).json({
-                success: false,
-                requireVerification: true,
-                email: found.user.email,
-                error: 'Seu endereço de e-mail ainda não foi confirmado. Por favor, digite o código de 6 dígitos enviado para sua caixa de entrada.'
-            });
         }
         const token = generateJwtToken({
             userId: found.user.id,

@@ -274,7 +274,8 @@ class DbRepository {
                 name: data.name,
                 email: data.email,
                 passwordHash: hashPassword(data.passwordHash),
-                role: data.role
+                role: data.role,
+                isEmailVerified: true
             }
         });
         if (data.role === 'PROFESSIONAL' || data.role === 'OWNER') {

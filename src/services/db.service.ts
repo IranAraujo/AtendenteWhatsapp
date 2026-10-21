@@ -424,7 +424,8 @@ class DbRepository {
         name: data.name,
         email: data.email,
         passwordHash: hashPassword(data.passwordHash),
-        role: data.role as Role
+        role: data.role as Role,
+        isEmailVerified: true
       }
     });
 
