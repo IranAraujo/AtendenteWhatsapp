@@ -2,16 +2,17 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Instala dependências do sistema
-RUN apk add --no-cache python3 make g++
+# Instala dependências do sistema (incluindo openssl para o Prisma no Alpine)
+RUN apk add --no-cache python3 make g++ openssl
 
 COPY package*.json ./
+COPY prisma ./prisma/
 
 RUN npm install
 
 COPY . .
 
-RUN npm run build
+RUN npx prisma generate && npm run build
 
 EXPOSE 10000
 
