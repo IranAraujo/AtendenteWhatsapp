@@ -296,7 +296,7 @@
 
     <div class="card-panel">
       <div class="panel-header">
-        <h3><i class="fa-solid fa-list-check"></i> Contas de Clientes / Barbearias Assinantes</h3>
+        <h3><i class="fa-solid fa-list-check"></i> Contas de Clientes / Empresas Assinantes</h3>
       </div>
 
       <div style="overflow-x: auto; margin-top: 10px;">
@@ -324,22 +324,22 @@
     <div class="modal-card">
       <h3 style="margin-bottom: 20px;"><i class="fa-solid fa-crown" style="color: #f59e0b;"></i> Criar Nova Conta de Cliente SaaS</h3>
       <div class="form-group">
-        <label>Nome do Estabelecimento / Barbearia</label>
-        <input type="text" id="modal-tenant-name" class="form-control" placeholder="Ex: Barbearia Estilo Premium">
+        <label>Nome da Empresa / Estabelecimento</label>
+        <input type="text" id="modal-tenant-name" class="form-control" placeholder="Ex: Clínica & Consultório Premium">
       </div>
       <div class="form-group">
         <label>Email do Proprietário</label>
-        <input type="email" id="modal-tenant-email" class="form-control" placeholder="Ex: dono@barbeariaestilo.com">
+        <input type="email" id="modal-tenant-email" class="form-control" placeholder="Ex: contato@suaempresa.com.br">
       </div>
       <div class="form-group">
         <label>Plano de Assinatura</label>
         <select id="modal-tenant-plan" class="form-control" onchange="togglePlanUsersInput()">
-          <option value="SINGLE_USER">Plano Single-User (1 Barbeiro/Usuário)</option>
+          <option value="SINGLE_USER">Plano Single-User (1 Profissional/Usuário)</option>
           <option value="MULTI_USER">Plano Multi-User (Equipe / Múltiplos Usuários)</option>
         </select>
       </div>
       <div class="form-group" id="max-users-group" style="display: none;">
-        <label>Limite Máximo de Usuários/Barbeiros Permitidos</label>
+        <label>Limite Máximo de Profissionais/Usuários Permitidos</label>
         <input type="number" id="modal-tenant-max-users" class="form-control" value="5" min="1" max="50">
       </div>
       <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 10px;">
@@ -351,6 +351,22 @@
 
   <script>
     const baseUrl = window.location.protocol.startsWith('http') ? '' : 'http://localhost:3001';
+
+    const _origFetch = window.fetch.bind(window);
+    window.fetch = async function(input, init = {}) {
+      try {
+        const urlStr = typeof input === 'string' ? input : (input && input.url ? input.url : '');
+        if (urlStr.includes('/api/')) {
+          const token = localStorage.getItem('saas_token');
+          const headers = new Headers(init.headers || {});
+          if (token && !headers.has('Authorization')) {
+            headers.set('Authorization', `Bearer ${token}`);
+          }
+          init = { ...init, headers, credentials: init.credentials || 'same-origin' };
+        }
+      } catch (e) {}
+      return _origFetch(input, init);
+    };
 
     async function loadTenantsTable() {
       try {

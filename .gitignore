@@ -11,6 +11,7 @@ yarn-error.log*
 
 # Autenticação e Sessões do WhatsApp Baileys (Sessões reais do WhatsApp)
 data/baileys_auth_*
+data/database.json
 
 # Sistema Operacional e IDEs
 .vscode/

@@ -1232,6 +1232,194 @@
       box-shadow: 0 8px 32px rgba(11, 20, 26, 0.15);
     }
 
+    /* ========================================================= */
+    /* POP-UPS / TOAST NOTIFICATIONS & CUSTOM DIALOGS           */
+    /* ========================================================= */
+    .toast-container {
+      position: fixed;
+      top: 20px;
+      right: 24px;
+      z-index: 99999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-width: 400px;
+      width: calc(100vw - 48px);
+      pointer-events: none;
+    }
+
+    .onboarding-step-box:hover {
+      border-color: var(--wa-green) !important;
+      background: #ffffff !important;
+      box-shadow: 0 4px 14px rgba(0, 168, 132, 0.12) !important;
+      transform: translateY(-2px);
+    }
+
+    .custom-toast {
+      pointer-events: auto;
+      background: #ffffff;
+      border: 1px solid var(--wa-card-border);
+      border-radius: 12px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      box-shadow: 0 10px 30px rgba(11, 20, 26, 0.12), 0 2px 6px rgba(11, 20, 26, 0.06);
+      transform: translateX(120%);
+      opacity: 0;
+      transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .custom-toast.show {
+      transform: translateX(0);
+      opacity: 1;
+    }
+
+    .custom-toast.hide {
+      transform: translateX(120%);
+      opacity: 0;
+    }
+
+    .toast-icon {
+      font-size: 20px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .toast-content {
+      flex: 1;
+    }
+
+    .toast-title {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--wa-text-main);
+      margin-bottom: 2px;
+    }
+
+    .toast-message {
+      font-size: 12.5px;
+      color: var(--wa-text-sub);
+      line-height: 1.4;
+    }
+
+    .toast-close-btn {
+      background: transparent;
+      border: none;
+      color: var(--wa-text-muted);
+      cursor: pointer;
+      font-size: 14px;
+      padding: 2px 4px;
+      border-radius: 4px;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+
+    .toast-close-btn:hover {
+      color: var(--wa-text-main);
+      background: #f0f2f5;
+    }
+
+    /* Toast Variants */
+    .custom-toast.success { border-left: 4px solid var(--wa-green); }
+    .custom-toast.success .toast-icon { color: var(--wa-green); }
+
+    .custom-toast.error { border-left: 4px solid #ef4444; }
+    .custom-toast.error .toast-icon { color: #ef4444; }
+
+    .custom-toast.warning { border-left: 4px solid #f59e0b; }
+    .custom-toast.warning .toast-icon { color: #f59e0b; }
+
+    .custom-toast.info { border-left: 4px solid #3b82f6; }
+    .custom-toast.info .toast-icon { color: #3b82f6; }
+
+    /* Custom Confirm & Alert Modal */
+    .custom-popup-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(11, 20, 26, 0.45);
+      backdrop-filter: blur(5px);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100000;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .custom-popup-overlay.open {
+      opacity: 1; pointer-events: auto;
+    }
+
+    .custom-popup-card {
+      background: #ffffff;
+      border: 1px solid var(--wa-card-border);
+      border-radius: 16px;
+      width: 440px;
+      max-width: 92%;
+      padding: 28px 24px 22px 24px;
+      box-shadow: 0 16px 40px rgba(11, 20, 26, 0.18), 0 4px 12px rgba(11, 20, 26, 0.08);
+      transform: scale(0.92) translateY(10px);
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      text-align: center;
+    }
+
+    .custom-popup-overlay.open .custom-popup-card {
+      transform: scale(1) translateY(0);
+    }
+
+    .popup-icon-wrapper {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      margin-bottom: 16px;
+    }
+
+    .popup-icon-wrapper.warning { background: #fef3c7; color: #d97706; }
+    .popup-icon-wrapper.danger { background: #fee2e2; color: #ef4444; }
+    .popup-icon-wrapper.success { background: #d9fdd3; color: var(--wa-green-dark); }
+    .popup-icon-wrapper.info { background: #eff6ff; color: #3b82f6; }
+    .popup-icon-wrapper.question { background: #f0fdf4; color: var(--wa-green-dark); }
+
+    .popup-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--wa-text-main);
+      margin-bottom: 8px;
+    }
+
+    .popup-message {
+      font-size: 13.5px;
+      color: var(--wa-text-sub);
+      line-height: 1.5;
+      margin-bottom: 22px;
+      white-space: pre-line;
+    }
+
+    .popup-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .popup-actions button {
+      flex: 1;
+      padding: 11px 18px;
+      border-radius: 10px;
+      font-size: 13.5px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
     /* ============================================================= */
     /* RESPONSIVIDADE & ADAPTAÇÃO PARA DISPOSITIVOS MÓVEIS (CELULARES) */
     /* ============================================================= */
@@ -1501,10 +1689,10 @@
     <!-- Perfil do Usuário Logado -->
     <div class="user-profile-box">
       <div style="display: flex; align-items: center; gap: 10px;">
-        <div class="user-avatar" id="user-avatar-initial">L</div>
+        <div class="user-avatar" id="user-avatar-initial">-</div>
         <div>
-          <div style="font-weight: 700; font-size: 13.5px;" id="user-display-name">Lucas Silva</div>
-          <div style="font-size: 11.5px; color: var(--text-muted);" id="user-display-role">Proprietário(a)</div>
+          <div style="font-weight: 700; font-size: 13.5px;" id="user-display-name">Carregando...</div>
+          <div style="font-size: 11.5px; color: var(--text-muted);" id="user-display-role">-</div>
         </div>
       </div>
       <button class="btn-secondary" onclick="handleLogout()" title="Sair do sistema" style="padding: 6px 8px; border: none; background: transparent;">
@@ -1519,15 +1707,18 @@
       <li class="nav-item" data-tab="agenda" onclick="switchTab('agenda', this)">
         <i class="fa-regular fa-calendar-days"></i> Agenda & Calendário
       </li>
-      <li class="nav-item" data-tab="equipe" onclick="switchTab('equipe', this)">
+      <li class="nav-item admin-only" data-tab="equipe" onclick="switchTab('equipe', this)">
         <i class="fa-solid fa-users"></i> Equipe & Profissionais
       </li>
-      <li class="nav-item" data-tab="servicos" onclick="switchTab('servicos', this)">
+      <li class="nav-item admin-only" data-tab="servicos" onclick="switchTab('servicos', this)">
         <i class="fa-solid fa-store"></i> Serviços & Produtos
       </li>
+      <li class="nav-item admin-only" data-tab="clientes" onclick="switchTab('clientes', this)">
+        <i class="fa-solid fa-address-book"></i> Clientes (CRM)
+      </li>
       
-      <!-- ITEM CONFIGURAÇÕES COM SUBMENU LATERAL -->
-      <li class="nav-item-parent">
+      <!-- ITEM CONFIGURAÇÕES COM SUBMENU LATERAL (RESTRITO AO PROPRIETÁRIO) -->
+      <li class="nav-item-parent admin-only">
         <div class="nav-item" id="nav-cfg-main" onclick="toggleConfigSubmenu(this)">
           <i class="fa-solid fa-gear"></i> Configurações
           <i class="fa-solid fa-chevron-down" id="cfg-chevron" style="margin-left: auto; font-size: 11px; transition: transform 0.2s;"></i>
@@ -1552,7 +1743,7 @@
     </ul>
 
     <div class="sidebar-footer">
-      <div class="sidebar-footer-link" onclick="alert('Central de Ajuda SaaS Atendente: Suporte ativo 24/7')">
+      <div class="sidebar-footer-link" onclick="showToast('Central de Ajuda SaaS Atendente: Suporte ativo 24/7', 'info')">
         <i class="fa-regular fa-circle-question"></i> Suporte
       </div>
       <div class="sidebar-footer-link" onclick="handleLogout()" style="color: #ef4444;">
@@ -1568,14 +1759,14 @@
     <header class="app-topbar">
       <div class="topbar-brand">
         <div>
-          <h1 class="topbar-title" id="tenant-display-name">Estilo & Beleza Premium</h1>
+          <h1 class="topbar-title" id="tenant-display-name">Carregando Estabelecimento...</h1>
           <p class="topbar-subtitle">Painel Administrativo & Atendimento Inteligente</p>
         </div>
       </div>
 
       <div class="topbar-actions">
         <!-- STATUS DO WHATSAPP INTERATIVO -->
-        <div class="status-badge-pill" id="whatsapp-header-badge" onclick="switchTab('configuracoes', 'wa')" title="Clique para gerenciar a Conexão do WhatsApp">
+        <div class="status-badge-pill admin-only" id="whatsapp-header-badge" onclick="switchTab('configuracoes', 'wa')" title="Clique para gerenciar a Conexão do WhatsApp">
           <i class="fa-brands fa-whatsapp" style="font-size: 15px;"></i>
           <span class="badge-dot" id="whatsapp-header-dot"></span>
           <span id="whatsapp-header-text">WhatsApp Desconectado</span>
@@ -1595,34 +1786,105 @@
       <!-- TAB: DASHBOARD -->
       <div id="tab-dashboard" class="tab-panel active" style="display: block;">
         
+        <!-- ONBOARDING CHECKLIST BANNER (4 PASSOS PARA O SUCESSO DO SEU NEGÓCIO) -->
+        <div id="onboarding-banner" class="admin-only" style="display: none; background: #ffffff; border: 1px solid var(--wa-card-border); border-radius: 14px; padding: 22px 24px; margin-bottom: 24px; box-shadow: 0 4px 14px rgba(11, 20, 26, 0.05);">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="background: var(--wa-pill-active); color: var(--wa-pill-active-text); font-weight: 800; font-size: 11px; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px;">Primeiros Passos</span>
+                <span id="onboarding-counter-badge" style="font-size: 13px; font-weight: 600; color: var(--wa-text-muted);">0 de 4 concluídos</span>
+              </div>
+              <h3 style="font-size: 17px; font-weight: 700; color: var(--wa-text-main); margin-top: 8px;">Guia de Configuração do seu Estabelecimento</h3>
+              <p style="font-size: 13px; color: var(--wa-text-sub); margin-top: 2px;">Complete os passos abaixo para que sua IA atenda e agende clientes automaticamente pelo WhatsApp 24h por dia.</p>
+            </div>
+            <button type="button" onclick="dismissOnboardingBanner()" style="background: none; border: none; color: var(--wa-text-muted); cursor: pointer; font-size: 18px; padding: 4px 8px; border-radius: 6px;" title="Dispensar guia de início">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+
+          <!-- Barra de Progresso Interativa -->
+          <div style="background: #e9edef; height: 6px; border-radius: 3px; overflow: hidden; margin-bottom: 18px;">
+            <div id="onboarding-progress-bar" style="background: var(--wa-green); height: 100%; width: 25%; border-radius: 3px; transition: width 0.3s ease;"></div>
+          </div>
+
+          <!-- Grade dos 4 Passos -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px;">
+            
+            <div class="onboarding-step-box" id="ob-step-wa" onclick="switchTab('configuracoes', 'wa')" style="border: 1px solid var(--wa-card-border); border-radius: 10px; padding: 14px; cursor: pointer; background: #f8fafc; transition: all 0.2s;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(37, 211, 102, 0.15); color: #008069; display: flex; align-items: center; justify-content: center; font-size: 16px;">
+                  <i class="fa-brands fa-whatsapp"></i>
+                </div>
+                <span class="ob-check-icon" id="ob-icon-wa" style="color: #94a3b8;"><i class="fa-regular fa-circle"></i></span>
+              </div>
+              <h4 style="font-size: 13.5px; font-weight: 700; color: var(--wa-text-main);">1. Conectar WhatsApp</h4>
+              <p style="font-size: 12px; color: var(--wa-text-muted); margin-top: 4px;">Escaneie o QR Code para ativar o robô no WhatsApp.</p>
+            </div>
+
+            <div class="onboarding-step-box" id="ob-step-services" onclick="switchTab('servicos')" style="border: 1px solid var(--wa-card-border); border-radius: 10px; padding: 14px; cursor: pointer; background: #f8fafc; transition: all 0.2s;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(59, 130, 246, 0.15); color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 15px;">
+                  <i class="fa-solid fa-list-check"></i>
+                </div>
+                <span class="ob-check-icon" id="ob-icon-services" style="color: #94a3b8;"><i class="fa-regular fa-circle"></i></span>
+              </div>
+              <h4 style="font-size: 13.5px; font-weight: 700; color: var(--wa-text-main);">2. Cadastrar Serviços</h4>
+              <p style="font-size: 12px; color: var(--wa-text-muted); margin-top: 4px;">Adicione tempo de duração, descrições e valores.</p>
+            </div>
+
+            <div class="onboarding-step-box" id="ob-step-team" onclick="switchTab('equipe')" style="border: 1px solid var(--wa-card-border); border-radius: 10px; padding: 14px; cursor: pointer; background: #f8fafc; transition: all 0.2s;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(168, 85, 247, 0.15); color: #7c3aed; display: flex; align-items: center; justify-content: center; font-size: 15px;">
+                  <i class="fa-solid fa-user-group"></i>
+                </div>
+                <span class="ob-check-icon" id="ob-icon-team" style="color: #94a3b8;"><i class="fa-regular fa-circle"></i></span>
+              </div>
+              <h4 style="font-size: 13.5px; font-weight: 700; color: var(--wa-text-main);">3. Equipe & Horários</h4>
+              <p style="font-size: 12px; color: var(--wa-text-muted); margin-top: 4px;">Defina os atendentes e seus turnos de trabalho.</p>
+            </div>
+
+            <div class="onboarding-step-box" id="ob-step-link" onclick="selectConfigOption('calcom')" style="border: 1px solid var(--wa-card-border); border-radius: 10px; padding: 14px; cursor: pointer; background: #f8fafc; transition: all 0.2s;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(245, 158, 11, 0.15); color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 15px;">
+                  <i class="fa-solid fa-link"></i>
+                </div>
+                <span class="ob-check-icon" id="ob-icon-link" style="color: #94a3b8;"><i class="fa-regular fa-circle"></i></span>
+              </div>
+              <h4 style="font-size: 13.5px; font-weight: 700; color: var(--wa-text-main);">4. Link de Agendamento</h4>
+              <p style="font-size: 12px; color: var(--wa-text-muted); margin-top: 4px;">Copie e compartilhe seu portal web com clientes.</p>
+            </div>
+
+          </div>
+        </div>
+        
         <!-- 3 Metric Cards Row -->
         <div class="metrics-grid">
           
           <div class="metric-card">
             <div class="metric-header">
               <div class="metric-icon-box"><i class="fa-regular fa-calendar-check"></i></div>
-              <span class="metric-trend up">↗ +12%</span>
+              <span class="metric-trend neutral">Hoje</span>
             </div>
             <div class="metric-label">AGENDAMENTOS (HOJE)</div>
-            <div class="metric-value" id="metric-appts-count">24</div>
+            <div class="metric-value" id="metric-appts-count">0</div>
           </div>
 
           <div class="metric-card">
             <div class="metric-header">
               <div class="metric-icon-box"><i class="fa-solid fa-wallet"></i></div>
-              <span class="metric-trend up">↗ +5%</span>
+              <span class="metric-trend neutral">Estimada</span>
             </div>
             <div class="metric-label">RECEITA ESTIMADA</div>
-            <div class="metric-value" id="metric-revenue-sum">R$ 1.850</div>
+            <div class="metric-value" id="metric-revenue-sum">R$ 0,00</div>
           </div>
 
           <div class="metric-card">
             <div class="metric-header">
               <div class="metric-icon-box"><i class="fa-solid fa-user-plus"></i></div>
-              <span class="metric-trend neutral">→ 0%</span>
+              <span class="metric-trend neutral">Total</span>
             </div>
-            <div class="metric-label">NOVOS CLIENTES</div>
-            <div class="metric-value" id="metric-clients-count">4</div>
+            <div class="metric-label">CLIENTES ATENDIDOS</div>
+            <div class="metric-value" id="metric-clients-count">0</div>
           </div>
 
         </div>
@@ -1643,40 +1905,8 @@
             </div>
 
             <div class="appointment-list" id="dashboard-recent-appts-list">
-              <div class="appointment-item">
-                <div class="appt-accent-bar green"></div>
-                <div class="appt-info">
-                  <div class="appt-service-name">Corte + Barba</div>
-                  <div class="appt-customer-name">com Carlos Eduardo</div>
-                </div>
-                <div class="appt-time-box">
-                  <div class="appt-time">14:00 - 15:00</div>
-                  <div class="appt-day-label">Hoje</div>
-                </div>
-              </div>
-
-              <div class="appointment-item">
-                <div class="appt-accent-bar purple"></div>
-                <div class="appt-info">
-                  <div class="appt-service-name">Luzes & Hidratação</div>
-                  <div class="appt-customer-name">com Rafael Souza</div>
-                </div>
-                <div class="appt-time-box">
-                  <div class="appt-time">15:30 - 17:00</div>
-                  <div class="appt-day-label">Hoje</div>
-                </div>
-              </div>
-
-              <div class="appointment-item">
-                <div class="appt-accent-bar amber"></div>
-                <div class="appt-info">
-                  <div class="appt-service-name">Atendimento Estético</div>
-                  <div class="appt-customer-name">com Gabriel Martins</div>
-                </div>
-                <div class="appt-time-box">
-                  <div class="appt-time">10:00 - 10:30</div>
-                  <div class="appt-day-label">Amanhã</div>
-                </div>
+              <div style="text-align: center; padding: 28px 16px; color: var(--wa-text-muted); font-size: 13px;">
+                <i class="fa-solid fa-spinner fa-spin" style="margin-right: 6px;"></i> Carregando agendamentos...
               </div>
             </div>
           </div>
@@ -1707,10 +1937,12 @@
             <div class="panel-box-title"><i class="fa-regular fa-calendar-days" style="color: var(--wa-green-dark);"></i> Calendário Interativo de Agendamentos</div>
 
             <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-              <label style="font-size: 13px; font-weight: 600; color: var(--wa-text-sub);">Profissional:</label>
-              <select id="calendar-professional-filter" class="form-control" style="width: auto; padding: 6px 12px; font-size: 13px;" onchange="loadAppointmentsFromServer()">
-                <option value="ALL"> Todos os Profissionais</option>
-              </select>
+              <div id="calendar-prof-filter-container" style="display: flex; align-items: center; gap: 8px;">
+                <label style="font-size: 13px; font-weight: 600; color: var(--wa-text-sub);">Profissional:</label>
+                <select id="calendar-professional-filter" class="form-control" style="width: auto; padding: 6px 12px; font-size: 13px;" onchange="loadAppointmentsFromServer()">
+                  <option value="ALL"> Todos os Profissionais</option>
+                </select>
+              </div>
               <button class="btn-secondary" onclick="openScheduleBlockModal()" style="padding: 8px 14px; font-weight: 600; background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;">
                 <i class="fa-solid fa-ban"></i> Bloquear Horário / Folga
               </button>
@@ -1794,7 +2026,7 @@
           <div class="panel-box-header" style="flex-wrap: wrap; gap: 16px;">
             <div style="display: flex; align-items: center; gap: 12px;">
               <button class="btn-secondary active" id="btn-subtab-services" onclick="switchCatalogTab('services')"><i class="fa-solid fa-briefcase"></i> Serviços</button>
-              <button class="btn-secondary" id="btn-subtab-products" onclick="switchCatalogTab('products')"><i class="fa-solid fa-pump-soap"></i> Produtos à Venda</button>
+              <button class="btn-secondary" id="btn-subtab-products" onclick="switchCatalogTab('products')"><i class="fa-solid fa-box"></i> Produtos à Venda</button>
             </div>
 
             <button class="btn-primary" id="btn-add-item" onclick="openCreateItemModal()">
@@ -1808,6 +2040,47 @@
 
           <div id="subtab-products-content" style="display: none;">
             <div id="products-grid-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: CLIENTES (CRM) -->
+      <div id="tab-clientes" class="tab-panel" style="display: none;">
+        <div class="panel-box">
+          <div class="panel-box-header" style="flex-wrap: wrap; gap: 16px;">
+            <div>
+              <div class="panel-box-title"><i class="fa-solid fa-address-book" style="color: var(--wa-green-dark);"></i> Base de Clientes & Histórico (CRM)</div>
+              <p style="color: var(--wa-text-muted); font-size: 13px; margin-top: 4px;">Acompanhe os clientes cadastrados automaticamente via WhatsApp ou Portal Online.</p>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <input type="text" id="crm-search-input" class="form-control" placeholder="Buscar por nome ou WhatsApp..." style="width: 240px; padding: 8px 14px; font-size: 13px;" oninput="filterCustomersCRM()">
+              <button class="btn-secondary" onclick="exportCustomersCSV()" style="padding: 8px 14px; font-size: 13px; font-weight: 600;">
+                <i class="fa-solid fa-file-csv" style="color: var(--wa-green-dark);"></i> Exportar CSV
+              </button>
+              <button class="btn-primary" onclick="openNewAppointmentModal()" style="padding: 8px 14px; font-size: 13px;">
+                <i class="fa-solid fa-plus"></i> Novo Agendamento
+              </button>
+            </div>
+          </div>
+
+          <div style="overflow-x: auto; margin-top: 12px;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13.5px;">
+              <thead>
+                <tr style="border-bottom: 1px solid var(--wa-card-border); color: var(--wa-text-muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
+                  <th style="padding: 12px;">Cliente</th>
+                  <th style="padding: 12px;">WhatsApp</th>
+                  <th style="padding: 12px;">Atendimentos</th>
+                  <th style="padding: 12px;">Último Agendamento</th>
+                  <th style="padding: 12px;">Preferência</th>
+                  <th style="padding: 12px; text-align: right;">Ação Rápida</th>
+                </tr>
+              </thead>
+              <tbody id="crm-customers-tbody">
+                <tr>
+                  <td colspan="6" style="padding: 28px; text-align: center; color: var(--wa-text-muted);">Carregando clientes...</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -1863,6 +2136,18 @@
               </div>
 
               <!-- FAQ / PERGUNTAS FREQUENTES (#17) -->
+              <div class="form-group" style="margin-top: 18px; background: #f8fafc; border: 1px solid var(--wa-card-border); border-radius: 10px; padding: 14px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                  <label style="margin: 0; font-size: 13.5px; font-weight: 700; color: var(--wa-text-main);">
+                    <i class="fa-solid fa-circle-question" style="color: var(--wa-green-dark);"></i> Perguntas Frequentes (FAQ da IA)
+                  </label>
+                  <button type="button" class="btn-secondary" onclick="addFaqItemRow()" style="padding: 4px 10px; font-size: 12px; font-weight: 600;">
+                    <i class="fa-solid fa-plus"></i> Adicionar Pergunta
+                  </button>
+                </div>
+                <div id="ai-faq-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 220px; overflow-y: auto;"></div>
+              </div>
+
               <!-- CONFIGURAÇÃO DE VOZ E RESPOSTA POR ÁUDIO -->
               <div class="form-group" style="margin-top: 20px; background: #f0fdf4; border: 1px solid rgba(0, 168, 132, 0.3); border-radius: 10px; padding: 14px;">
                 <div class="panel-box-title" style="font-size: 13.5px; margin-bottom: 12px; color: #008069;">
@@ -1935,10 +2220,10 @@
 
                 <!-- Chips de Teste Rápido Humanizados -->
                 <div style="display: flex; gap: 6px; padding: 6px 12px; overflow-x: auto; background: var(--wa-card-bg); border-top: 1px solid var(--wa-card-border); scrollbar-width: none;">
-                  <button type="button" class="btn-secondary" style="font-size: 11px; padding: 4px 9px; border-radius: 12px; white-space: nowrap;" onclick="sendQuickSimulator('matheus tem horário na segunda?')">Matheus tem horário na segunda?</button>
+                  <button type="button" class="btn-secondary" style="font-size: 11px; padding: 4px 9px; border-radius: 12px; white-space: nowrap;" onclick="sendQuickSimulator('Olá, gostaria de agendar um horário')">Agendar Horário</button>
                   <button type="button" class="btn-secondary" style="font-size: 11px; padding: 4px 9px; border-radius: 12px; white-space: nowrap;" onclick="sendQuickSimulator('Quais serviços vocês oferecem e quais os preços?')">Serviços e Preços</button>
-                  <button type="button" class="btn-secondary" style="font-size: 11px; padding: 4px 9px; border-radius: 12px; white-space: nowrap;" onclick="sendQuickSimulator('Tem horário vago amanhã à tarde?')">Horários amanhã à tarde</button>
-                  <button type="button" class="btn-secondary" style="font-size: 11px; padding: 4px 9px; border-radius: 12px; white-space: nowrap;" onclick="sendQuickSimulator('Quem corta cabelo por aí?')">Quem corta cabelo?</button>
+                  <button type="button" class="btn-secondary" style="font-size: 11px; padding: 4px 9px; border-radius: 12px; white-space: nowrap;" onclick="sendQuickSimulator('Tem horário vago amanhã?')">Horários amanhã</button>
+                  <button type="button" class="btn-secondary" style="font-size: 11px; padding: 4px 9px; border-radius: 12px; white-space: nowrap;" onclick="sendQuickSimulator('Meu nome é Pedro, quero agendar para hoje')">Meu nome é Pedro</button>
                   <button type="button" class="btn-secondary" style="font-size: 11px; padding: 4px 9px; border-radius: 12px; white-space: nowrap; color: #dc2626;" onclick="clearSimulatorChat()" title="Reiniciar conversa e limpar sessão">Limpar Chat 🔄</button>
                 </div>
 
@@ -2012,7 +2297,7 @@
               <h4 style="font-size: 15.5px; font-weight: 700; color: var(--wa-green-dark); margin-bottom: 6px;"><i class="fa-solid fa-vial"></i> Testar Envio Real no Seu Celular Agora</h4>
               <p style="color: var(--wa-text-sub); font-size: 13px; margin-bottom: 14px;">Envie uma mensagem de teste do lembrete diretamente para o seu WhatsApp (requer o número do WhatsApp conectado na aba "Conectar WhatsApp").</p>
               <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                <input type="text" id="rem-test-phone" class="form-control" placeholder="Seu WhatsApp com DDD (ex: 84988234441)" style="max-width: 320px; background: #ffffff;">
+                <input type="text" id="rem-test-phone" class="form-control" placeholder="Seu WhatsApp com DDD (ex: 11999998888)" style="max-width: 320px; background: #ffffff;">
                 <button class="btn-primary" onclick="sendTestReminderWhatsApp('1h')" style="white-space: nowrap;"><i class="fa-brands fa-whatsapp"></i> Receber Lembrete 1h</button>
                 <button class="btn-secondary" onclick="sendTestReminderWhatsApp('24h')" style="white-space: nowrap;"><i class="fa-brands fa-whatsapp"></i> Receber Lembrete 24h</button>
               </div>
@@ -2043,14 +2328,32 @@
                 <p style="font-size: 12px; color: var(--wa-text-muted); margin-bottom: 12px;">
                   Envie este link para clientes que preferirem agendar pela web ou coloque na bio do seu Instagram:
                 </p>
-                <div style="display: flex; gap: 8px;">
-                  <input type="text" id="public-booking-url-input" class="form-control" readonly value="http://localhost:3001/agendar/estilo-beleza-premium" style="font-size: 12.5px; background: white; font-weight: 600; color: #1e293b;">
+                <div style="display: flex; gap: 8px; margin-bottom: 14px;">
+                  <input type="text" id="public-booking-url-input" class="form-control" readonly value="" placeholder="Carregando link do seu estabelecimento..." style="font-size: 12.5px; background: white; font-weight: 600; color: #1e293b;">
                   <button type="button" class="btn-primary" onclick="copyPublicBookingLink()" style="font-size: 12px; white-space: nowrap; padding: 8px 14px;">
                     <i class="fa-regular fa-copy"></i> Copiar
                   </button>
-                  <a href="/agendar/estilo-beleza-premium" id="public-booking-preview-btn" target="_blank" class="btn-secondary" style="font-size: 12px; white-space: nowrap; padding: 8px 14px; text-decoration: none; display: flex; align-items: center; gap: 4px; background: white;">
+                  <a href="#" id="public-booking-preview-btn" target="_blank" class="btn-secondary" style="font-size: 12px; white-space: nowrap; padding: 8px 14px; text-decoration: none; display: flex; align-items: center; gap: 4px; background: white;">
                     <i class="fa-solid fa-arrow-up-right-from-square"></i> Abrir
                   </a>
+                </div>
+
+                <!-- Edição de Nome e Slug da Empresa -->
+                <div style="border-top: 1px dashed rgba(37,99,235,0.2); padding-top: 12px; margin-top: 8px;">
+                  <div style="font-size: 12px; font-weight: 700; color: #1e293b; margin-bottom: 8px;"><i class="fa-solid fa-pen-to-square"></i> Personalizar Nome & Link da Empresa:</div>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                    <div>
+                      <label style="font-size: 11.5px; color: var(--wa-text-muted); display: block; margin-bottom: 4px;">Nome da Empresa / Estabelecimento:</label>
+                      <input type="text" id="cfg-company-name-input" class="form-control" placeholder="Ex: Meu Consultório / Minha Empresa" style="font-size: 12.5px; background: white;">
+                    </div>
+                    <div>
+                      <label style="font-size: 11.5px; color: var(--wa-text-muted); display: block; margin-bottom: 4px;">Link Personalizado (Slug URL):</label>
+                      <input type="text" id="cfg-company-slug-input" class="form-control" placeholder="Ex: minha-empresa" style="font-size: 12.5px; background: white;">
+                    </div>
+                  </div>
+                  <button type="button" class="btn-primary" onclick="saveCompanyProfile()" style="font-size: 12px; padding: 6px 14px;">
+                    <i class="fa-solid fa-floppy-disk"></i> Salvar Nome & Link
+                  </button>
                 </div>
               </div>
 
@@ -2174,8 +2477,19 @@
       </div>
 
       <div class="form-group">
-        <label>Telefone / WhatsApp</label>
-        <input type="text" id="modal-new-phone" class="form-control" placeholder="5511999998888">
+        <label>Telefone / WhatsApp (com DDD)</label>
+        <input type="text" id="modal-new-phone" class="form-control" placeholder="Ex: 11999998888">
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label>Serviço</label>
+          <select id="modal-new-service" class="form-control"></select>
+        </div>
+        <div class="form-group">
+          <label>Profissional</label>
+          <select id="modal-new-prof" class="form-control"></select>
+        </div>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
@@ -2191,7 +2505,7 @@
 
       <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 10px;">
         <button class="btn-secondary" onclick="closeNewAppointmentModal()">Cancelar</button>
-        <button class="btn-primary" onclick="saveNewAppointmentSubmit()"><i class="fa-solid fa-check"></i> Confirmar Agendamento</button>
+        <button class="btn-primary" id="btn-save-new-appt" onclick="saveNewAppointmentSubmit()"><i class="fa-solid fa-check"></i> Confirmar Agendamento</button>
       </div>
     </div>
   </div>
@@ -2327,13 +2641,13 @@
 
       <!-- CONTEÚDO 1: MEUS DADOS & PLANO -->
       <div id="ptab-account" class="profile-tab-content">
-        <div style="background: #0f172a; border: 1px solid var(--bg-card-border); border-radius: 12px; padding: 18px; margin-bottom: 16px;">
+        <div style="background: #ffffff; border: 1px solid var(--wa-card-border); border-radius: 12px; padding: 18px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(11, 20, 26, 0.04);">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-            <h4 style="font-size: 14px; font-weight: 700; color: white;"><i class="fa-solid fa-store" style="color: var(--primary);"></i> Estabelecimento Conectado</h4>
-            <span id="profile-plan-tier-badge" style="background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700;">SINGLE_USER</span>
+            <h4 style="font-size: 14px; font-weight: 700; color: var(--wa-text-main);"><i class="fa-solid fa-store" style="color: var(--wa-green);"></i> Estabelecimento Conectado</h4>
+            <span id="profile-plan-tier-badge" style="background: #d9fdd3; color: var(--wa-green-dark); border: 1px solid rgba(0, 168, 132, 0.3); padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700;">SINGLE_USER</span>
           </div>
-          <p style="font-size: 15px; font-weight: 700; color: white;" id="profile-tenant-name">Nome do Estabelecimento</p>
-          <p style="color: var(--text-muted); font-size: 13px; margin-top: 4px;" id="profile-quota-text">Cota de Uso: 1 / 1 Profissional Cadastrado</p>
+          <p style="font-size: 15px; font-weight: 700; color: var(--wa-text-main);" id="profile-tenant-name">Nome do Estabelecimento</p>
+          <p style="color: var(--wa-text-muted); font-size: 13px; margin-top: 4px;" id="profile-quota-text">Cota de Uso: 1 / 1 Profissional Cadastrado</p>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
@@ -2355,7 +2669,7 @@
 
       <!-- CONTEÚDO 2: SEGURANÇA (TROCA DE SENHA) -->
       <div id="ptab-security" class="profile-tab-content" style="display: none;">
-        <h4 style="font-size: 14px; font-weight: 700; color: white; margin-bottom: 14px;"><i class="fa-solid fa-lock" style="color: var(--primary);"></i> Alteração de Senha de Acesso</h4>
+        <h4 style="font-size: 14px; font-weight: 700; color: var(--wa-text-main); margin-bottom: 14px;"><i class="fa-solid fa-lock" style="color: var(--wa-green);"></i> Alteração de Senha de Acesso</h4>
         
         <div class="form-group">
           <label>Senha Atual</label>
@@ -2382,49 +2696,49 @@
 
       <!-- CONTEÚDO 3: UPGRADE DE PLANO -->
       <div id="ptab-upgrade" class="profile-tab-content" style="display: none;">
-        <h4 style="font-size: 14px; font-weight: 700; color: white; margin-bottom: 14px;"><i class="fa-solid fa-layer-group" style="color: var(--primary);"></i> Escolha o Plano Ideal para seu Estabelecimento</h4>
+        <h4 style="font-size: 14px; font-weight: 700; color: var(--wa-text-main); margin-bottom: 14px;"><i class="fa-solid fa-layer-group" style="color: var(--wa-green);"></i> Escolha o Plano Ideal para seu Estabelecimento</h4>
 
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
           
           <!-- CARD SINGLE USER -->
-          <div style="background: #0f172a; border: 1px solid var(--bg-card-border); border-radius: 12px; padding: 16px; text-align: center; display: flex; flex-direction: column; justify-content: space-between;">
+          <div style="background: #ffffff; border: 1px solid var(--wa-card-border); border-radius: 12px; padding: 16px; text-align: center; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 1px 3px rgba(11, 20, 26, 0.04);">
             <div>
-              <span style="background: rgba(148, 163, 184, 0.15); color: #94a3b8; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700;">SINGLE-USER</span>
-              <h5 style="font-size: 18px; font-weight: 800; color: white; margin-top: 8px;">R$ 97<span style="font-size: 12px; color: var(--text-muted);">/mês</span></h5>
-              <ul style="list-style: none; font-size: 12px; color: var(--text-muted); margin-top: 10px; text-align: left; display: flex; flex-direction: column; gap: 6px;">
-                <li><i class="fa-solid fa-check" style="color: #4ade80;"></i> 1 Conexão WhatsApp</li>
-                <li><i class="fa-solid fa-check" style="color: #4ade80;"></i> 1 Atendente IA</li>
-                <li><i class="fa-solid fa-check" style="color: #4ade80;"></i> 1 Profissional</li>
+              <span style="background: #f0f2f5; color: var(--wa-text-sub); padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: 700;">SINGLE-USER</span>
+              <h5 style="font-size: 18px; font-weight: 800; color: var(--wa-text-main); margin-top: 8px;">R$ 97<span style="font-size: 12px; color: var(--wa-text-muted);">/mês</span></h5>
+              <ul style="list-style: none; font-size: 12px; color: var(--wa-text-sub); margin-top: 10px; text-align: left; display: flex; flex-direction: column; gap: 6px;">
+                <li><i class="fa-solid fa-check" style="color: var(--wa-green);"></i> 1 Conexão WhatsApp</li>
+                <li><i class="fa-solid fa-check" style="color: var(--wa-green);"></i> 1 Atendente IA</li>
+                <li><i class="fa-solid fa-check" style="color: var(--wa-green);"></i> 1 Profissional</li>
               </ul>
             </div>
             <button type="button" class="btn-secondary" onclick="submitUpgradePlan('SINGLE_USER')" style="margin-top: 14px; font-size: 12px; font-weight: 700;">Selecionar</button>
           </div>
 
           <!-- CARD MULTI USER -->
-          <div style="background: rgba(59, 130, 246, 0.1); border: 2px solid var(--primary); border-radius: 12px; padding: 16px; text-align: center; display: flex; flex-direction: column; justify-content: space-between; position: relative;">
-            <div style="position: absolute; top: -10px; right: 12px; background: var(--primary); color: white; font-size: 9px; font-weight: 800; padding: 2px 8px; border-radius: 10px; text-transform: uppercase;">Mais Popular</div>
+          <div style="background: #f0fdf4; border: 2px solid var(--wa-green); border-radius: 12px; padding: 16px; text-align: center; display: flex; flex-direction: column; justify-content: space-between; position: relative; box-shadow: 0 2px 8px rgba(0, 168, 132, 0.12);">
+            <div style="position: absolute; top: -10px; right: 12px; background: var(--wa-green); color: white; font-size: 9px; font-weight: 800; padding: 2px 8px; border-radius: 10px; text-transform: uppercase;">Mais Popular</div>
             <div>
-              <span style="background: rgba(59, 130, 246, 0.2); color: #60a5fa; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700;">MULTI-USER</span>
-              <h5 style="font-size: 18px; font-weight: 800; color: white; margin-top: 8px;">R$ 197<span style="font-size: 12px; color: var(--text-muted);">/mês</span></h5>
-              <ul style="list-style: none; font-size: 12px; color: var(--text-muted); margin-top: 10px; text-align: left; display: flex; flex-direction: column; gap: 6px;">
-                <li><i class="fa-solid fa-check" style="color: #4ade80;"></i> 1 Conexão WhatsApp</li>
-                <li><i class="fa-solid fa-check" style="color: #4ade80;"></i> 1 Atendente IA</li>
-                <li><i class="fa-solid fa-check" style="color: #4ade80;"></i> <strong>Até 5 Profissionais</strong></li>
-                <li><i class="fa-solid fa-check" style="color: #4ade80;"></i> Gestão de Equipe</li>
+              <span style="background: #d9fdd3; color: var(--wa-green-dark); padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: 700;">MULTI-USER</span>
+              <h5 style="font-size: 18px; font-weight: 800; color: var(--wa-text-main); margin-top: 8px;">R$ 197<span style="font-size: 12px; color: var(--wa-text-muted);">/mês</span></h5>
+              <ul style="list-style: none; font-size: 12px; color: var(--wa-text-sub); margin-top: 10px; text-align: left; display: flex; flex-direction: column; gap: 6px;">
+                <li><i class="fa-solid fa-check" style="color: var(--wa-green);"></i> 1 Conexão WhatsApp</li>
+                <li><i class="fa-solid fa-check" style="color: var(--wa-green);"></i> 1 Atendente IA</li>
+                <li><i class="fa-solid fa-check" style="color: var(--wa-green);"></i> <strong>Até 5 Profissionais</strong></li>
+                <li><i class="fa-solid fa-check" style="color: var(--wa-green);"></i> Gestão de Equipe</li>
               </ul>
             </div>
             <button type="button" class="btn-primary" onclick="submitUpgradePlan('MULTI_USER')" style="margin-top: 14px; font-size: 12px; font-weight: 700;">Fazer Upgrade</button>
           </div>
 
           <!-- CARD ENTERPRISE -->
-          <div style="background: #0f172a; border: 1px solid var(--bg-card-border); border-radius: 12px; padding: 16px; text-align: center; display: flex; flex-direction: column; justify-content: space-between;">
+          <div style="background: #ffffff; border: 1px solid var(--wa-card-border); border-radius: 12px; padding: 16px; text-align: center; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 1px 3px rgba(11, 20, 26, 0.04);">
             <div>
-              <span style="background: rgba(168, 85, 247, 0.2); color: #c084fc; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700;">ENTERPRISE</span>
-              <h5 style="font-size: 18px; font-weight: 800; color: white; margin-top: 8px;">R$ 397<span style="font-size: 12px; color: var(--text-muted);">/mês</span></h5>
-              <ul style="list-style: none; font-size: 12px; color: var(--text-muted); margin-top: 10px; text-align: left; display: flex; flex-direction: column; gap: 6px;">
-                <li><i class="fa-solid fa-check" style="color: #4ade80;"></i> 1 Conexão WhatsApp</li>
-                <li><i class="fa-solid fa-check" style="color: #4ade80;"></i> <strong>Profissionais Ilimitados</strong></li>
-                <li><i class="fa-solid fa-check" style="color: #4ade80;"></i> Suporte Prioritário 24/7</li>
+              <span style="background: #f3e8ff; color: #7e22ce; padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: 700;">ENTERPRISE</span>
+              <h5 style="font-size: 18px; font-weight: 800; color: var(--wa-text-main); margin-top: 8px;">R$ 397<span style="font-size: 12px; color: var(--wa-text-muted);">/mês</span></h5>
+              <ul style="list-style: none; font-size: 12px; color: var(--wa-text-sub); margin-top: 10px; text-align: left; display: flex; flex-direction: column; gap: 6px;">
+                <li><i class="fa-solid fa-check" style="color: var(--wa-green);"></i> 1 Conexão WhatsApp</li>
+                <li><i class="fa-solid fa-check" style="color: var(--wa-green);"></i> <strong>Profissionais Ilimitados</strong></li>
+                <li><i class="fa-solid fa-check" style="color: var(--wa-green);"></i> Suporte Prioritário 24/7</li>
               </ul>
             </div>
             <button type="button" class="btn-secondary" onclick="submitUpgradePlan('ENTERPRISE')" style="margin-top: 14px; font-size: 12px; font-weight: 700;">Migrar Enterprise</button>
@@ -2435,18 +2749,18 @@
 
       <!-- CONTEÚDO 4: FORMAS DE PAGAMENTO -->
       <div id="ptab-billing" class="profile-tab-content" style="display: none;">
-        <h4 style="font-size: 14px; font-weight: 700; color: white; margin-bottom: 14px;"><i class="fa-solid fa-wallet" style="color: var(--primary);"></i> Gestão de Pagamento & Cobrança</h4>
+        <h4 style="font-size: 14px; font-weight: 700; color: var(--wa-text-main); margin-bottom: 14px;"><i class="fa-solid fa-wallet" style="color: var(--wa-green);"></i> Gestão de Pagamento & Cobrança</h4>
 
-        <div style="background: #0f172a; border: 1px solid var(--bg-card-border); border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+        <div style="background: #ffffff; border: 1px solid var(--wa-card-border); border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(11, 20, 26, 0.04);">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <div style="display: flex; align-items: center; gap: 12px;">
-              <i class="fa-solid fa-credit-card" style="font-size: 24px; color: #60a5fa;"></i>
+              <i class="fa-solid fa-credit-card" style="font-size: 24px; color: var(--wa-green);"></i>
               <div>
-                <div style="font-size: 14px; font-weight: 700; color: white;" id="prof-card-mask">Cartão de Crédito **** 4321</div>
-                <div style="font-size: 12px; color: var(--text-muted);">Renovação automática mensal</div>
+                <div style="font-size: 14px; font-weight: 700; color: var(--wa-text-main);" id="prof-card-mask">Cartão de Crédito •••• 4321</div>
+                <div style="font-size: 12px; color: var(--wa-text-muted);">Renovação automática mensal</div>
               </div>
             </div>
-            <span style="background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 700;">Ativo</span>
+            <span style="background: #d9fdd3; color: var(--wa-green-dark); border: 1px solid rgba(0, 168, 132, 0.3); padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 700;">Ativo</span>
           </div>
         </div>
 
@@ -2461,14 +2775,14 @@
           <i class="fa-solid fa-floppy-disk"></i> Atualizar Forma de Pagamento
         </button>
 
-        <h5 style="font-size: 13px; font-weight: 700; color: #111827; margin-top: 20px; margin-bottom: 10px;">Faturas Recentes</h5>
+        <h5 style="font-size: 13px; font-weight: 700; color: var(--wa-text-main); margin-top: 20px; margin-bottom: 10px;">Faturas Recentes</h5>
         <div style="display: flex; flex-direction: column; gap: 8px;">
-          <div style="background: #ffffff; border: 1px solid #e5e7eb; padding: 10px 14px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+          <div style="background: #ffffff; border: 1px solid var(--wa-card-border); padding: 10px 14px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
             <div>
-              <span style="color: #111827; font-weight: 700;">Fatura Agosto/2026</span>
-              <span style="color: #6b7280; font-size: 11px; margin-left: 8px;">01/08/2026</span>
+              <span style="color: var(--wa-text-main); font-weight: 700;">Fatura Agosto/2026</span>
+              <span style="color: var(--wa-text-muted); font-size: 11px; margin-left: 8px;">01/08/2026</span>
             </div>
-            <span style="color: #166534; font-weight: 700;">R$ 197,00 (Pago)</span>
+            <span style="color: var(--wa-green-dark); font-weight: 700;">R$ 197,00 (Pago)</span>
           </div>
         </div>
       </div>
@@ -2683,6 +2997,24 @@
     </div>
   </div>
 
+  <!-- Container Global de Toasts / Popups de Avisos -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Modal Global de Confirmação & Alerta Customizado -->
+  <div id="custom-popup-overlay" class="custom-popup-overlay" onclick="handleCustomPopupBackdropClick(event)">
+    <div class="custom-popup-card" onclick="event.stopPropagation()">
+      <div id="custom-popup-icon" class="popup-icon-wrapper question">
+        <i class="fa-solid fa-circle-question"></i>
+      </div>
+      <h3 id="custom-popup-title" class="popup-title">Título do Aviso</h3>
+      <p id="custom-popup-message" class="popup-message">Mensagem detalhada do aviso ou confirmação.</p>
+      <div id="custom-popup-actions" class="popup-actions">
+        <button id="custom-popup-cancel-btn" class="btn-secondary" onclick="closeCustomPopup(false)">Cancelar</button>
+        <button id="custom-popup-confirm-btn" class="btn-primary" onclick="closeCustomPopup(true)">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- JavaScript -->
   <script>
     let currentNavDate = new Date();
@@ -2693,9 +3025,27 @@
     let servicesState = [];
     let productsState = [];
     let teamUsersState = [];
+    let customersState = [];
     let currentCatalogTab = 'services';
 
     const baseUrl = window.location.protocol.startsWith('http') ? '' : 'http://localhost:3001';
+
+    // Interceptor Global de Autenticação JWT: injeta automaticamente Authorization: Bearer em todas as chamadas /api/
+    const _originalFetch = window.fetch.bind(window);
+    window.fetch = async function(input, init = {}) {
+      try {
+        const urlStr = typeof input === 'string' ? input : (input && input.url ? input.url : '');
+        if (urlStr.includes('/api/')) {
+          const token = localStorage.getItem('saas_token');
+          const headers = new Headers(init.headers || {});
+          if (token && !headers.has('Authorization')) {
+            headers.set('Authorization', `Bearer ${token}`);
+          }
+          init = { ...init, headers, credentials: init.credentials || 'same-origin' };
+        }
+      } catch (e) {}
+      return _originalFetch(input, init);
+    };
 
     function parseApptDate(dateInput) {
       if (!dateInput) return new Date();
@@ -2751,10 +3101,21 @@
 
         if (currentUser) {
           document.getElementById('user-display-name').textContent = currentUser.name || 'Usuário';
-          document.getElementById('user-avatar-initial').textContent = (currentUser.name ? currentUser.name.charAt(0) : 'U').toUpperCase();
+          const initial = (currentUser.name ? currentUser.name.charAt(0) : 'U').toUpperCase();
+          document.getElementById('user-avatar-initial').textContent = initial;
+          
+          const headAvatar = document.getElementById('header-user-avatar');
+          if (headAvatar) headAvatar.textContent = initial;
 
           const roleLabels = { OWNER: 'Proprietário(a)', PROFESSIONAL: 'Profissional', RECEPTIONIST: 'Recepcionista', SUPER_ADMIN: 'Super Admin' };
           document.getElementById('user-display-role').textContent = roleLabels[currentUser.role] || currentUser.role || 'Proprietário(a)';
+
+          applyRolePermissionsUI();
+        }
+
+        if (tenant && tenant.name) {
+          const tenantTitle = document.getElementById('tenant-display-name');
+          if (tenantTitle) tenantTitle.textContent = tenant.name;
         }
         return true;
       } catch (err) {
@@ -2763,27 +3124,224 @@
       }
     }
 
-    function showToast(message, type = 'success') {
+    function applyRolePermissionsUI() {
+      if (!currentUser) return;
+      const isProfessional = currentUser.role === 'PROFESSIONAL';
+      
+      // Oculta abas administrativas (Equipe, Serviços & Configurações do WhatsApp/IA)
+      document.querySelectorAll('.admin-only').forEach(el => {
+        el.style.display = isProfessional ? 'none' : '';
+      });
+
+      // Oculta pílula de status do WhatsApp do cabeçalho
+      const waPill = document.getElementById('whatsapp-header-badge');
+      if (waPill && isProfessional) waPill.style.display = 'none';
+
+      // Oculta simulador de WhatsApp para o profissional
+      const simBtn = document.getElementById('btn-open-simulator');
+      if (simBtn && isProfessional) simBtn.style.display = 'none';
+
+      // No filtro de profissionais do calendário, oculta ou trava para a agenda dele
+      const profFilterContainer = document.getElementById('calendar-prof-filter-container');
+      if (profFilterContainer && isProfessional) {
+        profFilterContainer.style.display = 'none';
+      }
+    }
+
+    // =========================================================
+    // SISTEMA MODERNO DE POP-UPS, AVISOS E CONFIRMAÇÕES
+    // =========================================================
+    let customPopupResolver = null;
+
+    function showToast(message, type = 'success', title = '') {
       let container = document.getElementById('toast-container');
       if (!container) {
         container = document.createElement('div');
         container.id = 'toast-container';
+        container.className = 'toast-container';
         document.body.appendChild(container);
       }
+
       const toast = document.createElement('div');
-      toast.className = `toast-msg ${type}`;
-      const icon = type === 'success' ? 'fa-circle-check' : (type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-info');
-      toast.innerHTML = `<i class="fa-solid ${icon}" style="font-size: 16px;"></i> <span>${message}</span>`;
+      toast.className = `custom-toast ${type}`;
+
+      let iconClass = 'fa-solid fa-circle-check';
+      let defaultTitle = 'Sucesso';
+      if (type === 'error') {
+        iconClass = 'fa-solid fa-circle-exclamation';
+        defaultTitle = 'Atenção';
+      } else if (type === 'warning') {
+        iconClass = 'fa-solid fa-triangle-exclamation';
+        defaultTitle = 'Aviso';
+      } else if (type === 'info') {
+        iconClass = 'fa-solid fa-circle-info';
+        defaultTitle = 'Informação';
+      }
+
+      const titleText = title || defaultTitle;
+
+      toast.innerHTML = `
+        <div class="toast-icon">
+          <i class="${iconClass}"></i>
+        </div>
+        <div class="toast-content">
+          <div class="toast-title">${titleText}</div>
+          <div class="toast-message">${message}</div>
+        </div>
+        <button class="toast-close-btn" onclick="this.parentElement.remove()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      `;
+
       container.appendChild(toast);
 
+      requestAnimationFrame(() => {
+        toast.classList.add('show');
+      });
+
       setTimeout(() => {
-        toast.classList.add('fade-out');
-        setTimeout(() => toast.remove(), 300);
-      }, 3500);
+        if (toast.parentElement) {
+          toast.classList.remove('show');
+          toast.classList.add('hide');
+          setTimeout(() => toast.remove(), 350);
+        }
+      }, 4200);
     }
 
-    function handleLogout() {
-      if (confirm('Deseja sair da sua conta?')) {
+    function showNotification(message, type = 'success') {
+      showToast(message, type);
+    }
+
+    function showConfirmModal({
+      title = 'Confirmação',
+      message = 'Deseja realmente continuar?',
+      iconType = 'question', // 'question', 'danger', 'warning', 'info', 'success'
+      confirmText = 'Confirmar',
+      cancelText = 'Cancelar',
+      isDanger = false
+    } = {}) {
+      return new Promise((resolve) => {
+        customPopupResolver = resolve;
+
+        const overlay = document.getElementById('custom-popup-overlay');
+        const iconWrapper = document.getElementById('custom-popup-icon');
+        const titleEl = document.getElementById('custom-popup-title');
+        const msgEl = document.getElementById('custom-popup-message');
+        const cancelBtn = document.getElementById('custom-popup-cancel-btn');
+        const confirmBtn = document.getElementById('custom-popup-confirm-btn');
+
+        titleEl.textContent = title;
+        msgEl.textContent = message;
+
+        iconWrapper.className = `popup-icon-wrapper ${iconType}`;
+        let iconHtml = '<i class="fa-solid fa-circle-question"></i>';
+        if (iconType === 'danger') iconHtml = '<i class="fa-solid fa-triangle-exclamation"></i>';
+        else if (iconType === 'warning') iconHtml = '<i class="fa-solid fa-circle-exclamation"></i>';
+        else if (iconType === 'info') iconHtml = '<i class="fa-solid fa-circle-info"></i>';
+        else if (iconType === 'success') iconHtml = '<i class="fa-solid fa-circle-check"></i>';
+        iconWrapper.innerHTML = iconHtml;
+
+        cancelBtn.style.display = 'inline-flex';
+        cancelBtn.textContent = cancelText;
+
+        confirmBtn.textContent = confirmText;
+        if (isDanger) {
+          confirmBtn.className = 'btn-danger';
+          confirmBtn.style.background = '#ef4444';
+          confirmBtn.style.color = '#ffffff';
+          confirmBtn.style.border = 'none';
+        } else {
+          confirmBtn.className = 'btn-primary';
+          confirmBtn.style.background = 'var(--wa-green)';
+          confirmBtn.style.color = '#ffffff';
+          confirmBtn.style.border = 'none';
+        }
+
+        overlay.classList.add('open');
+      });
+    }
+
+    function showAlertModal({
+      title = 'Aviso',
+      message = '',
+      iconType = 'info',
+      confirmText = 'Entendido'
+    } = {}) {
+      return new Promise((resolve) => {
+        customPopupResolver = resolve;
+
+        const overlay = document.getElementById('custom-popup-overlay');
+        const iconWrapper = document.getElementById('custom-popup-icon');
+        const titleEl = document.getElementById('custom-popup-title');
+        const msgEl = document.getElementById('custom-popup-message');
+        const cancelBtn = document.getElementById('custom-popup-cancel-btn');
+        const confirmBtn = document.getElementById('custom-popup-confirm-btn');
+
+        titleEl.textContent = title;
+        msgEl.textContent = message;
+
+        iconWrapper.className = `popup-icon-wrapper ${iconType}`;
+        let iconHtml = '<i class="fa-solid fa-circle-info"></i>';
+        if (iconType === 'danger' || iconType === 'error') {
+          iconWrapper.className = 'popup-icon-wrapper danger';
+          iconHtml = '<i class="fa-solid fa-circle-exclamation"></i>';
+        } else if (iconType === 'warning') {
+          iconHtml = '<i class="fa-solid fa-triangle-exclamation"></i>';
+        } else if (iconType === 'success') {
+          iconHtml = '<i class="fa-solid fa-circle-check"></i>';
+        }
+        iconWrapper.innerHTML = iconHtml;
+
+        cancelBtn.style.display = 'none';
+        confirmBtn.className = 'btn-primary';
+        confirmBtn.style.background = 'var(--wa-green)';
+        confirmBtn.style.color = '#ffffff';
+        confirmBtn.style.border = 'none';
+        confirmBtn.textContent = confirmText;
+
+        overlay.classList.add('open');
+      });
+    }
+
+    function closeCustomPopup(result) {
+      const overlay = document.getElementById('custom-popup-overlay');
+      if (overlay) overlay.classList.remove('open');
+      if (customPopupResolver) {
+        customPopupResolver(result);
+        customPopupResolver = null;
+      }
+    }
+
+    function handleCustomPopupBackdropClick(event) {
+      if (event.target && event.target.id === 'custom-popup-overlay') {
+        closeCustomPopup(false);
+      }
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const overlay = document.getElementById('custom-popup-overlay');
+        if (overlay && overlay.classList.contains('open')) {
+          closeCustomPopup(false);
+        }
+      }
+    });
+
+    // Redireciona chamadas globais de alert para o toast moderno
+    window.alert = (msg) => {
+      showToast(String(msg), 'info', 'Aviso do Sistema');
+    };
+
+    async function handleLogout() {
+      const confirmed = await showConfirmModal({
+        title: 'Sair da Conta',
+        message: 'Deseja realmente desconectar e sair da sua conta?',
+        iconType: 'question',
+        confirmText: 'Sair da Conta',
+        cancelText: 'Continuar Conectado',
+        isDanger: true
+      });
+      if (confirmed) {
         localStorage.removeItem('saas_token');
         localStorage.removeItem('saas_user');
         localStorage.removeItem('saas_tenant');
@@ -2793,6 +3351,17 @@
 
     function switchTab(tabId, element) {
       closeMobileSidebar();
+
+      // Bloqueio no front-end para profissionais que tentarem acessar abas proibidas
+      if (currentUser && currentUser.role === 'PROFESSIONAL') {
+        const forbiddenTabs = ['equipe', 'servicos', 'clientes', 'configuracoes', 'config-ia', 'config-wa', 'config-reminders'];
+        if (forbiddenTabs.includes(tabId)) {
+          showToast('Acesso restrito ao proprietário do estabelecimento.', 'error');
+          switchTab('dashboard');
+          return;
+        }
+      }
+
       document.querySelectorAll('.tab-panel').forEach(panel => {
         panel.style.display = 'none';
         panel.classList.remove('active');
@@ -2824,6 +3393,8 @@
         checkRealWhatsAppStatus();
       } else if (tabId === 'servicos') {
         loadServicesAndProducts();
+      } else if (tabId === 'clientes') {
+        loadCustomersCRM();
       } else if (tabId === 'equipe') {
         loadTeamUsers();
       } else if (tabId === 'dashboard' || tabId === 'agenda') {
@@ -2897,7 +3468,9 @@
 
       if (subId === 'wa') checkRealWhatsAppStatus();
       if (subId === 'calcom') {
-        const publicUrl = `${window.location.origin}/agendar/estilo-beleza-premium`;
+        const savedTenant = JSON.parse(localStorage.getItem('saas_tenant') || '{}');
+        const activeSlug = savedTenant.slug || savedTenant.id || getActiveTenantId();
+        const publicUrl = `${window.location.origin}/agendar/${activeSlug}`;
         const input = document.getElementById('public-booking-url-input');
         if (input) input.value = publicUrl;
         const previewBtn = document.getElementById('public-booking-preview-btn');
@@ -2915,6 +3488,58 @@
         document.execCommand('copy');
         showToast('Link copiado!', 'success');
       });
+    }
+
+    async function saveCompanyProfile() {
+      const name = document.getElementById('cfg-company-name-input').value.trim();
+      const slug = document.getElementById('cfg-company-slug-input').value.trim();
+
+      if (!name) {
+        showToast('Por favor, informe o nome da sua empresa.', 'warning');
+        return;
+      }
+
+      try {
+        const token = localStorage.getItem('saas_token');
+        const response = await fetch(`${baseUrl}/api/tenants/${getActiveTenantId()}/profile`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': token ? `Bearer ${token}` : ''
+          },
+          body: JSON.stringify({ name, slug })
+        });
+
+        const data = await response.json();
+        if (data.success && data.tenant) {
+          localStorage.setItem('saas_tenant', JSON.stringify(data.tenant));
+          currentTenant = data.tenant;
+          
+          const newSlug = data.tenant.slug || data.tenant.id;
+          const publicUrl = `${window.location.origin}/agendar/${newSlug}`;
+          
+          if (document.getElementById('public-booking-url-input')) {
+            document.getElementById('public-booking-url-input').value = publicUrl;
+          }
+          if (document.getElementById('public-booking-preview-btn')) {
+            document.getElementById('public-booking-preview-btn').href = publicUrl;
+          }
+          if (document.getElementById('cfg-company-slug-input')) {
+            document.getElementById('cfg-company-slug-input').value = data.tenant.slug || '';
+          }
+          if (document.getElementById('profile-tenant-name')) {
+            document.getElementById('profile-tenant-name').textContent = data.tenant.name;
+          }
+          const topBrand = document.querySelector('.brand-title');
+          if (topBrand) topBrand.textContent = data.tenant.name;
+
+          showToast('Nome e link da empresa atualizados com sucesso!', 'success');
+        } else {
+          showToast('Erro ao atualizar: ' + (data.error || 'Erro desconhecido'), 'error');
+        }
+      } catch (err) {
+        showToast('Erro ao conectar ao servidor para atualizar perfil da empresa.', 'error');
+      }
     }
 
     async function saveBookingRulesSettings() {
@@ -3014,6 +3639,7 @@
         if (!data.success || !data.tenant) return;
 
         const tenant = data.tenant;
+        localStorage.setItem('saas_tenant', JSON.stringify(tenant));
 
         document.getElementById('tenant-display-name').textContent = tenant.name;
         document.getElementById('chat-simulator-title').textContent = `Simulador WhatsApp - ${tenant.name}`;
@@ -3090,15 +3716,100 @@
         if (document.getElementById('public-booking-preview-btn')) {
           document.getElementById('public-booking-preview-btn').href = publicBookingUrl;
         }
+        if (document.getElementById('cfg-company-name-input')) {
+          document.getElementById('cfg-company-name-input').value = tenant.name || '';
+        }
+        if (document.getElementById('cfg-company-slug-input')) {
+          document.getElementById('cfg-company-slug-input').value = tenant.slug || '';
+        }
 
         renderServicesGrid(data.services || []);
         renderProductsGrid(data.products || []);
+        renderOnboardingChecklist(data, lastWaStatusConnected);
 
         checkRealWhatsAppStatus();
         loadAppointmentsFromServer();
       } catch (err) {
         console.error('Erro ao carregar dados do estabelecimento:', err);
       }
+    }
+
+    let lastTenantDataForOnboarding = null;
+    let lastWaStatusConnected = false;
+
+    function renderOnboardingChecklist(tenantData, isWaConnected) {
+      if (!tenantData || !tenantData.tenant) return;
+      lastTenantDataForOnboarding = tenantData;
+      lastWaStatusConnected = isWaConnected;
+
+      const tenant = tenantData.tenant;
+      const tId = tenant.id || getActiveTenantId();
+      const banner = document.getElementById('onboarding-banner');
+      if (!banner) return;
+
+      if (currentUser && currentUser.role === 'PROFESSIONAL') {
+        banner.style.display = 'none';
+        return;
+      }
+
+      if (localStorage.getItem(`dismiss_onboarding_${tId}`) === 'true') {
+        banner.style.display = 'none';
+        return;
+      }
+
+      const services = tenantData.services || servicesState || [];
+      const professionals = tenantData.professionals || professionalsState || [];
+
+      const stepWa = Boolean(isWaConnected);
+      const stepServices = services.length > 0;
+      const stepTeam = professionals.length > 0;
+      const stepLink = Boolean(tenant.slug || tenant.id);
+
+      let completedCount = 0;
+      if (stepWa) completedCount++;
+      if (stepServices) completedCount++;
+      if (stepTeam) completedCount++;
+      if (stepLink) completedCount++;
+
+      function setStepUI(boxId, iconId, isDone) {
+        const box = document.getElementById(boxId);
+        const icon = document.getElementById(iconId);
+        if (!box || !icon) return;
+        if (isDone) {
+          icon.innerHTML = '<i class="fa-solid fa-circle-check" style="color: var(--wa-green); font-size: 16px;"></i>';
+          box.style.borderColor = '#d9fdd3';
+          box.style.background = '#f0fdf4';
+        } else {
+          icon.innerHTML = '<i class="fa-regular fa-circle" style="color: #94a3b8; font-size: 16px;"></i>';
+          box.style.borderColor = 'var(--wa-card-border)';
+          box.style.background = '#f8fafc';
+        }
+      }
+
+      setStepUI('ob-step-wa', 'ob-icon-wa', stepWa);
+      setStepUI('ob-step-services', 'ob-icon-services', stepServices);
+      setStepUI('ob-step-team', 'ob-icon-team', stepTeam);
+      setStepUI('ob-step-link', 'ob-icon-link', stepLink);
+
+      const counterBadge = document.getElementById('onboarding-counter-badge');
+      if (counterBadge) counterBadge.textContent = `${completedCount} de 4 concluídos`;
+
+      const progressBar = document.getElementById('onboarding-progress-bar');
+      if (progressBar) progressBar.style.width = `${Math.max(12, (completedCount / 4) * 100)}%`;
+
+      const isWelcome = new URLSearchParams(window.location.search).get('welcome') === 'true';
+      if (completedCount < 4 || isWelcome) {
+        banner.style.display = 'block';
+      } else {
+        banner.style.display = 'none';
+      }
+    }
+
+    function dismissOnboardingBanner() {
+      const tId = getActiveTenantId();
+      localStorage.setItem(`dismiss_onboarding_${tId}`, 'true');
+      const banner = document.getElementById('onboarding-banner');
+      if (banner) banner.style.display = 'none';
     }
 
     function openUserProfileModal() {
@@ -3139,16 +3850,16 @@
           const isCurrent = t.id === currentTId;
           const planLabel = t.planTier === 'FREE' ? 'Grátis' : (t.planTier === 'SINGLE_USER' ? 'Starter' : 'Pro');
           const div = document.createElement('div');
-          div.style.cssText = `background: ${isCurrent ? '#064e3b' : '#0f172a'}; border: 1px solid ${isCurrent ? '#25D366' : 'var(--bg-card-border)'}; border-radius: 10px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; gap: 12px;`;
+          div.style.cssText = `background: ${isCurrent ? '#f0fdf4' : '#ffffff'}; border: 1px solid ${isCurrent ? 'var(--wa-green)' : 'var(--wa-card-border)'}; border-radius: 10px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; gap: 12px; box-shadow: 0 1px 3px rgba(11, 20, 26, 0.04);`;
           div.innerHTML = `
             <div>
-              <div style="font-weight: 700; font-size: 14.5px; color: white; display: flex; align-items: center; gap: 8px;">
+              <div style="font-weight: 700; font-size: 14.5px; color: var(--wa-text-main); display: flex; align-items: center; gap: 8px;">
                 ${t.name}
-                ${isCurrent ? '<span style="background: #25D366; color: #064e3b; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 10px;">ATIVO</span>' : ''}
+                ${isCurrent ? '<span style="background: #d9fdd3; color: var(--wa-green-dark); font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 10px; border: 1px solid rgba(0, 168, 132, 0.3);">ATIVO</span>' : ''}
               </div>
-              <div style="font-size: 12px; color: var(--text-muted); margin-top: 3px;">Plano: <strong style="color: #60a5fa;">${planLabel}</strong> · Responsável: ${t.ownerName || t.ownerEmail}</div>
+              <div style="font-size: 12px; color: var(--wa-text-muted); margin-top: 3px;">Plano: <strong style="color: var(--wa-green-dark);">${planLabel}</strong> · Responsável: ${t.ownerName || t.ownerEmail}</div>
             </div>
-            ${!isCurrent ? `<button class="btn-primary" onclick="switchTenantSubmit('${t.id}')" style="padding: 7px 14px; font-size: 12.5px;"><i class="fa-solid fa-arrow-right-to-bracket"></i> Acessar</button>` : '<span style="font-size: 12.5px; color: #4ade80; font-weight: 700;"><i class="fa-solid fa-circle-check"></i> Conectado</span>'}
+            ${!isCurrent ? `<button class="btn-primary" onclick="switchTenantSubmit('${t.id}')" style="padding: 7px 14px; font-size: 12.5px;"><i class="fa-solid fa-arrow-right-to-bracket"></i> Acessar</button>` : '<span style="font-size: 12.5px; color: var(--wa-green-dark); font-weight: 700;"><i class="fa-solid fa-circle-check"></i> Conectado</span>'}
           `;
           container.appendChild(div);
         });
@@ -3175,10 +3886,10 @@
           showToast(`Conectado com sucesso a ${data.tenant.name}!`);
           await initDashboard();
         } else {
-          alert('Erro ao trocar estabelecimento: ' + (data.error || 'Erro desconhecido.'));
+          showToast('Erro ao trocar estabelecimento: ' + (data.error || 'Erro desconhecido.'), 'error');
         }
       } catch (err) {
-        alert('Erro ao conectar ao servidor para trocar de conta.');
+        showToast('Erro ao conectar ao servidor para trocar de conta.', 'error');
       }
     }
 
@@ -3189,7 +3900,7 @@
       const feedbackEl = document.getElementById('prof-pass-feedback');
 
       if (!currentPassword || !newPassword || !confirmPassword) {
-        alert('Por favor, preencha todos os campos de senha.');
+        showToast('Por favor, preencha todos os campos de senha.', 'warning');
         return;
       }
       if (newPassword !== confirmPassword) {
@@ -3220,6 +3931,7 @@
           feedbackEl.style.display = 'block';
           feedbackEl.style.color = '#4ade80';
           feedbackEl.textContent = 'Senha alterada com sucesso!';
+          showToast('Senha alterada com sucesso!', 'success');
           document.getElementById('prof-curr-pass').value = '';
           document.getElementById('prof-new-pass').value = '';
           document.getElementById('prof-confirm-pass').value = '';
@@ -3227,16 +3939,27 @@
           feedbackEl.style.display = 'block';
           feedbackEl.style.color = '#f87171';
           feedbackEl.textContent = data.error || 'Erro ao alterar senha.';
+          showToast(data.error || 'Erro ao alterar senha.', 'error');
         }
       } catch (err) {
         feedbackEl.style.display = 'block';
         feedbackEl.style.color = '#f87171';
         feedbackEl.textContent = 'Erro ao se conectar ao servidor.';
+        showToast('Erro ao se conectar ao servidor.', 'error');
       }
     }
 
     async function submitUpgradePlan(planTier) {
-      if (confirm(`Deseja confirmar a migração do seu plano para ${planTier}?`)) {
+      const planNames = { SINGLE_USER: 'Starter (1 Profissional)', MULTI_USER: 'Pro Negócios (Até 5 Profissionais)', ENTERPRISE: 'Enterprise (Profissionais Ilimitados)' };
+      const planNameStr = planNames[planTier] || planTier;
+      const confirmed = await showConfirmModal({
+        title: 'Migração de Plano',
+        message: `Deseja confirmar a alteração do plano do seu estabelecimento para ${planNameStr}?`,
+        iconType: 'question',
+        confirmText: 'Confirmar Plano',
+        cancelText: 'Voltar'
+      });
+      if (confirmed) {
         try {
           const response = await fetch(`${baseUrl}/api/tenants/${getActiveTenantId()}/upgrade-plan`, {
             method: 'POST',
@@ -3245,15 +3968,15 @@
           });
           const data = await response.json();
           if (data.success) {
-            alert(`✅ ${data.message}`);
+            showToast(data.message || 'Plano atualizado com sucesso!', 'success');
             loadTenantData();
             loadTeamUsers();
             switchProfileTab('account');
           } else {
-            alert(`⚠️ ${data.error}`);
+            showToast(data.error || 'Erro ao atualizar plano.', 'error');
           }
         } catch (err) {
-          alert('Erro ao processar upgrade de plano.');
+          showToast('Erro ao processar upgrade de plano.', 'error');
         }
       }
     }
@@ -3263,7 +3986,7 @@
       const feedbackEl = document.getElementById('prof-billing-feedback');
 
       if (!billingInput) {
-        alert('Por favor, informe os dados do cartão de crédito ou chave PIX.');
+        showToast('Por favor, informe os dados do cartão de crédito ou chave PIX.', 'warning');
         return;
       }
 
@@ -3283,28 +4006,45 @@
           feedbackEl.textContent = 'Forma de pagamento atualizada com sucesso!';
           document.getElementById('prof-card-mask').textContent = `Cartão / Pagamento: ${billingInput}`;
           document.getElementById('prof-billing-input').value = '';
+          showToast('Forma de pagamento atualizada com sucesso!', 'success');
         } else {
           feedbackEl.style.display = 'block';
           feedbackEl.style.color = '#f87171';
           feedbackEl.textContent = data.error || 'Erro ao atualizar forma de pagamento.';
+          showToast(data.error || 'Erro ao atualizar forma de pagamento.', 'error');
         }
       } catch (err) {
         feedbackEl.style.display = 'block';
         feedbackEl.style.color = '#f87171';
         feedbackEl.textContent = 'Erro ao conectar ao servidor.';
+        showToast('Erro ao conectar ao servidor.', 'error');
       }
     }
 
     function populateProfessionalFilter(professionals) {
       const filter = document.getElementById('calendar-professional-filter');
       if (!filter) return;
+
+      if (currentUser && currentUser.role === 'PROFESSIONAL') {
+        const myProf = (professionals || []).find(p => p.userId === currentUser.id || p.id === currentUser.professionalId || p.name.toLowerCase() === (currentUser.name || '').toLowerCase());
+        filter.innerHTML = '';
+        const opt = document.createElement('option');
+        opt.value = myProf ? myProf.id : (currentUser.professionalId || 'MY_ID');
+        opt.textContent = `👤 ${currentUser.name || 'Minha Agenda'} (Você)`;
+        filter.appendChild(opt);
+        filter.value = opt.value;
+        filter.disabled = true;
+        return;
+      }
+
       const prev = filter.value;
+      filter.disabled = false;
       filter.innerHTML = '<option value="ALL">Todos os Profissionais</option>';
 
       (professionals || []).forEach(p => {
         const opt = document.createElement('option');
         opt.value = p.id;
-        opt.textContent = `✂️ ${p.name}`;
+        opt.textContent = `👤 ${p.name}`;
         filter.appendChild(opt);
       });
 
@@ -3430,6 +4170,40 @@
       document.getElementById('edit-user-modal').classList.remove('open');
     }
 
+    async function openUpgradePlanModal() {
+      const confirmed = await showConfirmModal({
+        title: 'Upgrade de Plano',
+        message: 'Deseja fazer o upgrade para o Plano Pro Negócios (Até 5 profissionais + Recursos Premium)?',
+        iconType: 'question',
+        confirmText: 'Fazer Upgrade',
+        cancelText: 'Agora Não'
+      });
+      if (confirmed) {
+        try {
+          const tId = getActiveTenantId();
+          const token = localStorage.getItem('saas_token');
+          const response = await fetch(`${baseUrl}/api/tenants/${tId}/plan`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': token ? `Bearer ${token}` : ''
+            },
+            body: JSON.stringify({ planTier: 'MULTI_USER' })
+          });
+          const data = await response.json();
+          if (data.success) {
+            showToast('Plano atualizado com sucesso para Pro Negócios (5 Profissionais)!', 'success');
+            loadTenantData();
+            loadTeamUsers();
+          } else {
+            showToast('Erro ao atualizar plano: ' + (data.error || 'Erro desconhecido.'), 'error');
+          }
+        } catch (err) {
+          showToast('Erro ao conectar ao servidor.', 'error');
+        }
+      }
+    }
+
     async function saveEditUserSubmit() {
       const userId = document.getElementById('edit-user-id').value;
       const name = document.getElementById('edit-user-name').value.trim();
@@ -3438,7 +4212,7 @@
       const password = document.getElementById('edit-user-password').value;
 
       if (!name || !email) {
-        alert('Por favor, preencha o nome e email do profissional.');
+        showToast('Por favor, preencha o nome e email do profissional.', 'warning');
         return;
       }
 
@@ -3451,15 +4225,15 @@
         });
         const data = await response.json();
         if (data.success) {
-          showToast('Dados do profissional atualizados com sucesso!');
+          showToast('Dados do profissional atualizados com sucesso!', 'success');
           closeEditUserModal();
           loadTeamUsers();
           loadTenantData();
         } else {
-          alert('Erro ao atualizar profissional: ' + (data.error || 'Erro desconhecido.'));
+          showToast('Erro ao atualizar profissional: ' + (data.error || 'Erro desconhecido.'), 'error');
         }
       } catch (err) {
-        alert('Erro ao conectar ao servidor.');
+        showToast('Erro ao conectar ao servidor.', 'error');
       }
     }
 
@@ -3532,12 +4306,12 @@
         if (data.success) {
           closeProfSettingsModal();
           loadTeamUsers();
-          showToast('Configurações e limites do profissional atualizados com sucesso!');
+          showToast('Configurações e limites do profissional atualizados com sucesso!', 'success');
         } else {
-          alert('Erro ao salvar horários: ' + data.error);
+          showToast('Erro ao salvar horários: ' + (data.error || 'Erro desconhecido'), 'error');
         }
       } catch (err) {
-        alert('Erro ao conectar ao servidor.');
+        showToast('Erro ao conectar ao servidor.', 'error');
       }
     }
 
@@ -3556,7 +4330,7 @@
       const role = document.getElementById('modal-user-role').value;
 
       if (!name || !email || !password) {
-        alert('Por favor, preencha o nome, email e senha.');
+        showToast('Por favor, preencha o nome, email e senha.', 'warning');
         return;
       }
 
@@ -3568,30 +4342,40 @@
         });
         const data = await response.json();
         if (data.success) {
-          showToast(`Profissional ${name} cadastrado com sucesso!`);
+          showToast(`Profissional ${name} cadastrado com sucesso!`, 'success');
           closeNewUserModal();
           loadTeamUsers();
           loadTenantData();
         } else {
-          alert('Erro ao cadastrar profissional: ' + data.error);
+          showToast('Erro ao cadastrar profissional: ' + (data.error || 'Erro desconhecido'), 'error');
         }
       } catch (err) {
-        alert('Erro ao conectar ao servidor.');
+        showToast('Erro ao conectar ao servidor.', 'error');
       }
     }
 
     async function deleteUserConfirm(userId) {
-      if (confirm('Tem certeza que deseja remover este profissional da equipe?')) {
+      const confirmed = await showConfirmModal({
+        title: 'Remover Profissional',
+        message: 'Tem certeza de que deseja remover este profissional da equipe? Esta ação não pode ser desfeita.',
+        iconType: 'danger',
+        confirmText: 'Remover Profissional',
+        cancelText: 'Cancelar',
+        isDanger: true
+      });
+      if (confirmed) {
         try {
           const tId = getActiveTenantId();
           const response = await fetch(`${baseUrl}/api/tenants/${tId}/users/${userId}`, { method: 'DELETE' });
           const data = await response.json();
           if (data.success) {
-            showToast('Profissional removido com sucesso.');
+            showToast('Profissional removido com sucesso.', 'success');
             loadTeamUsers();
+          } else {
+            showToast(data.error || 'Erro ao remover usuário.', 'error');
           }
         } catch (err) {
-          alert('Erro ao remover usuário.');
+          showToast('Erro ao remover usuário.', 'error');
         }
       }
     }
@@ -3630,10 +4414,10 @@
         servicesGrid.innerHTML = `
           <div style="grid-column: 1 / -1; text-align: center; padding: 40px 20px; background: #ffffff; border: 1px dashed var(--wa-card-border); border-radius: 12px;">
             <div style="width: 52px; height: 52px; background: #d9fdd3; color: var(--wa-green-dark); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 12px auto;">
-              <i class="fa-solid fa-scissors"></i>
+              <i class="fa-solid fa-briefcase"></i>
             </div>
             <div style="font-weight: 700; font-size: 16px; color: var(--wa-text-main); margin-bottom: 6px;">Nenhum serviço cadastrado ainda</div>
-            <div style="font-size: 13.5px; color: var(--wa-text-muted); max-width: 420px; margin: 0 auto 16px auto;">Cadastre seus serviços (como Corte, Barba, Massagem) para que a IA e os clientes possam agendar automaticamente.</div>
+            <div style="font-size: 13.5px; color: var(--wa-text-muted); max-width: 420px; margin: 0 auto 16px auto;">Cadastre os serviços oferecidos pela sua empresa (como Consultoria, Atendimento, Sessão) para que a IA e os clientes possam agendar automaticamente.</div>
             <button class="btn-primary" onclick="openCreateItemModal('service')" style="padding: 9px 18px; font-size: 13.5px;"><i class="fa-solid fa-plus"></i> Adicionar Primeiro Serviço</button>
           </div>
         `;
@@ -3649,7 +4433,7 @@
         card.style.boxShadow = '0 1px 3px rgba(11,20,26,0.06)';
         card.innerHTML = `
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-            <h4 style="font-size: 15.5px; font-weight: 700; color: var(--wa-text-main);"> ${srv.name}</h4>
+            <h4 style="font-size: 15.5px; font-weight: 700; color: var(--wa-text-main);"><i class="fa-solid fa-briefcase" style="color: var(--wa-green-dark); font-size: 13px; margin-right: 4px;"></i> ${srv.name}</h4>
             <span style="font-size: 11.5px; background: #f0f2f5; color: var(--wa-text-main); padding: 4px 10px; border-radius: 12px; font-weight: 600;">${srv.durationMinutes || 30} min</span>
           </div>
           <p style="color: var(--wa-text-muted); font-size: 13px; margin: 8px 0 14px 0;">${srv.description || 'Sem descrição.'}</p>
@@ -3676,7 +4460,7 @@
               <i class="fa-solid fa-box-open"></i>
             </div>
             <div style="font-weight: 700; font-size: 16px; color: var(--wa-text-main); margin-bottom: 6px;">Nenhum produto cadastrado ainda</div>
-            <div style="font-size: 13.5px; color: var(--wa-text-muted); max-width: 420px; margin: 0 auto 16px auto;">Cadastre produtos vendidos no seu estabelecimento (pomadas, shampoos, óleos) com estoque e preço.</div>
+            <div style="font-size: 13.5px; color: var(--wa-text-muted); max-width: 420px; margin: 0 auto 16px auto;">Cadastre produtos ou itens complementares vendidos no seu estabelecimento com estoque e preço.</div>
             <button class="btn-primary" onclick="openCreateItemModal('product')" style="padding: 9px 18px; font-size: 13.5px;"><i class="fa-solid fa-plus"></i> Adicionar Primeiro Produto</button>
           </div>
         `;
@@ -3692,7 +4476,7 @@
         card.style.boxShadow = '0 1px 3px rgba(11,20,26,0.06)';
         card.innerHTML = `
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-            <h4 style="font-size: 15.5px; font-weight: 700; color: var(--wa-text-main);">🧴 ${prod.name}</h4>
+            <h4 style="font-size: 15.5px; font-weight: 700; color: var(--wa-text-main);"><i class="fa-solid fa-box" style="color: var(--accent-purple); font-size: 13px; margin-right: 4px;"></i> ${prod.name}</h4>
             <span style="font-size: 11.5px; background: #d9fdd3; color: #008069; padding: 4px 10px; border-radius: 12px; font-weight: 600;">Estoque: ${prod.stock || 0} un</span>
           </div>
           <p style="color: var(--wa-text-muted); font-size: 13px; margin: 8px 0 14px 0;">${prod.description || 'Sem descrição.'}</p>
@@ -3708,9 +4492,30 @@
       });
     }
 
-    function openNewAppointmentModal() {
+    function openNewAppointmentModal(prefillPhone = '', prefillName = '') {
       const todayStr = new Date().toISOString().split('T')[0];
       document.getElementById('modal-new-date').value = todayStr;
+      if (prefillName) document.getElementById('modal-new-name').value = prefillName;
+      if (prefillPhone) document.getElementById('modal-new-phone').value = prefillPhone;
+
+      const srvSelect = document.getElementById('modal-new-service');
+      if (srvSelect) {
+        if (servicesState && servicesState.length > 0) {
+          srvSelect.innerHTML = servicesState.map(s => `<option value="${s.id}">${s.name} (R$ ${Number(s.price || 0).toFixed(2)})</option>`).join('');
+        } else {
+          srvSelect.innerHTML = `<option value="">Atendimento Padrão</option>`;
+        }
+      }
+
+      const profSelect = document.getElementById('modal-new-prof');
+      if (profSelect) {
+        if (professionalsState && professionalsState.length > 0) {
+          profSelect.innerHTML = professionalsState.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+        } else {
+          profSelect.innerHTML = `<option value="">Qualquer Profissional</option>`;
+        }
+      }
+
       document.getElementById('new-appt-modal').classList.add('open');
     }
 
@@ -3723,32 +4528,159 @@
       const customerPhone = document.getElementById('modal-new-phone').value.trim();
       const dateStr = document.getElementById('modal-new-date').value;
       const timeStr = document.getElementById('modal-new-time').value;
+      const serviceId = document.getElementById('modal-new-service')?.value || undefined;
+      const professionalId = document.getElementById('modal-new-prof')?.value || undefined;
 
       if (!customerName || !customerPhone || !dateStr || !timeStr) {
-        alert('Por favor, preencha todos os campos do agendamento.');
+        showToast('Por favor, preencha todos os campos do agendamento.', 'warning');
         return;
       }
 
+      const btn = document.getElementById('btn-save-new-appt');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Salvando...';
+      }
+
       try {
-        const response = await fetch(`${baseUrl}/api/chat/simulate`, {
+        const response = await fetch(`${baseUrl}/api/appointments`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            tenantId: currentTenantId,
+            tenantId: getActiveTenantId(),
+            customerName,
             customerPhone,
-            message: `Quero agendar dia ${dateStr.split('-').reverse().join('/')} às ${timeStr} para ${customerName}`
+            dateStr,
+            timeStr,
+            serviceId,
+            professionalId
           })
         });
         const data = await response.json();
         if (data.success) {
+          document.getElementById('modal-new-name').value = '';
+          document.getElementById('modal-new-phone').value = '';
           closeNewAppointmentModal();
           loadAppointmentsFromServer();
+          showToast('Agendamento criado com sucesso!', 'success');
         } else {
-          alert('Erro ao criar agendamento.');
+          showToast(data.error || 'Erro ao criar agendamento.', 'error');
         }
       } catch (err) {
-        alert('Erro ao conectar ao servidor.');
+        showToast('Erro ao conectar ao servidor.', 'error');
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fa-solid fa-check"></i> Confirmar Agendamento';
+        }
       }
+    }
+
+    // =========================================================
+    // GESTÃO DE CLIENTES (CRM) & EXPORTAÇÃO CSV
+    // =========================================================
+    async function loadCustomersCRM() {
+      const tbody = document.getElementById('crm-customers-tbody');
+      if (!tbody) return;
+      try {
+        const res = await fetch(`${baseUrl}/api/tenants/${getActiveTenantId()}/customers`);
+        const data = await res.json();
+        if (data.success && Array.isArray(data.customers)) {
+          customersState = data.customers;
+          renderCustomersCRM(customersState);
+        }
+      } catch (err) {
+        console.error('Erro ao carregar CRM de clientes:', err);
+      }
+    }
+
+    function filterCustomersCRM() {
+      const q = (document.getElementById('crm-search-input')?.value || '').toLowerCase().trim();
+      if (!q) {
+        renderCustomersCRM(customersState);
+        return;
+      }
+      const filtered = customersState.filter(c =>
+        (c.name || '').toLowerCase().includes(q) ||
+        (c.phone || '').toLowerCase().includes(q)
+      );
+      renderCustomersCRM(filtered);
+    }
+
+    function renderCustomersCRM(list) {
+      const tbody = document.getElementById('crm-customers-tbody');
+      if (!tbody) return;
+      if (!list || list.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" style="padding: 36px 20px; text-align: center; color: var(--wa-text-muted);">
+              <i class="fa-regular fa-address-book" style="font-size: 28px; margin-bottom: 10px; display: block; color: var(--wa-green-dark);"></i>
+              Nenhum cliente encontrado. Assim que clientes agendarem pelo WhatsApp ou Portal Online, eles aparecerão automaticamente aqui!
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = list.map(c => {
+        const lastDate = c.lastVisitDate ? new Date(c.lastVisitDate).toLocaleDateString('pt-BR') : '—';
+        const prefProf = professionalsState.find(p => p.id === c.preferredProfId)?.name || 'Qualquer';
+        const prefSrv = servicesState.find(s => s.id === c.preferredServiceId)?.name || 'Geral';
+        const safeName = (c.name || 'Cliente').replace(/'/g, "\\'");
+        return `
+          <tr style="border-bottom: 1px solid var(--wa-card-border);">
+            <td style="padding: 14px 12px; font-weight: 700; color: var(--wa-text-main);">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 34px; height: 34px; border-radius: 50%; background: var(--wa-pill-active); color: var(--wa-green-dark); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px;">
+                  ${(c.name || 'C').charAt(0).toUpperCase()}
+                </div>
+                <span>${c.name || 'Cliente WhatsApp'}</span>
+              </div>
+            </td>
+            <td style="padding: 14px 12px; color: var(--wa-text-sub); font-family: monospace; font-size: 13px;">+${c.phone}</td>
+            <td style="padding: 14px 12px;">
+              <span style="background: #d9fdd3; color: #008069; padding: 3px 10px; border-radius: 12px; font-weight: 700; font-size: 12px;">
+                ${c.visitCount || 1} visita(s)
+              </span>
+            </td>
+            <td style="padding: 14px 12px; color: var(--wa-text-muted);">${lastDate}</td>
+            <td style="padding: 14px 12px; font-size: 12.5px; color: var(--wa-text-sub);">
+              <strong>${prefSrv}</strong> <span style="color: var(--wa-text-muted);">(${prefProf})</span>
+            </td>
+            <td style="padding: 14px 12px; text-align: right;">
+              <button class="btn-secondary" style="padding: 6px 10px; font-size: 12px;" onclick="openNewAppointmentModal('${c.phone}', '${safeName}')" title="Agendar para este cliente">
+                <i class="fa-regular fa-calendar-plus"></i> Agendar
+              </button>
+              <a href="https://wa.me/${c.phone.startsWith('55') ? c.phone : '55' + c.phone}" target="_blank" class="btn-primary" style="padding: 6px 10px; font-size: 12px; text-decoration: none; margin-left: 6px;">
+                <i class="fa-brands fa-whatsapp"></i> Conversar
+              </a>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function exportCustomersCSV() {
+      if (!customersState || customersState.length === 0) {
+        showToast('Não há clientes cadastrados para exportar ainda.', 'warning');
+        return;
+      }
+      const header = ['Nome', 'WhatsApp', 'Total_Visitas', 'Ultima_Visita'];
+      const rows = customersState.map(c => [
+        `"${(c.name || 'Cliente').replace(/"/g, '""')}"`,
+        `"${c.phone || ''}"`,
+        c.visitCount || 1,
+        c.lastVisitDate ? new Date(c.lastVisitDate).toLocaleDateString('pt-BR') : ''
+      ]);
+      const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [header.join(';'), ...rows.map(e => e.join(';'))].join('\n');
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', `clientes-${getActiveTenantId()}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast('Lista de clientes exportada em CSV com sucesso!', 'success');
     }
 
     function openAppointmentModal(apptId) {
@@ -3788,11 +4720,11 @@
       const btnEl = document.getElementById('btn-send-wa-direct');
 
       if (!rawPhone) {
-        alert('Por favor, digite o telefone do cliente.');
+        showToast('Por favor, digite o telefone do cliente.', 'warning');
         return;
       }
       if (!message) {
-        alert('Por favor, digite a mensagem que deseja enviar.');
+        showToast('Por favor, digite a mensagem que deseja enviar.', 'warning');
         return;
       }
 
@@ -3837,7 +4769,7 @@
       const status = document.getElementById('modal-appt-status').value;
 
       if (!id || !customerName || !dateStr || !timeStr) {
-        alert('Preencha os campos obrigatórios.');
+        showToast('Preencha os campos obrigatórios.', 'warning');
         return;
       }
 
@@ -3853,11 +4785,12 @@
         if (data.success) {
           closeAppointmentModal();
           loadAppointmentsFromServer();
+          showToast('Agendamento salvo com sucesso!', 'success');
         } else {
-          alert('Erro ao salvar agendamento: ' + data.error);
+          showToast('Erro ao salvar agendamento: ' + (data.error || 'Erro desconhecido.'), 'error');
         }
       } catch (err) {
-        alert('Erro ao conectar ao servidor.');
+        showToast('Erro ao conectar ao servidor.', 'error');
       }
     }
 
@@ -3865,18 +4798,28 @@
       const id = document.getElementById('modal-appt-id').value;
       if (!id) return;
 
-      if (confirm('Tem certeza que deseja cancelar/excluir este agendamento?')) {
+      const confirmed = await showConfirmModal({
+        title: 'Cancelar Agendamento',
+        message: 'Tem certeza de que deseja cancelar e excluir este agendamento?',
+        iconType: 'danger',
+        confirmText: 'Excluir Agendamento',
+        cancelText: 'Voltar',
+        isDanger: true
+      });
+
+      if (confirmed) {
         try {
           const response = await fetch(`${baseUrl}/api/appointments/${id}`, { method: 'DELETE' });
           const data = await response.json();
           if (data.success) {
             closeAppointmentModal();
             loadAppointmentsFromServer();
+            showToast('Agendamento excluído com sucesso.', 'success');
           } else {
-            alert('Erro ao excluir agendamento.');
+            showToast('Erro ao excluir agendamento.', 'error');
           }
         } catch (err) {
-          alert('Erro ao conectar ao servidor.');
+          showToast('Erro ao conectar ao servidor.', 'error');
         }
       }
     }
@@ -3896,7 +4839,7 @@
         document.getElementById('group-modal-stock').style.display = 'none';
         document.getElementById('modal-item-duration').value = '30';
       } else {
-        document.getElementById('modal-item-title').innerHTML = '<i class="fa-solid fa-pump-soap" style="color: var(--accent-purple);"></i> Novo Produto à Venda';
+        document.getElementById('modal-item-title').innerHTML = '<i class="fa-solid fa-box" style="color: var(--accent-purple);"></i> Novo Produto à Venda';
         document.getElementById('modal-lbl-name').textContent = 'Nome do Produto';
         document.getElementById('group-modal-duration').style.display = 'none';
         document.getElementById('group-modal-stock').style.display = 'block';
@@ -3953,11 +4896,11 @@
       const description = document.getElementById('modal-item-desc').value.trim();
 
       if (!name) {
-        alert('Por favor, informe o nome do item.');
+        showToast('Por favor, informe o nome do item.', 'warning');
         return;
       }
       if (isNaN(price) || price < 0) {
-        alert('Por favor, informe um preço válido (ex: 50.00 ou 0 para grátis).');
+        showToast('Por favor, informe um preço válido (ex: 50.00 ou 0 para grátis).', 'warning');
         return;
       }
 
@@ -3986,38 +4929,64 @@
         const data = await response.json();
         if (data.success) {
           closeItemModal();
-          showToast(id ? 'Item atualizado com sucesso!' : 'Novo item adicionado com sucesso!');
+          showToast(id ? 'Item atualizado com sucesso!' : 'Novo item adicionado com sucesso!', 'success');
           loadServicesAndProducts();
         } else {
-          alert('Erro ao salvar item: ' + (data.error || 'Erro desconhecido.'));
+          showToast('Erro ao salvar item: ' + (data.error || 'Erro desconhecido.'), 'error');
         }
       } catch (err) {
-        alert('Erro ao conectar ao servidor.');
+        showToast('Erro ao conectar ao servidor.', 'error');
       }
     }
 
     async function deleteServiceConfirm(serviceId) {
-      if (confirm('Deseja excluir este serviço?')) {
+      const confirmed = await showConfirmModal({
+        title: 'Excluir Serviço',
+        message: 'Deseja realmente excluir este serviço do catálogo?',
+        iconType: 'danger',
+        confirmText: 'Excluir Serviço',
+        cancelText: 'Cancelar',
+        isDanger: true
+      });
+      if (confirmed) {
         try {
           const tId = getActiveTenantId();
           const response = await fetch(`${baseUrl}/api/tenants/${tId}/services/${serviceId}`, { method: 'DELETE' });
           const data = await response.json();
-          if (data.success) loadServicesAndProducts();
+          if (data.success) {
+            showToast('Serviço excluído com sucesso.', 'success');
+            loadServicesAndProducts();
+          } else {
+            showToast('Erro ao excluir serviço: ' + (data.error || 'Erro desconhecido.'), 'error');
+          }
         } catch (err) {
-          alert('Erro ao excluir serviço.');
+          showToast('Erro ao excluir serviço.', 'error');
         }
       }
     }
 
     async function deleteProductConfirm(productId) {
-      if (confirm('Deseja excluir este produto?')) {
+      const confirmed = await showConfirmModal({
+        title: 'Excluir Produto',
+        message: 'Deseja realmente excluir este produto do catálogo?',
+        iconType: 'danger',
+        confirmText: 'Excluir Produto',
+        cancelText: 'Cancelar',
+        isDanger: true
+      });
+      if (confirmed) {
         try {
           const tId = getActiveTenantId();
           const response = await fetch(`${baseUrl}/api/tenants/${tId}/products/${productId}`, { method: 'DELETE' });
           const data = await response.json();
-          if (data.success) loadServicesAndProducts();
+          if (data.success) {
+            showToast('Produto excluído com sucesso.', 'success');
+            loadServicesAndProducts();
+          } else {
+            showToast('Erro ao excluir produto: ' + (data.error || 'Erro desconhecido.'), 'error');
+          }
         } catch (err) {
-          alert('Erro ao excluir produto.');
+          showToast('Erro ao excluir produto.', 'error');
         }
       }
     }
@@ -4027,11 +4996,25 @@
         const tenantToUse = getActiveTenantId();
         const profFilterEl = document.getElementById('calendar-professional-filter');
         const profFilter = (profFilterEl && profFilterEl.value && profFilterEl.value !== 'undefined' && profFilterEl.value !== 'null') ? profFilterEl.value : 'ALL';
-        const response = await fetch(`${baseUrl}/api/appointments?tenantId=${encodeURIComponent(tenantToUse)}&professionalId=${encodeURIComponent(profFilter)}`);
+        const token = localStorage.getItem('saas_token');
+        const response = await fetch(`${baseUrl}/api/appointments?tenantId=${encodeURIComponent(tenantToUse)}&professionalId=${encodeURIComponent(profFilter)}`, {
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+        });
         const data = await response.json();
         if (!data.success || !data.appointments) return;
 
-        const rawList = data.appointments;
+        let rawList = data.appointments;
+
+        if (currentUser && currentUser.role === 'PROFESSIONAL') {
+          const myProfId = currentUser.professionalId;
+          const myName = (currentUser.name || '').toLowerCase();
+          rawList = rawList.filter(a => {
+            if (myProfId && a.professionalId === myProfId) return true;
+            if (a.professionalName && a.professionalName.toLowerCase() === myName) return true;
+            if (a.prof && a.prof.toLowerCase() === myName) return true;
+            return false;
+          });
+        }
         
         const todayObj = new Date();
         const todayFormatted = `${todayObj.getFullYear()}-${String(todayObj.getMonth() + 1).padStart(2, '0')}-${String(todayObj.getDate()).padStart(2, '0')}`;
@@ -4059,8 +5042,12 @@
 
         // Atualiza métricas reais do Dashboard
         document.getElementById('metric-appts-count').textContent = todayAppts.length.toString();
-        const estimatedRev = todayAppts.length * 75;
-        document.getElementById('metric-revenue-sum').textContent = `R$ ${estimatedRev.toLocaleString('pt-BR')}`;
+        const estimatedRev = todayAppts.reduce((acc, a) => {
+          const sObj = servicesState.find(s => s.id === a.serviceId);
+          const price = sObj && sObj.price !== undefined ? Number(sObj.price) : 50;
+          return acc + (isNaN(price) ? 0 : price);
+        }, 0);
+        document.getElementById('metric-revenue-sum').textContent = `R$ ${estimatedRev.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         const uniquePhones = new Set(rawList.filter(a => a.status !== 'CANCELLED').map(a => a.customerPhone));
         document.getElementById('metric-clients-count').textContent = uniquePhones.size.toString();
         document.getElementById('weekly-total-val').textContent = weekAppts.length.toString();
@@ -4094,7 +5081,7 @@
             client: a.customerName || 'Cliente WhatsApp',
             phone: a.customerPhone || '5511999998888',
             serviceId: a.serviceId,
-            service: sObj ? sObj.name : (a.serviceId === 'srv-2' ? 'Corte e Modelagem' : 'Atendimento Estético'),
+            service: sObj ? sObj.name : (a.serviceId === 'srv-2' ? 'Atendimento Personalizado' : 'Atendimento Geral'),
             professionalId: a.professionalId,
             prof: pObj ? pObj.name : 'Profissional',
             professionalName: pObj ? pObj.name : 'Profissional',
@@ -4226,7 +5213,7 @@
         }
 
         const sObj = servicesState.find(s => s.id === a.serviceId);
-        const sName = sObj ? sObj.name : (a.serviceId === 'srv-2' ? 'Corte e Modelagem' : 'Atendimento Estético');
+        const sName = sObj ? sObj.name : (a.serviceId === 'srv-2' ? 'Atendimento Personalizado' : 'Atendimento Geral');
         const pObj = professionalsState.find(p => p.id === a.professionalId);
         const pName = pObj ? pObj.name : 'Profissional';
 
@@ -4242,7 +5229,7 @@
             <div class="appt-service-name">${sName}</div>
             <div class="appt-customer-name">
               <strong>${a.customerName || 'Cliente'}</strong>
-              <span style="font-size: 11px; color: var(--primary); font-weight: 600; margin-left: 6px;">✂️ com ${pName}</span>
+              <span style="font-size: 11px; color: var(--primary); font-weight: 600; margin-left: 6px;">👤 com ${pName}</span>
             </div>
           </div>
           <div class="appt-time-box">
@@ -4266,7 +5253,7 @@
         });
         checkRealWhatsAppStatus();
       } catch (err) {
-        alert('Erro ao iniciar sessão do WhatsApp.');
+        showToast('Erro ao iniciar sessão do WhatsApp.', 'error');
       }
     }
 
@@ -4283,6 +5270,7 @@
         const placeholder = document.getElementById('wa-qr-placeholder');
 
         if (data.status === 'CONNECTED') {
+          lastWaStatusConnected = true;
           badge.classList.add('connected');
           dot.classList.add('connected');
           text.textContent = `WhatsApp Conectado (${data.connectedPhone || 'Ativo'})`;
@@ -4299,6 +5287,7 @@
             `;
           }
         } else if (data.status === 'QR_READY' && data.qrCodeBase64) {
+          lastWaStatusConnected = false;
           badge.classList.remove('connected');
           dot.classList.remove('connected');
           text.textContent = 'Aguardando Leitura QR Code';
@@ -4309,6 +5298,7 @@
             qrImg.src = data.qrCodeBase64;
           }
         } else if (data.status === 'INITIALIZING') {
+          lastWaStatusConnected = false;
           badge.classList.remove('connected');
           dot.classList.remove('connected');
           text.textContent = 'Iniciando WhatsApp...';
@@ -4318,9 +5308,14 @@
             placeholder.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="font-size: 24px;"></i><br><br>Gerando QR Code vivo...';
           }
         } else {
+          lastWaStatusConnected = false;
           badge.classList.remove('connected');
           dot.classList.remove('connected');
           text.textContent = 'WhatsApp Desconectado';
+        }
+
+        if (lastTenantDataForOnboarding) {
+          renderOnboardingChecklist(lastTenantDataForOnboarding, lastWaStatusConnected);
         }
       } catch (err) {
         console.error('Erro ao verificar status do WhatsApp:', err);
@@ -4328,7 +5323,15 @@
     }
 
     async function logoutRealWhatsAppSession() {
-      if (confirm('Deseja desconectar esta conta de WhatsApp?')) {
+      const confirmed = await showConfirmModal({
+        title: 'Desconectar WhatsApp',
+        message: 'Deseja realmente desconectar esta sessão de WhatsApp do sistema?',
+        iconType: 'warning',
+        confirmText: 'Desconectar WhatsApp',
+        cancelText: 'Manter Conectado',
+        isDanger: true
+      });
+      if (confirmed) {
         try {
           await fetch(`${baseUrl}/api/whatsapp/disconnect`, {
             method: 'POST',
@@ -4336,9 +5339,9 @@
             body: JSON.stringify({ tenantId: currentTenantId })
           });
           checkRealWhatsAppStatus();
-          alert('WhatsApp desconectado.');
+          showToast('WhatsApp desconectado com sucesso.', 'info');
         } catch (err) {
-          alert('Erro ao desconectar.');
+          showToast('Erro ao desconectar WhatsApp.', 'error');
         }
       }
     }
@@ -4403,10 +5406,12 @@
         if (data.success) {
           faqItemsState = validFaq;
           renderFaqList();
-          alert('Configurações de IA, Vozes e FAQ salvas com sucesso!');
+          showToast('Configurações de IA, Vozes e FAQ salvas com sucesso!', 'success');
+        } else {
+          showToast('Erro ao salvar IA: ' + (data.error || 'Erro desconhecido'), 'error');
         }
       } catch (err) {
-        alert('Erro ao salvar IA.');
+        showToast('Erro ao conectar ao servidor para salvar IA.', 'error');
       }
     }
 
@@ -4475,7 +5480,7 @@
           btn.disabled = false;
         };
       } catch (err) {
-        alert('Não foi possível reproduzir a voz no momento.');
+        showToast('Não foi possível reproduzir a voz no momento.', 'error');
         btn.innerHTML = originalHtml;
         btn.disabled = false;
       }
@@ -4511,7 +5516,7 @@
       const reason = document.getElementById('modal-block-reason').value.trim() || 'Bloqueio';
 
       if (!dateStr) {
-        alert('Selecione uma data para o bloqueio.');
+        showToast('Selecione uma data para o bloqueio.', 'warning');
         return;
       }
 
@@ -4526,12 +5531,12 @@
           closeScheduleBlockModal();
           loadScheduleBlocks();
           renderGoogleCalendar();
-          alert('Bloqueio de agenda criado com sucesso!');
+          showToast('Bloqueio de agenda criado com sucesso!', 'success');
         } else {
-          alert('Erro ao criar bloqueio: ' + data.error);
+          showToast('Erro ao criar bloqueio: ' + (data.error || 'Erro desconhecido'), 'error');
         }
       } catch (err) {
-        alert('Erro de conexão.');
+        showToast('Erro de conexão ao criar bloqueio.', 'error');
       }
     }
 
@@ -4574,16 +5579,27 @@
     }
 
     async function deleteScheduleBlock(blockId) {
-      if (!confirm('Deseja remover este bloqueio de agenda?')) return;
+      const confirmed = await showConfirmModal({
+        title: 'Remover Bloqueio',
+        message: 'Deseja realmente remover este bloqueio de agenda?',
+        iconType: 'warning',
+        confirmText: 'Remover Bloqueio',
+        cancelText: 'Cancelar',
+        isDanger: true
+      });
+      if (!confirmed) return;
       try {
         const response = await fetch(`${baseUrl}/api/tenants/${getActiveTenantId()}/blocks/${blockId}`, { method: 'DELETE' });
         const data = await response.json();
         if (data.success) {
           loadScheduleBlocks();
           renderGoogleCalendar();
+          showToast('Bloqueio removido com sucesso.', 'success');
+        } else {
+          showToast('Erro ao remover bloqueio.', 'error');
         }
       } catch (err) {
-        alert('Erro ao remover bloqueio.');
+        showToast('Erro de conexão ao remover bloqueio.', 'error');
       }
     }
 
@@ -4628,15 +5644,26 @@
     }
 
     async function deleteWaitlist(waitlistId) {
-      if (!confirm('Deseja remover este cliente da lista de espera?')) return;
+      const confirmed = await showConfirmModal({
+        title: 'Remover da Lista de Espera',
+        message: 'Deseja realmente remover este cliente da lista de espera?',
+        iconType: 'warning',
+        confirmText: 'Remover da Lista',
+        cancelText: 'Cancelar',
+        isDanger: true
+      });
+      if (!confirmed) return;
       try {
         const response = await fetch(`${baseUrl}/api/tenants/${getActiveTenantId()}/waitlist/${waitlistId}`, { method: 'DELETE' });
         const data = await response.json();
         if (data.success) {
           loadWaitlist();
+          showToast('Cliente removido da lista de espera.', 'success');
+        } else {
+          showToast('Erro ao remover da lista de espera.', 'error');
         }
       } catch (err) {
-        alert('Erro ao remover da lista de espera.');
+        showToast('Erro de conexão ao remover da lista.', 'error');
       }
     }
 
@@ -4802,7 +5829,7 @@
           const colHeader = document.createElement('div');
           colHeader.className = `calendar-day-header${isToday ? ' today' : ''}`;
           colHeader.style.cursor = 'pointer';
-          colHeader.innerHTML = `<div>${['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][i]}</div><div style="font-size: 15px; font-weight: 700; color: white;">${colDate.getDate()}</div>`;
+          colHeader.innerHTML = `<div>${['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][i]}</div><div style="font-size: 15px; font-weight: 700; color: var(--wa-text-main); margin-top: 2px;">${colDate.getDate()}</div>`;
           colHeader.onclick = () => {
             currentNavDate = new Date(colDate);
             switchCalendarView('day');
@@ -4844,7 +5871,7 @@
           });
 
           if (dayAppointments.length === 0 && dayBlocks.length === 0) {
-            cell.innerHTML = `<div style="color: var(--text-muted); font-size: 11px; text-align: center; margin-top: 15px;">Sem agendamentos</div>`;
+            cell.innerHTML = `<div style="color: var(--wa-text-muted); font-size: 11.5px; text-align: center; margin-top: 15px;">Sem agendamentos</div>`;
           } else {
             dayAppointments.forEach(appt => {
               const isPast = appt.endTime ? (new Date(appt.endTime) < now) : (new Date(appt.startTime) < now);
@@ -4882,10 +5909,12 @@
 
         if (dayAppointments.length === 0) {
           cellsContainer.innerHTML = `
-            <div style="background: #111827; border: 1px solid var(--bg-card-border); border-radius: 12px; padding: 40px 20px; text-align: center;">
-              <i class="fa-regular fa-calendar-xmark" style="font-size: 40px; color: var(--text-muted); margin-bottom: 14px;"></i>
-              <h3 style="font-size: 16px; font-weight: 700; color: white;">Nenhum agendamento para ${isToday ? 'hoje' : 'esta data'}</h3>
-              <p style="color: var(--text-muted); font-size: 13px; margin-top: 6px; margin-bottom: 20px;">Não há consultas ou serviços agendados para ${dayLabel}.</p>
+            <div style="background: #ffffff; border: 1px solid var(--wa-card-border); border-radius: 12px; padding: 48px 24px; text-align: center; box-shadow: 0 1px 3px rgba(11, 20, 26, 0.05);">
+              <div style="width: 60px; height: 60px; border-radius: 50%; background: #f0fdf4; color: var(--wa-green); display: flex; align-items: center; justify-content: center; font-size: 26px; margin: 0 auto 16px auto;">
+                <i class="fa-regular fa-calendar-xmark"></i>
+              </div>
+              <h3 style="font-size: 16px; font-weight: 700; color: var(--wa-text-main);">Nenhum agendamento para ${isToday ? 'hoje' : 'esta data'}</h3>
+              <p style="color: var(--wa-text-muted); font-size: 13.5px; margin-top: 6px; margin-bottom: 22px;">Não há consultas ou serviços agendados para ${dayLabel}.</p>
               <button class="btn-primary" onclick="openNewAppointmentModal()" style="margin: 0 auto; display: inline-flex; align-items: center; gap: 8px;">
                 <i class="fa-solid fa-plus"></i> Novo Agendamento para este dia
               </button>
@@ -4900,37 +5929,41 @@
             const isPast = appt.endTime ? (new Date(appt.endTime) < now) : (new Date(appt.startTime) < now);
 
             let statusBadge = appt.status === 'CONFIRMED' 
-              ? `<span style="background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700;">Confirmado</span>`
-              : `<span style="background: rgba(234, 179, 8, 0.15); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.3); padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700;">Agendado</span>`;
+              ? `<span style="background: #d9fdd3; color: var(--wa-green-dark); border: 1px solid rgba(0, 168, 132, 0.35); padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px;"><i class="fa-solid fa-check" style="font-size: 11px;"></i> Confirmado</span>`
+              : `<span style="background: #fef3c7; color: #b45309; border: 1px solid #fde68a; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px;"><i class="fa-regular fa-clock" style="font-size: 11px;"></i> Pendente</span>`;
 
             if (isPast) {
-              statusBadge = `<span style="background: rgba(148, 163, 184, 0.15); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.3); padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700;"><i class="fa-solid fa-check"></i> Realizado</span>`;
+              statusBadge = `<span style="background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px;"><i class="fa-solid fa-check-double" style="font-size: 11px;"></i> Realizado</span>`;
             }
 
-            const timeBoxBg = isPast 
-              ? 'background: rgba(148, 163, 184, 0.12); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.2);' 
-              : 'background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3);';
+            const timeBoxStyle = isPast 
+              ? 'background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0;' 
+              : 'background: #d9fdd3; color: var(--wa-green-dark); border: 1px solid rgba(0, 168, 132, 0.3);';
 
-            const cardStyle = isPast ? 'background: #0f172a; opacity: 0.75;' : 'background: #111827;';
+            const cardStyle = isPast 
+              ? 'background: #fafbfc; opacity: 0.85;' 
+              : 'background: #ffffff;';
 
             dayHtml += `
-              <div style="${cardStyle} border: 1px solid var(--bg-card-border); border-radius: 12px; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; transition: all 0.2s ease;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--bg-card-border)'">
+              <div style="${cardStyle} border: 1px solid var(--wa-card-border); border-radius: 12px; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; box-shadow: 0 1px 3px rgba(11, 20, 26, 0.04); transition: all 0.2s ease;" onmouseover="this.style.borderColor='var(--wa-green)'; this.style.boxShadow='0 2px 8px rgba(0, 168, 132, 0.12)';" onmouseout="this.style.borderColor='var(--wa-card-border)'; this.style.boxShadow='0 1px 3px rgba(11, 20, 26, 0.04)';">
                 <div style="display: flex; align-items: center; gap: 16px;">
-                  <div style="${timeBoxBg} padding: 10px 16px; border-radius: 10px; font-size: 16px; font-weight: 800;">
+                  <div style="${timeBoxStyle} padding: 10px 16px; border-radius: 10px; font-size: 16px; font-weight: 800; font-family: 'Segoe UI', sans-serif;">
                     ${appt.timeStr}
                   </div>
                   <div>
-                    <h4 style="font-size: 15px; font-weight: 700; color: ${isPast ? '#cbd5e1' : 'white'}; margin-bottom: 2px;">
-                      ${appt.client} ${isPast ? '<span style="font-size: 11px; color: #94a3b8; font-weight: 400; margin-left: 6px;">(Realizado)</span>' : ''}
+                    <h4 style="font-size: 15px; font-weight: 700; color: var(--wa-text-main); margin-bottom: 3px;">
+                      ${appt.client} ${isPast ? '<span style="font-size: 11.5px; color: var(--wa-text-muted); font-weight: 400; margin-left: 6px;">(Realizado)</span>' : ''}
                     </h4>
-                    <p style="color: var(--text-muted); font-size: 13px;">${appt.service} com <strong style="color: white;">${appt.professionalName || 'Profissional'}</strong></p>
-                    ${appt.phone ? `<p style="color: #60a5fa; font-size: 12px; margin-top: 2px;"><i class="fa-brands fa-whatsapp"></i> ${appt.phone}</p>` : ''}
+                    <p style="color: var(--wa-text-muted); font-size: 13px; margin-bottom: 2px;">
+                      ${appt.service} com <strong style="color: var(--wa-text-main);">${appt.professionalName || 'Profissional'}</strong>
+                    </p>
+                    ${appt.phone ? `<p style="color: var(--wa-green-dark); font-size: 12.5px; font-weight: 500;"><i class="fa-brands fa-whatsapp" style="margin-right: 4px;"></i> ${appt.phone}</p>` : ''}
                   </div>
                 </div>
 
                 <div style="display: flex; align-items: center; gap: 12px;">
                   ${statusBadge}
-                  <button class="btn-secondary" onclick="openAppointmentModal('${appt.id}')" style="padding: 6px 12px; font-size: 12px;">
+                  <button class="btn-secondary" onclick="openAppointmentModal('${appt.id}')" style="padding: 7px 14px; font-size: 12.5px; display: inline-flex; align-items: center; gap: 6px;">
                     <i class="fa-regular fa-eye"></i> Detalhes
                   </button>
                 </div>
@@ -4995,7 +6028,6 @@
             message: text,
             systemPrompt: systemPrompt,
             businessInfo: businessInfo,
-            pushName: currentUser ? currentUser.name : 'Cliente Teste',
             voiceId: document.getElementById('ai-voice-id')?.value
           })
         });
@@ -5150,7 +6182,7 @@
       const chatInput = document.getElementById('chat-input');
 
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        alert('Seu navegador não possui suporte para gravar áudio do microfone.');
+        showToast('Seu navegador não possui suporte para gravar áudio do microfone.', 'error');
         return;
       }
 
@@ -5179,7 +6211,7 @@
         btn.title = 'Clique para enviar o áudio';
         chatInput.placeholder = '🔴 Gravando áudio de voz... Clique no quadrado para enviar';
       } catch (err) {
-        alert('Permissão de microfone negada ou erro ao acessar microfone.');
+        showToast('Permissão de microfone negada ou erro ao acessar microfone.', 'error');
       }
     }
 
@@ -5265,7 +6297,6 @@
             message: spokenText,
             systemPrompt: systemPrompt,
             businessInfo: businessInfo,
-            pushName: currentUser ? currentUser.name : 'Cliente Teste',
             isVoiceInput: true,
             voiceId: document.getElementById('ai-voice-id')?.value
           })
@@ -5300,7 +6331,7 @@
         }
       } catch (err) {
         if (chatMessages.contains(typingBubble)) chatMessages.removeChild(typingBubble);
-        alert('Erro ao enviar mensagem simulada.');
+        showToast('Erro ao enviar mensagem simulada.', 'error');
       }
     }
 
@@ -5366,7 +6397,7 @@
         };
       } catch (err) {
         if (chatMessages.contains(typingBubble)) chatMessages.removeChild(typingBubble);
-        alert('Erro ao processar mensagem de áudio.');
+        showToast('Erro ao processar mensagem de áudio.', 'error');
       }
     }
 
@@ -5382,7 +6413,7 @@
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            'Authorization': token ? `Bearer ${token}` : ''
           },
           body: JSON.stringify({
             enable24hReminder: enable24h,
@@ -5393,19 +6424,19 @@
         });
         const data = await response.json();
         if (data.success) {
-          alert('Configurações de lembretes salvas com sucesso!');
+          showToast('Configurações de lembretes salvas com sucesso!', 'success');
         } else {
-          alert(data.error || 'Erro ao salvar lembretes.');
+          showToast(data.error || 'Erro ao salvar lembretes.', 'error');
         }
       } catch (err) {
-        alert('Erro ao conectar ao servidor para salvar lembretes.');
+        showToast('Erro ao conectar ao servidor para salvar lembretes.', 'error');
       }
     }
 
     async function sendTestReminderWhatsApp(type) {
       const phone = document.getElementById('rem-test-phone').value.trim();
       if (!phone) {
-        alert('Por favor, informe seu número de WhatsApp com DDD para receber o disparo de teste!');
+        showToast('Por favor, informe seu número de WhatsApp com DDD para receber o disparo de teste!', 'warning');
         return;
       }
 
@@ -5415,18 +6446,18 @@
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            'Authorization': token ? `Bearer ${token}` : ''
           },
           body: JSON.stringify({ phone, type })
         });
         const data = await response.json();
         if (data.success) {
-          alert(`✅ ${data.message}`);
+          showToast(data.message || 'Lembrete enviado com sucesso!', 'success');
         } else {
-          alert(`⚠️ ${data.error}`);
+          showToast(data.error || 'Falha ao enviar teste de lembrete.', 'error');
         }
       } catch (err) {
-        alert('Erro ao conectar ao servidor para enviar o teste.');
+        showToast('Erro ao conectar ao servidor para enviar o teste.', 'error');
       }
     }
 
@@ -5440,9 +6471,10 @@
       loadVoicesList();
       if (checkAuthOnBoot()) {
         await loadTenantData();
+        await loadServicesAndProducts();
         await loadAppointmentsFromServer();
-        loadServicesAndProducts();
         loadTeamUsers();
+        loadCustomersCRM();
       }
     }
 

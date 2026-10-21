@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Confirmar E-mail - WhatsApp Atendente IA</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <style>
+    :root {
+      --wa-green: #00a884;
+      --wa-green-light: #25D366;
+      --wa-green-dark: #008069;
+      --wa-light-bg: #f0f2f5;
+      --wa-card-bg: #ffffff;
+      --wa-card-border: #e9edef;
+      --wa-text-main: #111b21;
+      --wa-text-muted: #667781;
+      --radius-lg: 14px;
+      --radius-md: 10px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+    body {
+      background-color: var(--wa-light-bg);
+      color: var(--wa-text-main);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      background-image: radial-gradient(circle at 50% 0%, rgba(0, 168, 132, 0.08) 0%, transparent 60%);
+    }
+
+    .verify-card {
+      background: var(--wa-card-bg);
+      border: 1px solid var(--wa-card-border);
+      border-radius: var(--radius-lg);
+      width: 460px;
+      max-width: 100%;
+      padding: 40px 32px;
+      box-shadow: 0 10px 30px rgba(11, 20, 26, 0.08);
+      text-align: center;
+    }
+
+    .brand-icon {
+      width: 58px;
+      height: 58px;
+      background: linear-gradient(135deg, var(--wa-green-light), var(--wa-green-dark));
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      color: white;
+      margin: 0 auto 16px auto;
+      box-shadow: 0 6px 18px rgba(0, 168, 132, 0.3);
+    }
+
+    .brand-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--wa-text-main);
+      margin-bottom: 6px;
+    }
+
+    .subtitle {
+      font-size: 13.5px;
+      color: var(--wa-text-muted);
+      line-height: 1.5;
+      margin-bottom: 24px;
+    }
+
+    .email-highlight {
+      font-weight: 600;
+      color: var(--wa-text-main);
+      word-break: break-all;
+    }
+
+    /* OTP Inputs */
+    .otp-container {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin: 28px 0;
+    }
+
+    .otp-input {
+      width: 48px;
+      height: 56px;
+      font-size: 24px;
+      font-weight: 700;
+      text-align: center;
+      border: 2px solid #cbd5e1;
+      border-radius: 10px;
+      background: #f8fafc;
+      color: var(--wa-text-main);
+      transition: all 0.2s ease;
+      outline: none;
+    }
+
+    .otp-input:focus {
+      border-color: var(--wa-green);
+      background: #ffffff;
+      box-shadow: 0 0 0 3px rgba(0, 168, 132, 0.15);
+    }
+
+    .btn-verify {
+      width: 100%;
+      padding: 13px;
+      background: var(--wa-green);
+      color: white;
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.2s;
+    }
+
+    .btn-verify:hover { background: var(--wa-green-dark); }
+    .btn-verify:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .resend-box {
+      margin-top: 24px;
+      font-size: 13px;
+      color: var(--wa-text-muted);
+    }
+
+    .btn-resend {
+      background: none;
+      border: none;
+      color: var(--wa-green-dark);
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: underline;
+      padding: 4px;
+    }
+
+    .btn-resend:disabled {
+      color: var(--wa-text-muted);
+      cursor: not-allowed;
+      text-decoration: none;
+    }
+
+    .alert {
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 18px;
+      display: none;
+      align-items: center;
+      gap: 8px;
+      text-align: left;
+    }
+    .alert-error { background: #fef2f2; border: 1px solid #fee2e2; color: #dc2626; }
+    .alert-success { background: #f0fdf4; border: 1px solid #dcfce7; color: #16a34a; }
+  </style>
+</head>
+<body>
+
+  <div class="verify-card">
+    <div class="brand-icon">
+      <i class="fa-solid fa-envelope-circle-check"></i>
+    </div>
+    
+    <h1 class="brand-title">Confirme seu E-mail</h1>
+    <p class="subtitle">
+      Enviamos um código de 6 dígitos para:<br>
+      <span class="email-highlight" id="target-email">seu@email.com</span>
+    </p>
+
+    <div class="alert alert-error" id="alert-error">
+      <i class="fa-solid fa-circle-exclamation"></i> <span id="error-text"></span>
+    </div>
+
+    <div class="alert alert-success" id="alert-success">
+      <i class="fa-solid fa-circle-check"></i> <span id="success-text"></span>
+    </div>
+
+    <div id="dev-code-hint" style="display: none; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; border-radius: 8px; padding: 10px 14px; margin-bottom: 20px; font-size: 13px; text-align: center;">
+      <i class="fa-solid fa-code" style="margin-right: 4px;"></i> <b>Modo de Testes:</b> Código gerado: <strong id="dev-code-val" style="letter-spacing: 2px; cursor: pointer; text-decoration: underline; color: #2563eb;"></strong> <span style="font-size: 11px; color: #64748b; display: block; margin-top: 2px;">(Clique no número acima para preencher automaticamente)</span>
+    </div>
+
+    <form onsubmit="handleVerifySubmit(event)">
+      <div class="otp-container" id="otp-inputs">
+        <input type="text" maxlength="1" class="otp-input" inputmode="numeric" autofocus>
+        <input type="text" maxlength="1" class="otp-input" inputmode="numeric">
+        <input type="text" maxlength="1" class="otp-input" inputmode="numeric">
+        <input type="text" maxlength="1" class="otp-input" inputmode="numeric">
+        <input type="text" maxlength="1" class="otp-input" inputmode="numeric">
+        <input type="text" maxlength="1" class="otp-input" inputmode="numeric">
+      </div>
+
+      <button type="submit" class="btn-verify" id="btn-verify">
+        <i class="fa-solid fa-check"></i> Ativar Minha Conta
+      </button>
+    </form>
+
+    <div class="resend-box">
+      Não recebeu o código? 
+      <button type="button" class="btn-resend" id="btn-resend" onclick="handleResendCode()">Reenviar código</button>
+      <span id="countdown-text" style="display: none; color: #94a3b8; font-size: 12px;"></span>
+    </div>
+
+    <div style="margin-top: 20px; font-size: 12px; color: #94a3b8;">
+      <a href="/login" style="color: #64748b; text-decoration: none;">Voltar para o Login</a>
+    </div>
+  </div>
+
+  <script>
+    const baseUrl = window.location.protocol.startsWith('http') ? '' : 'http://localhost:3001';
+    const urlParams = new URLSearchParams(window.location.search);
+    const emailParam = urlParams.get('email') || localStorage.getItem('saas_pending_email') || '';
+    const tokenParam = urlParams.get('token') || '';
+
+    const devCodeParam = urlParams.get('devCode') || '';
+
+    function setDevCode(code) {
+      if (!code) return;
+      const hint = document.getElementById('dev-code-hint');
+      const val = document.getElementById('dev-code-val');
+      if (hint && val) {
+        val.textContent = code;
+        val.onclick = () => fillCode(code);
+        hint.style.display = 'block';
+      }
+    }
+
+    function fillCode(code) {
+      if (!code) return;
+      const clean = String(code).trim();
+      inputs.forEach((inp, i) => inp.value = clean[i] || '');
+      inputs[5].focus();
+      checkAutoSubmit();
+    }
+
+    if (devCodeParam) {
+      setDevCode(devCodeParam);
+    }
+
+    if (emailParam) {
+      document.getElementById('target-email').textContent = emailParam;
+    }
+
+    const inputs = document.querySelectorAll('.otp-input');
+    inputs.forEach((input, index) => {
+      input.addEventListener('input', (e) => {
+        const val = e.target.value.replace(/\D/g, '');
+        e.target.value = val;
+        if (val && index < inputs.length - 1) {
+          inputs[index + 1].focus();
+        }
+        checkAutoSubmit();
+      });
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && !e.target.value && index > 0) {
+          inputs[index - 1].focus();
+        }
+      });
+
+      input.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const pasted = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '');
+        if (pasted.length >= 6) {
+          inputs.forEach((inp, i) => inp.value = pasted[i] || '');
+          inputs[5].focus();
+          checkAutoSubmit();
+        }
+      });
+    });
+
+    function getCode() {
+      return Array.from(inputs).map(inp => inp.value).join('');
+    }
+
+    function checkAutoSubmit() {
+      if (getCode().length === 6) {
+        handleVerifySubmit(new Event('submit'));
+      }
+    }
+
+    async function handleVerifySubmit(e) {
+      if (e) e.preventDefault();
+      const code = getCode();
+      const btn = document.getElementById('btn-verify');
+      const errorAlert = document.getElementById('alert-error');
+      const successAlert = document.getElementById('alert-success');
+
+      errorAlert.style.display = 'none';
+      successAlert.style.display = 'none';
+
+      if (!tokenParam && code.length < 6) {
+        showError('Por favor, digite todos os 6 dígitos do código.');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Ativando conta...';
+
+      try {
+        const res = await fetch(`${baseUrl}/api/auth/verify-email`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: emailParam,
+            code: code,
+            token: tokenParam
+          })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          showSuccess(data.message || 'Conta ativada com sucesso!');
+          localStorage.setItem('saas_token', data.token);
+          localStorage.setItem('saas_user', JSON.stringify(data.user));
+          localStorage.setItem('saas_tenant', JSON.stringify(data.tenant));
+          localStorage.removeItem('saas_pending_email');
+
+          btn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Redirecionando...';
+          btn.style.background = '#16a34a';
+
+          setTimeout(() => {
+            window.location.href = '/dashboard?welcome=true';
+          }, 800);
+        } else {
+          showError(data.error || 'Código inválido ou expirado.');
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fa-solid fa-check"></i> Ativar Minha Conta';
+        }
+      } catch (err) {
+        showError('Erro ao conectar ao servidor. Tente novamente.');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> Ativar Minha Conta';
+      }
+    }
+
+    async function handleResendCode() {
+      if (!emailParam) {
+        showError('Endereço de e-mail não informado. Volte à página de cadastro.');
+        return;
+      }
+
+      const resendBtn = document.getElementById('btn-resend');
+      const countdown = document.getElementById('countdown-text');
+      resendBtn.disabled = true;
+      resendBtn.textContent = 'Enviando...';
+
+      try {
+        const res = await fetch(`${baseUrl}/api/auth/resend-verification`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: emailParam })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showSuccess(data.message || 'Novo código enviado com sucesso!');
+          if (data.devCode) {
+            setDevCode(data.devCode);
+          }
+          startCountdown(60);
+        } else {
+          showError(data.error || 'Erro ao reenviar código.');
+          resendBtn.disabled = false;
+          resendBtn.textContent = 'Reenviar código';
+        }
+      } catch (err) {
+        showError('Erro ao conectar ao servidor.');
+        resendBtn.disabled = false;
+        resendBtn.textContent = 'Reenviar código';
+      }
+    }
+
+    function startCountdown(seconds) {
+      const resendBtn = document.getElementById('btn-resend');
+      const countdown = document.getElementById('countdown-text');
+      resendBtn.style.display = 'none';
+      countdown.style.display = 'inline';
+
+      let left = seconds;
+      countdown.textContent = `Aguarde ${left}s para reenviar`;
+
+      const interval = setInterval(() => {
+        left--;
+        if (left <= 0) {
+          clearInterval(interval);
+          resendBtn.style.display = 'inline';
+          resendBtn.disabled = false;
+          resendBtn.textContent = 'Reenviar código';
+          countdown.style.display = 'none';
+        } else {
+          countdown.textContent = `Aguarde ${left}s para reenviar`;
+        }
+      }, 1000);
+    }
+
+    function showError(msg) {
+      const alert = document.getElementById('alert-error');
+      document.getElementById('error-text').textContent = msg;
+      alert.style.display = 'flex';
+    }
+
+    function showSuccess(msg) {
+      const alert = document.getElementById('alert-success');
+      document.getElementById('success-text').textContent = msg;
+      alert.style.display = 'flex';
+    }
+
+    // Se a URL trouxe token, faz verificação direta
+    if (tokenParam) {
+      window.addEventListener('DOMContentLoaded', () => {
+        handleVerifySubmit();
+      });
+    }
+  </script>
+</body>
+</html>

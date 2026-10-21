@@ -13,7 +13,7 @@ export const AVAILABLE_VOICES: AvailableVoice[] = [
     id: 'pt-BR-FranciscaNeural',
     name: 'Francisca (Feminina - Suave & Acolhedora)',
     gender: 'FEMALE',
-    description: 'Voz feminina natural e calorosa, perfeita para salões, clínicas e estética.',
+    description: 'Voz feminina natural e calorosa, perfeita para clínicas, consultórios e empresas.',
     previewText: 'Olá! Seja muito bem-vindo! Como posso te ajudar com seu agendamento hoje?'
   },
   {

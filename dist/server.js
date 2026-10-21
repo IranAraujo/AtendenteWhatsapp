@@ -1,3 +1,4 @@
+// @ts-nocheck
 import dotenv from 'dotenv';
 dotenv.config();
 import express from 'express';
@@ -12,26 +13,46 @@ import { whatsappService } from './services/whatsapp.service.js';
 import { adminService } from './services/admin.service.js';
 import { dbRepository } from './services/db.service.js';
 import { generateJwtToken, comparePassword, hashPassword } from './services/auth.service.js';
+import { requireAuth, requireTenantAccess, requireAdmin, requireProfessionalOwner } from './middleware/auth.middleware.js';
 import { AVAILABLE_VOICES, generateSpeechAudio } from './services/tts.service.js';
 import { webhookService } from './services/webhook.service.js';
+import { emailService } from './services/email.service.js';
+import { seedDatabase } from './utils/seed.js';
+import logger from './utils/logger.js';
+import crypto from 'crypto';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
 const helmetFn = helmet.default || helmet;
 const rateLimitFn = rateLimit || rateLimit.default;
-// Proteção de Cabeçalhos HTTP com Helmet (permitindo inline scripts para o dashboard local)
-app.use(helmetFn({ contentSecurityPolicy: false }));
-app.use(cors());
+app.use(helmetFn({
+    contentSecurityPolicy: false,
+    crossOriginResourcePolicy: false
+}));
+app.use(cors({
+    origin: true,
+    credentials: true
+}));
 app.use(express.json());
 // Rate Limiter para Proteção contra Ataques de Força Bruta
 const loginLimiter = rateLimitFn({
     windowMs: 60 * 1000, // 1 minuto
-    max: 15, // Máximo 15 tentativas por minuto por IP
-    message: { success: false, error: 'Muitas tentativas de login. Aguarde 1 minuto e tente novamente.' }
+    max: 30,
+    message: { success: false, error: 'Muitas tentativas. Aguarde 1 minuto e tente novamente.' }
+});
+const publicBookingLimiter = rateLimitFn({
+    windowMs: 15 * 60 * 1000, // 15 minutos
+    max: 25,
+    message: { error: 'Muitas tentativas de agendamento deste endereço. Aguarde alguns minutos.' }
+});
+const aiSimulateLimiter = rateLimitFn({
+    windowMs: 60 * 1000,
+    max: 40,
+    message: { error: 'Limite de mensagens atingido. Aguarde alguns instantes.' }
 });
 const apiLimiter = rateLimitFn({
     windowMs: 60 * 1000,
-    max: 150,
+    max: 500,
     message: { success: false, error: 'Limite de requisições excedido. Aguarde alguns instantes.' }
 });
 app.use('/api/', apiLimiter);
@@ -89,6 +110,12 @@ app.get('/admin', (req, res) => {
 app.get(['/register', '/cadastro', '/planos', '/assinar'], (req, res) => {
     res.sendFile(path.join(__dirname, '../public/register.html'));
 });
+app.get(['/verify-email', '/confirmar-email', '/ativar'], (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/verify-email.html'));
+});
+app.get(['/reset-password', '/recuperar-senha', '/redefinir-senha'], (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/reset-password.html'));
+});
 // -------------------------------------------------------------
 // METADADOS DE PLANOS SAAS
 // -------------------------------------------------------------
@@ -138,7 +165,7 @@ app.get('/api/plans', (req, res) => {
             {
                 id: 'MULTI_USER',
                 name: 'Pro Negócios',
-                tagline: 'Perfeito para salões, barbearias e clínicas em crescimento',
+                tagline: 'Perfeito para empresas, clínicas e equipes em crescimento',
                 monthlyPrice: 197,
                 annualPriceMonthly: 157, // R$ 1.884/ano
                 maxUsers: 5,
@@ -177,6 +204,10 @@ app.post('/api/auth/register', loginLimiter, async (req, res) => {
                 error: 'A senha deve conter no mínimo 6 caracteres.'
             });
         }
+        // Geração do código OTP de 6 dígitos e token UUID para ativação por email
+        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+        const verificationToken = crypto.randomUUID();
+        const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
         const { tenant, user, initialServices, initialProfessional } = await dbRepository.registerTenantAndOwner({
             ownerName,
             email,
@@ -184,40 +215,146 @@ app.post('/api/auth/register', loginLimiter, async (req, res) => {
             companyName,
             phone,
             planTier: planTier || 'MULTI_USER',
-            segment: segment || 'barbearia',
-            businessAddress
+            segment: segment || 'servicos',
+            businessAddress,
+            isEmailVerified: false,
+            verificationCode,
+            verificationToken,
+            verificationExpires
         });
-        const token = generateJwtToken({
-            userId: user.id,
-            tenantId: user.tenantId,
-            role: user.role,
-            email: user.email
-        });
+        // Dispara e-mail com código de confirmação e link
+        try {
+            await emailService.sendVerificationEmail({
+                email: user.email,
+                name: user.name,
+                code: verificationCode,
+                token: verificationToken
+            });
+        }
+        catch (e) {
+            logger.warn('Falha no envio do email de verificação:', e.message);
+        }
         res.status(201).json({
             success: true,
-            message: 'Conta e estabelecimento criados com sucesso!',
-            token,
+            requireVerification: true,
+            email: user.email,
+            message: 'Conta criada com sucesso! Enviamos um código de confirmação para o seu e-mail.',
+            devCode: !process.env.SMTP_HOST ? verificationCode : undefined,
             user: {
                 id: user.id,
                 tenantId: user.tenantId,
                 name: user.name,
                 email: user.email,
-                role: user.role,
-                professionalId: user.professionalId
+                role: user.role
             },
             tenant: {
                 id: tenant.id,
                 name: tenant.name,
-                slug: tenant.slug,
-                planTier: tenant.planTier,
-                maxUsers: tenant.maxUsers
-            },
-            initialServicesCount: initialServices.length,
-            initialProfessionalName: initialProfessional.name
+                slug: tenant.slug
+            }
         });
     }
     catch (error) {
+        console.error("SERVER ERROR:", error);
         res.status(400).json({ success: false, error: error.message });
+    }
+});
+app.post('/api/auth/verify-email', loginLimiter, async (req, res) => {
+    try {
+        const { email, code, token } = req.body;
+        let found;
+        if (token) {
+            found = await dbRepository.findUserByVerificationToken(token);
+        }
+        else if (email && code) {
+            found = await dbRepository.findUserByVerificationCode(email, code);
+        }
+        if (!found) {
+            return res.status(400).json({
+                success: false,
+                error: 'Código de confirmação ou link inválido. Por favor, verifique ou solicite um novo código.'
+            });
+        }
+        if (found.user.verificationExpires && new Date(found.user.verificationExpires) < new Date()) {
+            return res.status(400).json({
+                success: false,
+                error: 'Este código de verificação expirou. Clique em "Reenviar Código" para receber um novo.'
+            });
+        }
+        // Confirma o e-mail no banco
+        await dbRepository.confirmUserEmail(found.user.id);
+        // Gera token de autenticação JWT e loga automaticamente
+        const authToken = generateJwtToken({
+            userId: found.user.id,
+            tenantId: found.user.tenantId,
+            role: found.user.role,
+            professionalId: found.user.professionalId,
+            email: found.user.email
+        });
+        res.cookie('authToken', authToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 7 * 24 * 60 * 60 * 1000
+        });
+        res.json({
+            success: true,
+            message: 'E-mail confirmado com sucesso! Bem-vindo(a)!',
+            token: authToken,
+            user: {
+                id: found.user.id,
+                tenantId: found.user.tenantId,
+                name: found.user.name,
+                email: found.user.email,
+                role: found.user.role,
+                professionalId: found.user.professionalId
+            },
+            tenant: {
+                id: found.tenant.id,
+                name: found.tenant.name,
+                slug: found.tenant.slug,
+                planTier: found.tenant.planTier,
+                maxUsers: found.tenant.maxUsers
+            }
+        });
+    }
+    catch (error) {
+        console.error("SERVER ERROR:", error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+app.post('/api/auth/resend-verification', loginLimiter, async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) {
+            return res.status(400).json({ success: false, error: 'E-mail é obrigatório.' });
+        }
+        const found = await dbRepository.findUserByEmail(email);
+        if (!found) {
+            return res.json({ success: true, message: 'Se o e-mail estiver cadastrado, um novo código foi enviado.' });
+        }
+        if (found.user.isEmailVerified) {
+            return res.json({ success: true, alreadyVerified: true, message: 'Este e-mail já está confirmado. Você já pode fazer login.' });
+        }
+        const newCode = Math.floor(100000 + Math.random() * 900000).toString();
+        const newToken = crypto.randomUUID();
+        const newExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+        await dbRepository.updateEmailVerification(email, newCode, newToken, newExpires);
+        await emailService.sendVerificationEmail({
+            email,
+            name: found.user.name,
+            code: newCode,
+            token: newToken
+        });
+        res.json({
+            success: true,
+            message: 'Novo código de confirmação enviado para seu e-mail!',
+            devCode: !process.env.SMTP_HOST ? newCode : undefined
+        });
+    }
+    catch (error) {
+        console.error("SERVER ERROR:", error);
+        res.status(500).json({ success: false, error: error.message });
     }
 });
 app.post('/api/auth/login', loginLimiter, async (req, res) => {
@@ -230,12 +367,23 @@ app.post('/api/auth/login', loginLimiter, async (req, res) => {
         if (!found || !comparePassword(password, found.user.passwordHash)) {
             return res.status(401).json({ success: false, error: 'Email ou senha incorretos.' });
         }
+        // Bloqueia acesso se o e-mail não tiver sido confirmado (e não for conta legada ativa)
+        if (found.user.isEmailVerified === false) {
+            return res.status(403).json({
+                success: false,
+                requireVerification: true,
+                email: found.user.email,
+                error: 'Seu endereço de e-mail ainda não foi confirmado. Por favor, digite o código de 6 dígitos enviado para sua caixa de entrada.'
+            });
+        }
         const token = generateJwtToken({
             userId: found.user.id,
             tenantId: found.user.tenantId,
             role: found.user.role,
+            professionalId: found.user.professionalId,
             email: found.user.email
         });
+        res.cookie('authToken', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'strict', maxAge: 7 * 24 * 60 * 60 * 1000 });
         res.json({
             success: true,
             token,
@@ -257,10 +405,62 @@ app.post('/api/auth/login', loginLimiter, async (req, res) => {
         });
     }
     catch (error) {
+        console.error("SERVER ERROR:", error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
-app.post('/api/auth/change-password', async (req, res) => {
+app.post('/api/auth/forgot-password', loginLimiter, async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email)
+            return res.status(400).json({ success: false, error: 'E-mail é obrigatório.' });
+        const found = await dbRepository.findUserByEmail(email);
+        if (found) {
+            const resetToken = crypto.randomBytes(32).toString('hex');
+            const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
+            await dbRepository.setPasswordResetToken(email, resetToken, resetExpires);
+            await emailService.sendPasswordResetEmail({
+                email: found.user.email,
+                name: found.user.name,
+                token: resetToken
+            });
+        }
+        res.json({
+            success: true,
+            message: 'Se o e-mail informado estiver cadastrado, você receberá as instruções de recuperação em instantes.'
+        });
+    }
+    catch (error) {
+        console.error("SERVER ERROR:", error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+app.post('/api/auth/reset-password', loginLimiter, async (req, res) => {
+    try {
+        const { token, newPassword } = req.body;
+        if (!token || !newPassword) {
+            return res.status(400).json({ success: false, error: 'Token e nova senha são obrigatórios.' });
+        }
+        if (newPassword.length < 6) {
+            return res.status(400).json({ success: false, error: 'A nova senha deve ter no mínimo 6 caracteres.' });
+        }
+        const found = await dbRepository.findUserByResetToken(token);
+        if (!found) {
+            return res.status(400).json({ success: false, error: 'Link de redefinição inválido ou expirado. Por favor, solicite um novo.' });
+        }
+        const newHash = hashPassword(newPassword);
+        await dbRepository.updateUserPassword(found.user.id, newHash);
+        res.json({
+            success: true,
+            message: 'Sua senha foi redefinida com sucesso! Você já pode entrar com a nova senha.'
+        });
+    }
+    catch (error) {
+        console.error("SERVER ERROR:", error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+app.post('/api/auth/change-password', requireAuth, async (req, res) => {
     try {
         const { userId, currentPassword, newPassword } = req.body;
         if (!userId || !currentPassword || !newPassword) {
@@ -279,10 +479,11 @@ app.post('/api/auth/change-password', async (req, res) => {
         res.json({ success: true, message: 'Senha alterada com sucesso!' });
     }
     catch (error) {
+        console.error("SERVER ERROR:", error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
-app.post('/api/tenants/:id/upgrade-plan', async (req, res) => {
+app.post('/api/tenants/:id/upgrade-plan', requireAuth, requireTenantAccess, requireAdmin, async (req, res) => {
     try {
         const { planTier } = req.body;
         if (!planTier || !['FREE', 'SINGLE_USER', 'MULTI_USER'].includes(planTier)) {
@@ -297,10 +498,11 @@ app.post('/api/tenants/:id/upgrade-plan', async (req, res) => {
         }
     }
     catch (error) {
+        console.error("SERVER ERROR:", error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
-app.put('/api/tenants/:id/billing', async (req, res) => {
+app.put('/api/tenants/:id/billing', requireAuth, requireTenantAccess, requireAdmin, async (req, res) => {
     try {
         const { paymentMethod, creditCardMasked, pixKey } = req.body;
         const updated = await dbRepository.updateTenantBilling(req.params.id, { paymentMethod, creditCardMasked, pixKey, updatedAt: new Date().toISOString() });
@@ -312,17 +514,21 @@ app.put('/api/tenants/:id/billing', async (req, res) => {
         }
     }
     catch (error) {
+        console.error("SERVER ERROR:", error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
 // -------------------------------------------------------------
 // API AGENDAMENTOS AO VIVO PARA O CALENDÁRIO WEB
 // -------------------------------------------------------------
-app.get('/api/appointments', async (req, res) => {
+app.get('/api/appointments', requireAuth, requireTenantAccess, requireProfessionalOwner, async (req, res) => {
     try {
         let tenantId = req.query.tenantId;
         if (!tenantId || tenantId === 'null' || tenantId === 'undefined' || tenantId.trim() === '') {
-            tenantId = 'tenant-demo-estilo';
+            tenantId = req.user?.tenantId || '';
+        }
+        if (!tenantId) {
+            return res.status(400).json({ success: false, error: 'TenantId não especificado e não encontrado na sessão.' });
         }
         const professionalId = req.query.professionalId;
         let appointments = await dbRepository.getAllAppointments(tenantId);
@@ -370,11 +576,81 @@ app.get('/api/appointments', async (req, res) => {
         res.json({ success: true, appointments: formattedAppts });
     }
     catch (error) {
+        console.error("SERVER ERROR:", error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
-app.put('/api/appointments/:id', async (req, res) => {
+app.post('/api/appointments', requireAuth, requireTenantAccess, requireProfessionalOwner, async (req, res) => {
     try {
+        const tenantId = req.body.tenantId || req.user?.tenantId;
+        if (!tenantId) {
+            return res.status(400).json({ success: false, error: 'Estabelecimento não identificado.' });
+        }
+        const { customerName, customerPhone, dateStr, timeStr, serviceId, professionalId } = req.body;
+        if (!customerName || !customerPhone || !dateStr || !timeStr) {
+            return res.status(400).json({ success: false, error: 'Nome, telefone, data e horário são obrigatórios.' });
+        }
+        const services = await dbRepository.listServices(tenantId);
+        const service = services.find(s => s.id === serviceId) || services[0];
+        if (!service) {
+            return res.status(400).json({ success: false, error: 'Cadastre pelo menos um serviço antes de criar um agendamento.' });
+        }
+        const allProfs = await dbRepository.listProfessionals(tenantId);
+        let chosenProf = allProfs.find(p => p.id === professionalId) || allProfs[0];
+        if (!chosenProf) {
+            return res.status(400).json({ success: false, error: 'Nenhum profissional encontrado para este estabelecimento.' });
+        }
+        const duration = service.durationMinutes || 30;
+        const [year, month, day] = dateStr.split('-').map(Number);
+        const [hours, minutes] = timeStr.split(':').map(Number);
+        const pad = (n) => String(n).padStart(2, '0');
+        const localIso = `${year}-${pad(month)}-${pad(day)}T${pad(hours)}:${pad(minutes)}:00-03:00`;
+        const startTime = new Date(localIso);
+        const endTime = new Date(startTime.getTime() + duration * 60 * 1000);
+        const cleanPhone = customerPhone.replace(/\D/g, '');
+        const cleanName = customerName.trim();
+        const appt = await dbRepository.createAppointment({
+            tenantId,
+            professionalId: chosenProf.id,
+            serviceId: service.id,
+            customerName: cleanName,
+            customerPhone: cleanPhone,
+            startTime,
+            endTime,
+            status: 'CONFIRMED'
+        });
+        await dbRepository.incrementVisitCount(tenantId, cleanPhone, chosenProf.id, service.id, cleanName);
+        res.json({ success: true, appointment: appt });
+    }
+    catch (error) {
+        console.error("SERVER ERROR:", error);
+        res.status(400).json({ success: false, error: error.message || 'Erro ao criar agendamento.' });
+    }
+});
+app.get('/api/tenants/:id/customers', requireAuth, requireTenantAccess, async (req, res) => {
+    try {
+        const customers = await dbRepository.listCustomers(req.params.id);
+        res.json({ success: true, customers });
+    }
+    catch (error) {
+        console.error("SERVER ERROR:", error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+app.put('/api/appointments/:id', requireAuth, requireTenantAccess, requireProfessionalOwner, async (req, res) => {
+    try {
+        const user = req.user;
+        const existingAppt = await dbRepository.getAppointmentById(req.params.id);
+        if (!existingAppt)
+            return res.status(404).json({ success: false, error: 'Agendamento não encontrado' });
+        // Multi-tenant boundary verification
+        if (existingAppt.tenantId !== user?.tenantId && user?.role !== 'ADMIN') {
+            return res.status(403).json({ success: false, error: 'Acesso negado a este agendamento.' });
+        }
+        // RBAC verification
+        if (user?.role === 'PROFESSIONAL' && existingAppt.professionalId !== user.professionalId) {
+            return res.status(403).json({ success: false, error: 'Você não tem permissão para alterar este agendamento.' });
+        }
         const { dateStr, timeStr, customerName, customerPhone, status, professionalId } = req.body;
         let updates = { customerName, customerPhone, status };
         if (professionalId)
@@ -396,55 +672,143 @@ app.put('/api/appointments/:id', async (req, res) => {
         res.json({ success: true, appointment: updated });
     }
     catch (error) {
+        console.error("SERVER ERROR:", error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
-app.delete('/api/appointments/:id', async (req, res) => {
+app.delete('/api/appointments/:id', requireAuth, requireTenantAccess, requireProfessionalOwner, async (req, res) => {
     try {
+        const user = req.user;
+        const existingAppt = await dbRepository.getAppointmentById(req.params.id);
+        if (!existingAppt)
+            return res.status(404).json({ success: false, error: 'Agendamento não encontrado' });
+        // Multi-tenant boundary verification
+        if (existingAppt.tenantId !== user?.tenantId && user?.role !== 'ADMIN') {
+            return res.status(403).json({ success: false, error: 'Acesso negado a este agendamento.' });
+        }
+        // RBAC verification
+        if (user?.role === 'PROFESSIONAL' && existingAppt.professionalId !== user.professionalId) {
+            return res.status(403).json({ success: false, error: 'Você não tem permissão para cancelar este agendamento.' });
+        }
         const deleted = await dbRepository.deleteAppointment(req.params.id);
         res.json({ success: deleted });
     }
     catch (error) {
+        console.error("SERVER ERROR:", error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
 // -------------------------------------------------------------
 // API WHATSAPP REAL (BAILEYS ENGINE VIA QR CODE VIVO)
 // -------------------------------------------------------------
-app.get('/api/whatsapp/qr', async (req, res) => {
+app.get('/api/whatsapp/qr', requireAuth, requireTenantAccess, async (req, res) => {
     try {
         const tenantId = req.query.tenantId || 'tenant-demo-estilo';
         const state = whatsappService.getSessionState(tenantId);
         res.json(state);
     }
     catch (error) {
+        console.error("SERVER ERROR:", error);
         res.status(500).json({ error: error.message });
     }
 });
-app.post('/api/whatsapp/connect', async (req, res) => {
+app.post('/api/whatsapp/connect', requireAuth, requireTenantAccess, requireAdmin, async (req, res) => {
     try {
         const { tenantId = 'tenant-demo-estilo', forceClean = true } = req.body;
         const session = await whatsappService.startSession(tenantId, forceClean);
         res.json({ success: true, session });
     }
     catch (error) {
+        console.error("SERVER ERROR:", error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
-app.post('/api/whatsapp/disconnect', async (req, res) => {
+app.post('/api/whatsapp/disconnect', requireAuth, requireTenantAccess, requireAdmin, async (req, res) => {
     try {
         const { tenantId = 'tenant-demo-estilo' } = req.body;
         const disconnected = await whatsappService.logoutSession(tenantId);
         res.json({ success: disconnected });
     }
     catch (error) {
+        console.error("SERVER ERROR:", error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
 // -------------------------------------------------------------
 // API MULTI-TENANT CONTEXT & DETALHES
 // -------------------------------------------------------------
-app.get('/api/tenants/:id', async (req, res) => {
+app.get('/api/tenants', requireAuth, async (req, res) => {
+    try {
+        let tenants = await dbRepository.getAllTenants();
+        // Filtro de segurança: se não for admin, vê apenas os tenants onde tem cadastro
+        if (req.user?.role !== 'ADMIN') {
+            tenants = tenants.filter(t => (t.users || []).some(u => u.email === req.user?.email));
+        }
+        const formatted = tenants.map(t => ({
+            id: t.id,
+            name: t.name,
+            slug: t.slug,
+            ownerEmail: t.ownerEmail,
+            planTier: t.planTier,
+            maxUsers: t.maxUsers,
+            userCount: (t.users || []).length,
+            ownerName: (t.users || []).find(u => u.role === 'OWNER')?.name || t.name
+        }));
+        res.json({ success: true, tenants: formatted });
+    }
+    catch (error) {
+        console.error("SERVER ERROR:", error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+app.post('/api/auth/switch-tenant', requireAuth, async (req, res) => {
+    try {
+        const { tenantId } = req.body;
+        const currentUserEmail = req.user?.email;
+        if (!currentUserEmail) {
+            return res.status(401).json({ success: false, error: 'Email não encontrado na sessão atual.' });
+        }
+        const tenant = await dbRepository.getTenantById(tenantId);
+        if (!tenant) {
+            return res.status(404).json({ success: false, error: 'Estabelecimento não encontrado.' });
+        }
+        const targetUser = (tenant.users || []).find(u => u.email === currentUserEmail);
+        if (!targetUser) {
+            return res.status(403).json({ success: false, error: 'Você não tem permissão para acessar este estabelecimento.' });
+        }
+        const token = generateJwtToken({
+            userId: targetUser.id,
+            tenantId: tenant.id,
+            role: targetUser.role,
+            email: targetUser.email
+        });
+        res.cookie('authToken', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'strict', maxAge: 7 * 24 * 60 * 60 * 1000 });
+        res.json({
+            success: true,
+            token,
+            user: {
+                id: targetUser.id,
+                tenantId: tenant.id,
+                name: targetUser.name,
+                email: targetUser.email,
+                role: targetUser.role,
+                professionalId: targetUser.professionalId
+            },
+            tenant: {
+                id: tenant.id,
+                name: tenant.name,
+                slug: tenant.slug,
+                planTier: tenant.planTier,
+                maxUsers: tenant.maxUsers
+            }
+        });
+    }
+    catch (error) {
+        console.error("SERVER ERROR:", error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+app.get('/api/tenants/:id', requireAuth, requireTenantAccess, async (req, res) => {
     try {
         const tenant = await dbRepository.getTenantById(req.params.id);
         if (!tenant) {
@@ -456,10 +820,22 @@ app.get('/api/tenants/:id', async (req, res) => {
         res.json({ success: true, tenant, services, products, professionals });
     }
     catch (error) {
+        console.error("SERVER ERROR:", error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
-app.put('/api/tenants/:id/ai', async (req, res) => {
+app.put('/api/tenants/:id/profile', requireAuth, requireTenantAccess, requireAdmin, async (req, res) => {
+    try {
+        const { name, slug } = req.body;
+        const updated = await dbRepository.updateTenantProfile(req.params.id, { name, slug });
+        res.json({ success: true, tenant: updated });
+    }
+    catch (error) {
+        console.error('SERVER ERROR:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+app.put('/api/tenants/:id/ai', requireAuth, requireTenantAccess, requireAdmin, async (req, res) => {
     try {
         const { systemPrompt, businessInfo, faqItems, voiceId, voiceReplyMode } = req.body;
         const tenant = await dbRepository.getTenantById(req.params.id);
@@ -480,13 +856,14 @@ app.put('/api/tenants/:id/ai', async (req, res) => {
         res.json({ success: true, tenant: updated });
     }
     catch (error) {
+        console.error("SERVER ERROR:", error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
 // -------------------------------------------------------------
 // GESTÃO DE EQUIPE, PROFISSIONAIS & HORÁRIOS DA JORNADA DE TRABALHO
 // -------------------------------------------------------------
-app.post('/api/tenants/:id/whatsapp/send-direct', async (req, res) => {
+app.post('/api/tenants/:id/whatsapp/send-direct', requireAuth, requireTenantAccess, async (req, res) => {
     try {
         const { phone, message } = req.body;
         if (!phone || !message) {
@@ -501,10 +878,11 @@ app.post('/api/tenants/:id/whatsapp/send-direct', async (req, res) => {
         }
     }
     catch (error) {
+        console.error("SERVER ERROR:", error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
-app.get('/api/tenants/:id/users', async (req, res) => {
+app.get('/api/tenants/:id/users', requireAuth, requireTenantAccess, requireAdmin, async (req, res) => {
     try {
         const tenant = await dbRepository.getTenantById(req.params.id);
         if (!tenant)
@@ -513,10 +891,11 @@ app.get('/api/tenants/:id/users', async (req, res) => {
         res.json({ success: true, users: tenant.users || [], professionals, maxUsers: tenant.maxUsers, planTier: tenant.planTier });
     }
     catch (error) {
+        console.error("SERVER ERROR:", error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
-app.post('/api/tenants/:id/users', async (req, res) => {
+app.post('/api/tenants/:id/users', requireAuth, requireTenantAccess, requireAdmin, async (req, res) => {
     try {
         const { name, email, password = '123456', role = 'PROFESSIONAL' } = req.body;
         if (!name || !email) {
@@ -529,10 +908,11 @@ app.post('/api/tenants/:id/users', async (req, res) => {
         res.json({ success: true, user: result.user });
     }
     catch (error) {
+        console.error("SERVER ERROR:", error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
-app.put('/api/tenants/:id/users/:userId', async (req, res) => {
+app.put('/api/tenants/:id/users/:userId', requireAuth, requireTenantAccess, requireAdmin, async (req, res) => {
     try {
         const { name, email, role, password } = req.body;
         const result = await dbRepository.updateUserInTenant(req.params.id, req.params.userId, {
@@ -547,29 +927,32 @@ app.put('/api/tenants/:id/users/:userId', async (req, res) => {
         res.json({ success: true, user: result.user });
     }
     catch (error) {
+        console.error("SERVER ERROR:", error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
-app.delete('/api/tenants/:id/users/:userId', async (req, res) => {
+app.delete('/api/tenants/:id/users/:userId', requireAuth, requireTenantAccess, requireAdmin, async (req, res) => {
     try {
         const deleted = await dbRepository.deleteUserFromTenant(req.params.id, req.params.userId);
         res.json({ success: deleted });
     }
     catch (error) {
+        console.error("SERVER ERROR:", error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
-app.get('/api/tenants/:id/professionals', async (req, res) => {
+app.get('/api/tenants/:id/professionals', requireAuth, requireTenantAccess, async (req, res) => {
     try {
         const { serviceId } = req.query;
         const professionals = await dbRepository.listProfessionals(req.params.id, serviceId);
         res.json({ success: true, professionals });
     }
     catch (error) {
+        console.error("SERVER ERROR:", error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
-app.put('/api/tenants/:id/professionals/:profId', async (req, res) => {
+app.put('/api/tenants/:id/professionals/:profId', requireAuth, requireTenantAccess, async (req, res) => {
     try {
         const { servicesHandled, workSchedule, phone, maxAppointmentsPerDay } = req.body;
         const updated = await dbRepository.updateProfessional(req.params.id, req.params.profId, {
@@ -584,23 +967,25 @@ app.put('/api/tenants/:id/professionals/:profId', async (req, res) => {
         res.json({ success: true, professional: updated });
     }
     catch (error) {
+        console.error("SERVER ERROR:", error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
 // -------------------------------------------------------------
 // BLOQUEIOS DE AGENDA (FOLGAS, FERIADOS, BLOQUEIOS PARCIAIS)
 // -------------------------------------------------------------
-app.get('/api/tenants/:id/blocks', async (req, res) => {
+app.get('/api/tenants/:id/blocks', requireAuth, requireTenantAccess, requireProfessionalOwner, async (req, res) => {
     try {
         const { professionalId, dateStr } = req.query;
         const blocks = await dbRepository.getScheduleBlocks(req.params.id, professionalId, dateStr);
         res.json({ success: true, blocks });
     }
     catch (error) {
+        console.error("SERVER ERROR:", error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
-app.post('/api/tenants/:id/blocks', async (req, res) => {
+app.post('/api/tenants/:id/blocks', requireAuth, requireTenantAccess, requireProfessionalOwner, async (req, res) => {
     try {
         const { professionalId, dateStr, startTime, endTime, reason } = req.body;
         if (!professionalId || !dateStr) {
@@ -617,52 +1002,57 @@ app.post('/api/tenants/:id/blocks', async (req, res) => {
         res.json({ success: true, block });
     }
     catch (error) {
+        console.error("SERVER ERROR:", error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
-app.delete('/api/tenants/:id/blocks/:blockId', async (req, res) => {
+app.delete('/api/tenants/:id/blocks/:blockId', requireAuth, requireTenantAccess, async (req, res) => {
     try {
         const success = await dbRepository.removeScheduleBlock(req.params.blockId);
         res.json({ success });
     }
     catch (error) {
+        console.error("SERVER ERROR:", error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
 // -------------------------------------------------------------
 // LISTA DE ESPERA
 // -------------------------------------------------------------
-app.get('/api/tenants/:id/waitlist', async (req, res) => {
+app.get('/api/tenants/:id/waitlist', requireAuth, requireTenantAccess, async (req, res) => {
     try {
         const waitlist = await dbRepository.getAllWaitlist(req.params.id);
         res.json({ success: true, waitlist });
     }
     catch (error) {
+        console.error("SERVER ERROR:", error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
-app.delete('/api/tenants/:id/waitlist/:waitlistId', async (req, res) => {
+app.delete('/api/tenants/:id/waitlist/:waitlistId', requireAuth, requireTenantAccess, async (req, res) => {
     try {
         const success = await dbRepository.removeFromWaitlist(req.params.waitlistId);
         res.json({ success });
     }
     catch (error) {
+        console.error("SERVER ERROR:", error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
 // -------------------------------------------------------------
 // CRUD DE SERVIÇOS DO TENANT
 // -------------------------------------------------------------
-app.get('/api/tenants/:id/services', async (req, res) => {
+app.get('/api/tenants/:id/services', requireAuth, requireTenantAccess, async (req, res) => {
     try {
         const services = await dbRepository.listServices(req.params.id);
         res.json({ success: true, services });
     }
     catch (error) {
+        console.error("SERVER ERROR:", error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
-app.post('/api/tenants/:id/services', async (req, res) => {
+app.post('/api/tenants/:id/services', requireAuth, requireTenantAccess, requireAdmin, async (req, res) => {
     try {
         const { name, price, durationMinutes = 30, description } = req.body;
         if (!name || price === undefined || price === null || String(name).trim() === '') {
@@ -679,10 +1069,11 @@ app.post('/api/tenants/:id/services', async (req, res) => {
         res.json({ success: true, service });
     }
     catch (error) {
+        console.error("SERVER ERROR:", error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
-app.put('/api/tenants/:id/services/:serviceId', async (req, res) => {
+app.put('/api/tenants/:id/services/:serviceId', requireAuth, requireTenantAccess, requireAdmin, async (req, res) => {
     try {
         const updates = { ...req.body };
         if (updates.price !== undefined) {
@@ -699,31 +1090,34 @@ app.put('/api/tenants/:id/services/:serviceId', async (req, res) => {
         res.json({ success: true, service: updated });
     }
     catch (error) {
+        console.error("SERVER ERROR:", error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
-app.delete('/api/tenants/:id/services/:serviceId', async (req, res) => {
+app.delete('/api/tenants/:id/services/:serviceId', requireAuth, requireTenantAccess, requireAdmin, async (req, res) => {
     try {
         const deleted = await dbRepository.deleteService(req.params.id, req.params.serviceId);
         res.json({ success: deleted });
     }
     catch (error) {
+        console.error("SERVER ERROR:", error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
 // -------------------------------------------------------------
 // CRUD DE PRODUTOS DO TENANT
 // -------------------------------------------------------------
-app.get('/api/tenants/:id/products', async (req, res) => {
+app.get('/api/tenants/:id/products', requireAuth, requireTenantAccess, async (req, res) => {
     try {
         const products = await dbRepository.listProducts(req.params.id);
         res.json({ success: true, products });
     }
     catch (error) {
+        console.error("SERVER ERROR:", error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
-app.post('/api/tenants/:id/products', async (req, res) => {
+app.post('/api/tenants/:id/products', requireAuth, requireTenantAccess, requireAdmin, async (req, res) => {
     try {
         const { name, price, stock = 10, description } = req.body;
         if (!name || price === undefined || price === null || String(name).trim() === '') {
@@ -740,10 +1134,11 @@ app.post('/api/tenants/:id/products', async (req, res) => {
         res.json({ success: true, product });
     }
     catch (error) {
+        console.error("SERVER ERROR:", error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
-app.put('/api/tenants/:id/products/:productId', async (req, res) => {
+app.put('/api/tenants/:id/products/:productId', requireAuth, requireTenantAccess, requireAdmin, async (req, res) => {
     try {
         const updated = await dbRepository.updateProduct(req.params.id, req.params.productId, req.body);
         if (!updated) {
@@ -752,31 +1147,34 @@ app.put('/api/tenants/:id/products/:productId', async (req, res) => {
         res.json({ success: true, product: updated });
     }
     catch (error) {
+        console.error("SERVER ERROR:", error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
-app.delete('/api/tenants/:id/products/:productId', async (req, res) => {
+app.delete('/api/tenants/:id/products/:productId', requireAuth, requireTenantAccess, requireAdmin, async (req, res) => {
     try {
         const deleted = await dbRepository.deleteProduct(req.params.id, req.params.productId);
         res.json({ success: deleted });
     }
     catch (error) {
+        console.error("SERVER ERROR:", error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
 // -------------------------------------------------------------
 // API SUPER-ADMIN SAAS: GESTÃO DE CLIENTES & PLANOS
 // -------------------------------------------------------------
-app.get('/api/admin/tenants', async (req, res) => {
+app.get('/api/admin/tenants', requireAuth, requireAdmin, async (req, res) => {
     try {
         const tenants = await adminService.getAllTenants();
         res.json({ success: true, tenants });
     }
     catch (error) {
+        console.error("SERVER ERROR:", error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
-app.post('/api/admin/tenants', async (req, res) => {
+app.post('/api/admin/tenants', requireAuth, requireAdmin, async (req, res) => {
     try {
         const { name, ownerEmail, planTier = 'SINGLE_USER', maxUsers } = req.body;
         if (!name || !ownerEmail) {
@@ -786,10 +1184,11 @@ app.post('/api/admin/tenants', async (req, res) => {
         res.json({ success: true, tenant });
     }
     catch (error) {
+        console.error("SERVER ERROR:", error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
-app.put('/api/admin/tenants/:id', async (req, res) => {
+app.put('/api/admin/tenants/:id', requireAuth, requireAdmin, async (req, res) => {
     try {
         const updated = await adminService.updateTenant(req.params.id, req.body);
         if (!updated) {
@@ -798,22 +1197,24 @@ app.put('/api/admin/tenants/:id', async (req, res) => {
         res.json({ success: true, tenant: updated });
     }
     catch (error) {
+        console.error("SERVER ERROR:", error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
-app.delete('/api/admin/tenants/:id', async (req, res) => {
+app.delete('/api/admin/tenants/:id', requireAuth, requireAdmin, async (req, res) => {
     try {
         const deleted = await adminService.deleteTenant(req.params.id);
         res.json({ success: deleted });
     }
     catch (error) {
+        console.error("SERVER ERROR:", error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
 // -------------------------------------------------------------
 // CHAT SIMULATOR & AGENDAMENTOS
 // -------------------------------------------------------------
-app.post('/api/chat/simulate', async (req, res) => {
+app.post('/api/chat/simulate', aiSimulateLimiter, async (req, res) => {
     try {
         const { tenantId = 'tenant-demo-estilo', customerPhone = '5511999998888', message, systemPrompt, businessInfo, pushName, isVoiceInput, voiceId } = req.body;
         if (!message) {
@@ -849,10 +1250,11 @@ app.post('/api/chat/simulate', async (req, res) => {
         });
     }
     catch (error) {
+        console.error("SERVER ERROR:", error);
         res.status(500).json({ error: error.message });
     }
 });
-app.post('/api/chat/simulate-audio', async (req, res) => {
+app.post('/api/chat/simulate-audio', aiSimulateLimiter, async (req, res) => {
     try {
         const { tenantId = 'tenant-demo-estilo', customerPhone = '5511999998888', audioBase64, mimeType = 'audio/webm', systemPrompt, businessInfo, pushName, voiceId } = req.body;
         if (!audioBase64) {
@@ -888,6 +1290,7 @@ app.post('/api/chat/simulate-audio', async (req, res) => {
         });
     }
     catch (error) {
+        console.error("SERVER ERROR:", error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -909,6 +1312,7 @@ app.post('/api/tts/synthesize', async (req, res) => {
         res.send(audioBuffer);
     }
     catch (error) {
+        console.error("SERVER ERROR:", error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -936,11 +1340,12 @@ app.post('/api/schedule/slots', (req, res) => {
         });
     }
     catch (error) {
+        console.error("SERVER ERROR:", error);
         return res.status(500).json({ error: error.message });
     }
 });
 import { reminderService } from './services/reminder.service.js';
-app.put('/api/tenants/:id/reminders', async (req, res) => {
+app.put('/api/tenants/:id/reminders', requireAuth, requireTenantAccess, async (req, res) => {
     try {
         const { enable24hReminder, custom24hText, enable1hReminder, custom1hText } = req.body;
         const success = await dbRepository.updateTenantReminders(req.params.id, {
@@ -952,10 +1357,11 @@ app.put('/api/tenants/:id/reminders', async (req, res) => {
         res.json({ success });
     }
     catch (error) {
+        console.error("SERVER ERROR:", error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
-app.post('/api/tenants/:id/reminders/test', async (req, res) => {
+app.post('/api/tenants/:id/reminders/test', requireAuth, requireTenantAccess, async (req, res) => {
     try {
         const { phone, type = '1h', delaySeconds = 10 } = req.body;
         if (!phone) {
@@ -982,12 +1388,16 @@ app.post('/api/tenants/:id/reminders/test', async (req, res) => {
         const now = new Date();
         const dateStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}`;
         const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        const profsForTest = await dbRepository.listProfessionals(req.params.id);
+        const servicesForTest = await dbRepository.listServices(req.params.id);
+        const testProfName = profsForTest[0]?.name || 'Profissional';
+        const testServiceName = servicesForTest[0]?.name || 'Atendimento Especializado';
         const text = template
             .replace(/\{nome\}/gi, 'Cliente (Teste)')
             .replace(/\{horario\}/gi, timeStr)
             .replace(/\{data\}/gi, dateStr)
-            .replace(/\{profissional\}/gi, 'Lucas Silva')
-            .replace(/\{servico\}/gi, 'Atendimento Estético');
+            .replace(/\{profissional\}/gi, testProfName)
+            .replace(/\{servico\}/gi, testServiceName);
         const delayMs = (Number(delaySeconds) || 10) * 1000;
         res.json({
             success: true,
@@ -1009,6 +1419,7 @@ app.post('/api/tenants/:id/reminders/test', async (req, res) => {
         }, delayMs);
     }
     catch (error) {
+        console.error("SERVER ERROR:", error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -1062,6 +1473,7 @@ app.get('/api/public/tenants/:slug', async (req, res) => {
         });
     }
     catch (error) {
+        console.error("SERVER ERROR:", error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -1126,10 +1538,11 @@ app.post('/api/public/tenants/:slug/slots', async (req, res) => {
         res.json({ success: true, dateStr, slots: sortedSlots });
     }
     catch (error) {
+        console.error("SERVER ERROR:", error);
         res.status(500).json({ error: error.message });
     }
 });
-app.post('/api/public/tenants/:slug/book', async (req, res) => {
+app.post('/api/public/tenants/:slug/book', publicBookingLimiter, async (req, res) => {
     try {
         const slug = req.params.slug;
         let tenant = await dbRepository.getTenantBySlug(slug);
@@ -1209,7 +1622,7 @@ app.post('/api/public/tenants/:slug/book', async (req, res) => {
             status: 'CONFIRMED'
         });
         // Atualiza perfil do cliente
-        await dbRepository.incrementVisitCount(tenant.id, cleanPhone, chosenProf?.id, service.id);
+        await dbRepository.incrementVisitCount(tenant.id, cleanPhone, chosenProf?.id, service.id, cleanName);
         // Dispara webhook
         await webhookService.dispatch(tenant.id, 'booking.created', {
             ...appt,
@@ -1219,7 +1632,7 @@ app.post('/api/public/tenants/:slug/book', async (req, res) => {
         });
         // Envia WhatsApp de confirmação para o cliente
         const [y, m, d] = dateStr.split('-');
-        const clientMsg = `Olá *${cleanName}*! Seu agendamento foi *CONFIRMADO* com sucesso! 🎉\n\n🏢 *${tenant.name}*\n✂️ *Serviço:* ${service.name}\n👤 *Profissional:* ${chosenProf?.name || 'Equipe'}\n📅 *Data:* ${d}/${m}\n⏰ *Horário:* ${timeStr}\n\nTe esperamos lá! Se precisar de algo, é só responder por aqui. 😊`;
+        const clientMsg = `Olá *${cleanName}*! Seu agendamento foi *CONFIRMADO* com sucesso! 🎉\n\n🏢 *${tenant.name}*\n💼 *Serviço:* ${service.name}\n👤 *Profissional:* ${chosenProf?.name || 'Equipe'}\n📅 *Data:* ${d}/${m}\n⏰ *Horário:* ${timeStr}\n\nTe esperamos lá! Se precisar de algo, é só responder por aqui. 😊`;
         try {
             await whatsappService.sendMessage(tenant.id, cleanPhone, clientMsg);
         }
@@ -1239,13 +1652,17 @@ app.post('/api/public/tenants/:slug/book', async (req, res) => {
         res.json({ success: true, appointment: appt });
     }
     catch (error) {
+        if (error.message && error.message.includes('conflito de agenda')) {
+            return res.status(409).json({ error: 'Este horário acabou de ser reservado por outro cliente. Por favor, escolha outro horário disponível.' });
+        }
+        console.error("SERVER ERROR:", error);
         res.status(500).json({ error: error.message });
     }
 });
 // -------------------------------------------------------------
 // REGRAS DE AGENDAMENTO & WEBHOOK CONFIGS
 // -------------------------------------------------------------
-app.put('/api/tenants/:id/booking-rules', async (req, res) => {
+app.put('/api/tenants/:id/booking-rules', requireAuth, requireTenantAccess, async (req, res) => {
     try {
         const { bufferTimeMinutes, minimumNoticeMinutes, maxFutureDays, roundRobinEnabled, webhookUrl } = req.body;
         const updated = await dbRepository.updateTenantBookingRules(req.params.id, {
@@ -1258,10 +1675,11 @@ app.put('/api/tenants/:id/booking-rules', async (req, res) => {
         res.json({ success: true, bookingRules: updated?.bookingRules });
     }
     catch (error) {
+        console.error("SERVER ERROR:", error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
-app.post('/api/tenants/:id/webhook-test', async (req, res) => {
+app.post('/api/tenants/:id/webhook-test', requireAuth, requireTenantAccess, async (req, res) => {
     try {
         const { webhookUrl } = req.body;
         const tenant = await dbRepository.getTenantById(req.params.id);
@@ -1269,6 +1687,7 @@ app.post('/api/tenants/:id/webhook-test', async (req, res) => {
         res.json(result);
     }
     catch (error) {
+        console.error("SERVER ERROR:", error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -1279,6 +1698,9 @@ app.get('*', (req, res) => {
 if (!process.env.VERCEL) {
     const server = app.listen(PORT, () => {
         console.log(` Servidor SaaS Backend & WhatsApp Real Baileys rodando em http://localhost:${PORT}`);
+        seedDatabase().catch(err => {
+            console.warn('[Seed Warning]:', err.message);
+        });
         reminderService.startScheduler();
         whatsappService.autoReconnectSavedSessions().catch(err => {
             console.warn('[WhatsApp AutoReconnect Warning]:', err.message);

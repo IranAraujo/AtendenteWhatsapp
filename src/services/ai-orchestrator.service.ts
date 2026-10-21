@@ -1,3 +1,5 @@
+import logger from '../utils/logger.js';
+// @ts-nocheck
 import dotenv from 'dotenv';
 dotenv.config();
 import { GoogleGenerativeAI } from '@google/generative-ai';
@@ -60,10 +62,10 @@ export async function transcribeAudioBuffer(audioBuffer: Buffer, mimeType: strin
           }
         } else {
           const errText = await res.text();
-          console.warn(`[Audio STT Groq ${model}]: status ${res.status} - ${errText}`);
+          logger.warn(`[Audio STT Groq ${model}]: status ${res.status} - ${errText}`);
         }
       } catch (e: any) {
-        console.warn(`[Audio STT Groq ${model} Error]:`, e.message);
+        logger.warn(`[Audio STT Groq ${model} Error]:`, e.message);
       }
     }
   }
@@ -88,7 +90,7 @@ export async function transcribeAudioBuffer(audioBuffer: Buffer, mimeType: strin
         if (json.text && json.text.trim()) return json.text.trim();
       }
     } catch (e: any) {
-      console.warn('[Audio STT OpenAI Fallback]:', e.message);
+      logger.warn('[Audio STT OpenAI Fallback]:', e.message);
     }
   }
 
@@ -111,7 +113,7 @@ export async function transcribeAudioBuffer(audioBuffer: Buffer, mimeType: strin
       const text = (await result.response).text().trim();
       if (text) return text;
     } catch (e: any) {
-      console.warn('[Audio STT Gemini Fallback]:', e.message);
+      logger.warn('[Audio STT Gemini Fallback]:', e.message);
     }
   }
 
@@ -160,7 +162,7 @@ setInterval(() => {
     }
   }
   if (cleaned > 0) {
-    console.log(`[Session GC] ${cleaned} sessões inativas removidas. Sessões ativas: ${customerSessions.size}`);
+    logger.info(`[Session GC] ${cleaned} sessões inativas removidas. Sessões ativas: ${customerSessions.size}`);
   }
 }, 30 * 60 * 1000);
 
@@ -234,67 +236,129 @@ export function extractPhoneNumberFromText(text: string): string | null {
 
 export function extractCleanCustomerName(input: string): string {
   if (!input) return '';
-  let text = input.trim();
+  const text = input.trim();
 
-  const explicitPrefixes = [
-    /^meu\s+nome\s+(é|e)\s+/i,
-    /^me\s+chamo\s+/i,
-    /^me\s+chama\s+/i,
-    /^chamo\s+/i,
-    /^sou\s+(o|a)\s+/i,
-    /^pode\s+colocar\s+(o\s+nome\s+(de\s+)?)?/i,
-    /^pode\s+anotar\s+(o\s+nome\s+(de\s+)?)?/i,
-    /^anota\s+(aí\s+|ai\s+)?(o\s+nome\s+(de\s+)?)?/i,
-    /^nome\s*:\s*/i,
-    /^não,?\s*(é|e)?\s*(para|pra|pro|o|a)?\s+/i,
-    /^(é|e)\s*(para|pra|pro|o|a)\s+/i
+  // 1. Padrões explícitos de apresentação de nome
+  const explicitPatterns = [
+    /(?:meu\s+nome\s+(?:é|e)\s+|me\s+chamo\s+|me\s+chama\s+|chamo-me\s+|sou\s+(?:o|a)\s+|aqui\s+(?:é|e)\s+(?:o|a)?\s*|(?:em|no)\s+nome\s+de\s+|pode\s+(?:anotar|marcar|colocar)\s+(?:em|no)?\s*(?:nome\s+de\s+)?|nome\s*:\s*|anota\s+(?:aí|ai)?\s*:?\s*)([A-Za-zÀ-ÿ\s]+)/i,
+    /(?:(?:é|e)\s+)?(?:para|pra|pro)\s+(?:(?:o|a)\s+)?([A-Za-zÀ-ÿ\s]+)/i
   ];
 
-  let hasExplicitIntro = false;
-  for (const prefix of explicitPrefixes) {
-    if (prefix.test(text)) {
-      text = text.replace(prefix, '').trim();
-      hasExplicitIntro = true;
+  let rawName = '';
+  let hadExplicitPattern = false;
+
+  for (const pattern of explicitPatterns) {
+    const match = text.match(pattern);
+    if (match && match[1]) {
+      rawName = match[1].trim();
+      hadExplicitPattern = true;
       break;
     }
   }
 
-  const cleaned = text.replace(/[.,!?;:()\[\]{}—–\-_]/g, ' ').replace(/\s+/g, ' ').trim();
-  const lower = cleaned.toLowerCase();
-
-  const forbiddenWords = [
-    'quero', 'queria', 'queira', 'gostaria', 'posso', 'podemos', 'pode', 'vamos', 'vou', 'vai',
+  const actionAndStopWords = [
+    'quero', 'queria', 'gostaria', 'posso', 'podemos', 'pode', 'vamos', 'vou', 'vai',
     'marcar', 'agendar', 'ver', 'trocar', 'mudar', 'reagendar', 'cancelar', 'desmarcar',
-    'corte', 'cote', 'cortar', 'fazer', 'barba', 'cabelo', 'sobrancelha', 'escova', 'unha', 'massagem',
-    'serviço', 'servico', 'atendimento', 'produto', 'pomada', 'shampoo',
+    'atendimento', 'serviço', 'servico', 'consulta', 'sessão', 'sessao', 'corte', 'barba',
     'hoje', 'amanhã', 'amanha', 'ontem', 'segunda', 'terça', 'terca', 'quarta', 'quinta', 'sexta', 'sábado', 'sabado', 'domingo',
-    'manhã', 'manha', 'tarde', 'noite', 'horário', 'horario', 'hora', 'horas', 'vaga', 'livre',
-    'sim', 'não', 'nao', 'ok', 'beleza', 'valeu', 'obrigado', 'obrigada', 'por favor', 'pfv', 'show',
-    'lucas', 'matheus', 'atendente', 'recepcionista', 'salão', 'salao', 'barbearia', 'estilo', 'beleza',
-    'cliente', 'whatsapp', 'informado', 'desconhecido', 'completo', 'nome',
-    'para', 'pra', 'pro', 'com', 'sem', 'tem', 'teria', 'ter', 'estar', 'está', 'esta', 'ser', 'simples'
+    'às', 'as', 'no', 'na', 'em', 'horário', 'horario', 'hora', 'horas', 'à', 'a', 'de', 'para', 'pra', 'pro', 'com',
+    'por', 'favor', 'pfv', 'obrigado', 'obrigada', 'valeu', 'blz', 'ok', 'sim', 'não', 'nao',
+    'olá', 'ola', 'oi', 'oii', 'oiii', 'bom', 'dia', 'boa', 'tarde', 'noite', 'tudo', 'bem',
+    'tem', 'vaga', 'disponibilidade', 'livre', 'quanto', 'custa', 'valor', 'preço', 'preco',
+    'atendente', 'recepcionista', 'cliente', 'whatsapp', 'informado', 'desconhecido'
   ];
 
-  const words = lower.split(/\s+/).filter(Boolean);
-
-  if (/\d/.test(cleaned)) return '';
-  if (!hasExplicitIntro && (words.length > 4 || cleaned.length > 35)) return '';
-
-  if (!hasExplicitIntro) {
-    if (words.some(w => forbiddenWords.includes(w))) return '';
-  } else {
-    const validWords: string[] = [];
-    for (const w of text.split(/\s+/)) {
-      if (forbiddenWords.includes(w.toLowerCase()) && !['da', 'de', 'do', 'dos', 'das', 'e'].includes(w.toLowerCase())) break;
-      validWords.push(w);
+  // Se não houve padrão explícito, verifica se a mensagem é apenas o nome (1 a 4 palavras)
+  if (!hadExplicitPattern) {
+    const words = text.replace(/[.,!?;:()\[\]{}—–\-_]/g, ' ').split(/\s+/).filter(Boolean);
+    if (words.length === 0 || words.length > 4 || /\d/.test(text)) return '';
+    
+    // Se contiver verbos de ação, cumprimentos ou palavras de tempo, não é nome puro
+    if (words.some(w => actionAndStopWords.includes(w.toLowerCase()))) {
+      return '';
     }
-    const result = validWords.join(' ').trim();
-    if (result.length < 2) return '';
-    return result;
+    rawName = text;
   }
 
-  if (cleaned.length < 2) return '';
-  return cleaned;
+  // Percorre as palavras do nome extraído e interrompe em palavras de parada
+  const words = rawName.split(/\s+/).filter(Boolean);
+  const cleanWords: string[] = [];
+
+  for (let i = 0; i < words.length; i++) {
+    const w = words[i].replace(/[.,!?;:()\[\]{}—–\-_]/g, '').trim();
+    if (!w) continue;
+    const wLower = w.toLowerCase();
+
+    if (actionAndStopWords.includes(wLower)) {
+      if (['da', 'de', 'do', 'dos', 'das'].includes(wLower) && cleanWords.length > 0 && i < words.length - 1) {
+        cleanWords.push(wLower);
+        continue;
+      }
+      break;
+    }
+
+    if (/\d/.test(w)) break;
+
+    cleanWords.push(w);
+  }
+
+  if (cleanWords.length === 0 || cleanWords.length > 4) return '';
+
+  const formatted = cleanWords.map((w, idx) => {
+    if (['da', 'de', 'do', 'dos', 'das', 'e'].includes(w.toLowerCase()) && idx > 0) {
+      return w.toLowerCase();
+    }
+    return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+  }).join(' ');
+
+  if (formatted.length < 2) return '';
+  return formatted;
+}
+
+export function normalizeText(str?: string): string {
+  if (!str) return '';
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
+export function findBestMatchingProfessional(profs: any[], input?: string): any {
+  if (!input || !profs || profs.length === 0) return undefined;
+  const cleanInput = normalizeText(input);
+  if (!cleanInput) return undefined;
+
+  // 1. Match exato por ID
+  const byId = profs.find(p => p.id === input || p.id === cleanInput);
+  if (byId) return byId;
+
+  // 2. Match exato por nome completo
+  const byExactFullName = profs.find(p => normalizeText(p.name) === cleanInput);
+  if (byExactFullName) return byExactFullName;
+
+  // 3. Match por substring com prioridade para nomes mais longos/específicos
+  // (ex: "Maria José" tem 10 caracteres e dá match antes de "Maria")
+  const sortedProfs = [...profs].sort((a, b) => (b.name?.length || 0) - (a.name?.length || 0));
+
+  for (const p of sortedProfs) {
+    const pNameNorm = normalizeText(p.name);
+    if (!pNameNorm) continue;
+    if (cleanInput.includes(pNameNorm) || pNameNorm.includes(cleanInput)) {
+      return p;
+    }
+  }
+
+  // 4. Match por palavras/tokens significativos (ex: "josé", "de jesus", "matheus")
+  const inputWords = cleanInput.split(/\s+/).filter(w => w.length > 2 && !['com', 'pra', 'para', 'com o', 'com a', 'marcar', 'agendar', 'corte', 'horario', 'vaga'].includes(w));
+  for (const p of sortedProfs) {
+    const pWords = normalizeText(p.name).split(/\s+/).filter(w => w.length > 2);
+    if (inputWords.some(iw => pWords.includes(iw))) {
+      return p;
+    }
+  }
+
+  return undefined;
 }
 
 export function parseNaturalLanguageDateTime(
@@ -504,18 +568,38 @@ export class AiOrchestratorService {
     }
 
     if (functionName === 'get_available_slots') {
-      const { professionalId, serviceId, dateStr } = args;
+      let { professionalId, serviceId, dateStr } = args;
       const profs = await dbRepository.listProfessionals(tenantId);
       const services = await dbRepository.listServices(tenantId);
-      const service = services.find(s => s.id === serviceId || (serviceId && s.name.toLowerCase().includes(serviceId.toLowerCase()))) || services[0];
+
+      // Normaliza dateStr se vier vazio, "hoje", "amanhã" etc.
+      if (!dateStr || dateStr.toLowerCase().includes('hoje') || dateStr.toLowerCase().includes('today')) {
+        const now = new Date();
+        const p = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(now);
+        dateStr = `${p.find(x=>x.type==='year')?.value}-${p.find(x=>x.type==='month')?.value}-${p.find(x=>x.type==='day')?.value}`;
+      } else if (dateStr.toLowerCase().includes('amanha') || dateStr.toLowerCase().includes('amanhã') || dateStr.toLowerCase().includes('tomorrow')) {
+        const tom = new Date(Date.now() + 86400000);
+        const p = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(tom);
+        dateStr = `${p.find(x=>x.type==='year')?.value}-${p.find(x=>x.type==='month')?.value}-${p.find(x=>x.type==='day')?.value}`;
+      }
+
+      const cleanServiceInput = normalizeText(serviceId);
+      const service = services.find((s: any) => s.id === serviceId || (serviceId && (normalizeText(s.name) === cleanServiceInput || normalizeText(s.name).includes(cleanServiceInput) || cleanServiceInput.includes(normalizeText(s.name))))) || services[0];
       const serviceDuration = service ? service.durationMinutes : 30;
 
       const profMap: Record<string, string[]> = {};
       const allUniqueSlots = new Set<string>();
 
-      const targetProfs = professionalId 
-        ? profs.filter(p => p.id === professionalId || p.name.toLowerCase().includes(professionalId.toLowerCase())) 
-        : (profs.length > 0 ? profs : [{ id: 'prof-1', name: 'Atendente', workSchedule: { startTime: '08:00', endTime: '18:00', lunchStartTime: '12:00', lunchEndTime: '13:00' } }]);
+      let targetProfs = profs;
+      if (professionalId) {
+        const matched = findBestMatchingProfessional(profs, professionalId);
+        if (matched) {
+          targetProfs = [matched];
+        }
+      }
+      if (!targetProfs || targetProfs.length === 0) {
+        targetProfs = profs.length > 0 ? profs : [{ id: 'prof-1', name: 'Atendente', workSchedule: { startTime: '08:00', endTime: '18:00', lunchStartTime: '12:00', lunchEndTime: '13:00' } } as any];
+      }
 
       for (const prof of targetProfs) {
         let scheduleToUse: ScheduleTimeBlock = { startTime: '08:00', endTime: '18:00', lunchStartTime: '12:00', lunchEndTime: '13:00' };
@@ -543,7 +627,7 @@ export class AiOrchestratorService {
         const tenantItem = await dbRepository.getTenantById(tenantId);
         const bufferMinutes = service?.bufferTimeMinutes ?? tenantItem?.bookingRules?.bufferTimeMinutes ?? 10;
         const minNotice = tenantItem?.bookingRules?.minimumNoticeMinutes ?? 60;
-        const tenantDailyLimit = dbRepository.getTenantDailyAppointmentLimit(tenantItem);
+        const tenantDailyLimit = await dbRepository.getTenantDailyAppointmentLimit(tenantItem);
         const tenantDayCount = await dbRepository.getDailyAppointmentCountForTenant(tenantId, dateStr);
         const maxFutureDays = tenantItem?.bookingRules?.maxFutureDays ?? 30;
 
@@ -551,8 +635,8 @@ export class AiOrchestratorService {
           dateStr,
           serviceDurationMinutes: serviceDuration,
           schedule: scheduleToUse,
-          existingAppointments: existingAppointments.map(a => ({ startTime: a.startTime, endTime: a.endTime })),
-          scheduleBlocks: blocks.map(b => ({ startTime: b.startTime, endTime: b.endTime })),
+          existingAppointments: existingAppointments.map((a: any) => ({ startTime: a.startTime, endTime: a.endTime })),
+          scheduleBlocks: blocks.map((b: any) => ({ startTime: b.startTime, endTime: b.endTime })),
           maxAppointmentsPerDay: (prof as any).maxAppointmentsPerDay,
           currentDayAppointmentCount: dayCount,
           maxDailyAppointmentsForTenant: tenantDailyLimit,
@@ -570,7 +654,7 @@ export class AiOrchestratorService {
         }
       }
 
-      const sortedSlots = Array.from(allUniqueSlots).sort();
+      const sortedSlots = Array.from(allUniqueSlots).sort((a: string, b: string) => a.localeCompare(b));
       return { 
         result: { 
           data: dateStr, 
@@ -590,23 +674,23 @@ export class AiOrchestratorService {
 
       const profs = await dbRepository.listProfessionals(tenantId);
       const services = await dbRepository.listServices(tenantId);
-      const targetProf = profs.find(p => p.id === professionalId || (professionalId && p.name.toLowerCase().includes(professionalId.toLowerCase()))) || profs[0];
+      const targetProf = findBestMatchingProfessional(profs, professionalId) || profs[0];
       const targetProfId = targetProf.id;
-      const service = services.find(s => s.id === serviceId || (serviceId && s.name.toLowerCase().includes(serviceId.toLowerCase()))) || services[0];
+      const cleanServiceInput = normalizeText(serviceId);
+      const service = services.find((s: any) => s.id === serviceId || (serviceId && (normalizeText(s.name) === cleanServiceInput || normalizeText(s.name).includes(cleanServiceInput) || cleanServiceInput.includes(normalizeText(s.name))))) || services[0];
       const targetServiceId = service.id;
       const duration = service ? service.durationMinutes : 30;
 
-      const cleanName = extractCleanCustomerName(customerName || '');
-      const isGenericName = !cleanName || cleanName.toLowerCase() === 'cliente' || cleanName.toLowerCase() === 'cliente whatsapp' || cleanName.length < 2 || cleanName.toLowerCase().includes('nome completo') || cleanName.toLowerCase().includes('informado') || cleanName.toLowerCase().includes('desconhecido') || cleanName.toLowerCase().includes('ainda não');
+      let finalCustomerName = extractCleanCustomerName(customerName || '');
+      if (!finalCustomerName || finalCustomerName.toLowerCase() === 'cliente' || finalCustomerName.toLowerCase() === 'cliente whatsapp' || finalCustomerName.length < 2 || finalCustomerName.toLowerCase().includes('informado') || finalCustomerName.toLowerCase().includes('ainda não')) {
+        finalCustomerName = customerName && customerName.trim().length > 0 ? customerName.trim() : 'Cliente WhatsApp';
+      }
 
-      if (!dateStr || !timeStr || isGenericName) {
+      if (!dateStr || !timeStr) {
         return {
           result: {
-            status: 'HORARIO_LIVRE_AGUARDANDO_NOME',
-            horarioDisponivel: true,
-            mensagem: `O horário das ${targetTimeStr} do dia ${targetDateStr} com ${targetProf?.name || 'o profissional'} está disponível e pré-reservado! Peça agora o nome completo do cliente para registrar o agendamento.`,
-            data: targetDateStr,
-            horario: targetTimeStr
+            status: 'ERRO',
+            mensagem: 'Data ou horário não especificados para o agendamento.'
           }
         };
       }
@@ -625,19 +709,19 @@ export class AiOrchestratorService {
         };
       }
       const existingAppointments = await dbRepository.getAppointmentsForProfessional(targetProf.id, targetDateStr);
-      const otherAppointments = existingAppointments.filter(a => a.customerPhone !== customerPhone);
+      const otherAppointments = existingAppointments.filter((a: any) => a.customerPhone !== customerPhone);
       const blocks = await dbRepository.getScheduleBlocks(tenantId, targetProf.id, targetDateStr);
       const dayCount = otherAppointments.length;
       const tenantObj = await dbRepository.getTenantById(tenantId);
-      const tenantDailyLimit = dbRepository.getTenantDailyAppointmentLimit(tenantObj);
+      const tenantDailyLimit = await dbRepository.getTenantDailyAppointmentLimit(tenantObj);
       const tenantDayCount = await dbRepository.getDailyAppointmentCountForTenant(tenantId, targetDateStr);
 
       const availableSlots = calculateAvailableSlots({
         dateStr: targetDateStr,
         serviceDurationMinutes: duration,
         schedule: scheduleToUse,
-        existingAppointments: otherAppointments.map(a => ({ startTime: a.startTime, endTime: a.endTime })),
-        scheduleBlocks: blocks.map(b => ({ startTime: b.startTime, endTime: b.endTime })),
+        existingAppointments: otherAppointments.map((a: any) => ({ startTime: a.startTime, endTime: a.endTime })),
+        scheduleBlocks: blocks.map((b: any) => ({ startTime: b.startTime, endTime: b.endTime })),
         maxAppointmentsPerDay: targetProf.maxAppointmentsPerDay,
         currentDayAppointmentCount: dayCount,
         maxDailyAppointmentsForTenant: tenantDailyLimit,
@@ -672,11 +756,16 @@ export class AiOrchestratorService {
       if (existingAppt) {
         const updated = await dbRepository.updateAppointmentTime(existingAppt.id, startTime, endTime);
         if (updated) {
-          updated.customerName = cleanName;
+          updated.customerName = finalCustomerName;
+          await dbRepository.updateAppointmentDetails(existingAppt.id, {
+            professionalId: targetProfId,
+            serviceId: targetServiceId,
+            customerName: finalCustomerName
+          });
           return {
             result: {
               status: 'SUCESSO',
-              mensagem: `Agendamento existente de ${cleanName} alterado com sucesso para o novo horário! O horário antigo foi liberado.`,
+              mensagem: `Agendamento existente de ${finalCustomerName} alterado com sucesso para o novo horário com ${targetProf.name}! O horário antigo foi liberado.`,
               agendamentoId: updated.id
             },
             appointmentCreated: updated
@@ -686,9 +775,9 @@ export class AiOrchestratorService {
 
       const newAppt = await dbRepository.createAppointment({
         tenantId,
-        professionalId: professionalId || 'prof-1',
-        serviceId: serviceId || 'srv-1',
-        customerName: cleanName,
+        professionalId: targetProfId,
+        serviceId: targetServiceId,
+        customerName: finalCustomerName,
         customerPhone,
         startTime,
         endTime,
@@ -696,7 +785,7 @@ export class AiOrchestratorService {
       });
 
       // #3/#16: Atualiza perfil do cliente com preferências aprendidas
-      await dbRepository.incrementVisitCount(tenantId, customerPhone, professionalId, serviceId);
+      await dbRepository.incrementVisitCount(tenantId, customerPhone, targetProfId, targetServiceId);
 
       // Webhook dispatch: booking.created
       await webhookService.dispatch(tenantId, 'booking.created', newAppt);
@@ -708,12 +797,12 @@ export class AiOrchestratorService {
         const apptDateForNotif = `${String(apptStartForNotif.getDate()).padStart(2,'0')}/${String(apptStartForNotif.getMonth()+1).padStart(2,'0')}`;
         const apptTimeForNotif = `${String(apptStartForNotif.getHours()).padStart(2,'0')}:${String(apptStartForNotif.getMinutes()).padStart(2,'0')}`;
         const srvForNotif = services.find((s: any) => s.id === newAppt.serviceId);
-        const notifMsg = `*Novo agendamento (Pendente de confirmação)*\n\nCliente: *${cleanName}*\nServiço: *${srvForNotif?.name || 'Atendimento'}*\nData: *${apptDateForNotif}*\nHorário: *${apptTimeForNotif}*`;
+        const notifMsg = `*Novo agendamento (Pendente de confirmação)*\n\nCliente: *${finalCustomerName}*\nServiço: *${srvForNotif?.name || 'Atendimento'}*\nData: *${apptDateForNotif}*\nHorário: *${apptTimeForNotif}*`;
         try {
           const { whatsappService } = await import('./whatsapp.service.js');
           await whatsappService.sendMessage(tenantId, (notifProf as any).phone, notifMsg);
         } catch(e: any) {
-          console.warn('[Notif Profissional] Falha ao enviar notificação:', e.message);
+          logger.warn('[Notif Profissional] Falha ao enviar notificação:', e.message);
         }
       }
 
@@ -721,7 +810,7 @@ export class AiOrchestratorService {
       return {
         result: {
           status: 'SUCESSO',
-          mensagem: `Agendamento pré-reservado para ${cleanName} às ${timeStr} do dia ${apptD}/${apptM}/${apptY} com status PENDENTE de confirmação. Solicite que o cliente responda com 1 para Confirmar ou 2 para Cancelar.`,
+          mensagem: `Agendamento pré-reservado para ${finalCustomerName} às ${timeStr} do dia ${apptD}/${apptM}/${apptY} com status PENDENTE de confirmação. Solicite que o cliente responda com 1 para Confirmar ou 2 para Cancelar.`,
           agendamentoId: newAppt.id
         },
         appointmentCreated: newAppt
@@ -737,12 +826,12 @@ export class AiOrchestratorService {
 
       // BUG 1 FIX: buscar duração real do serviço em vez de hardcode de 30 min
       const allServices = await dbRepository.listServices(tenantId);
-      const apptService = allServices.find(s => s.id === existingAppt.serviceId) || allServices[0];
+      const apptService = allServices.find((s: any) => s.id === existingAppt.serviceId) || allServices[0];
       const apptDuration = apptService?.durationMinutes ?? 30;
 
       // BUG 2 FIX: validar disponibilidade do novo horário antes de confirmar reagendamento
       const allProfs = await dbRepository.listProfessionals(tenantId);
-      const apptProf = allProfs.find(p => p.id === existingAppt.professionalId) || allProfs[0];
+      const apptProf = allProfs.find((p: any) => p.id === existingAppt.professionalId) || allProfs[0];
       if (apptProf) {
         const profSchedule: ScheduleTimeBlock = {
           startTime: apptProf.workSchedule?.startTime || '08:00',
@@ -752,15 +841,15 @@ export class AiOrchestratorService {
         };
         const existingAppts = await dbRepository.getAppointmentsForProfessional(apptProf.id, newDateStr);
         // Exclui o próprio agendamento atual da verificação de conflito
-        const otherAppts = existingAppts.filter(a => a.id !== existingAppt.id);
+        const otherAppts = existingAppts.filter((a: any) => a.id !== existingAppt.id);
         const blocks = await dbRepository.getScheduleBlocks(tenantId, apptProf.id, newDateStr);
         const dayCount = otherAppts.length;
         const availableSlots = calculateAvailableSlots({
           dateStr: newDateStr,
           serviceDurationMinutes: apptDuration,
           schedule: profSchedule,
-          existingAppointments: otherAppts.map(a => ({ startTime: a.startTime, endTime: a.endTime })),
-          scheduleBlocks: blocks.map(b => ({ startTime: b.startTime, endTime: b.endTime })),
+          existingAppointments: otherAppts.map((a: any) => ({ startTime: a.startTime, endTime: a.endTime })),
+          scheduleBlocks: blocks.map((b: any) => ({ startTime: b.startTime, endTime: b.endTime })),
           maxAppointmentsPerDay: apptProf.maxAppointmentsPerDay,
           currentDayAppointmentCount: dayCount,
           slotIntervalMinutes: 30
@@ -813,24 +902,24 @@ export class AiOrchestratorService {
       if (cancelled) {
         try {
           const cancelledDateStr = (() => {
-            const st = cancelled.startTime;
+            const st = (cancelled as any).startTime || new Date();
             const p = new Intl.DateTimeFormat('en-CA', {timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(st instanceof Date ? st : new Date(st));
             return `${p.find(x=>x.type==='year')?.value}-${p.find(x=>x.type==='month')?.value}-${p.find(x=>x.type==='day')?.value}`;
           })();
-          const waitlistForDay = await dbRepository.getWaitlistForDate(tenantId, cancelledDateStr, cancelled.professionalId);
+          const waitlistForDay = await dbRepository.getWaitlistForDate(tenantId, cancelledDateStr, (cancelled as any).professionalId);
           if (waitlistForDay.length > 0) {
-            const nextInLine = waitlistForDay[0];
+            const nextInLine: any = waitlistForDay[0];
             const { whatsappService } = await import('./whatsapp.service.js');
-            const [wy, wm, wd] = nextInLine.dateStr.split('-');
+            const [wy, wm, wd] = (nextInLine.dateStr || '').split('-');
             await whatsappService.sendMessage(tenantId, nextInLine.customerPhone, `🎉 Boa notícia, ${nextInLine.customerName}! Abriu um horário para o dia *${wd}/${wm}*! Quer confirmar seu agendamento? Responda aqui para garantir sua vaga!`);
             await dbRepository.removeFromWaitlist(nextInLine.id);
           }
         } catch(e: any) {
-          console.warn('[Waitlist Notify]:', e.message);
+          logger.warn('[Waitlist Notify]:', e.message);
         }
       }
 
-      const apptId = cancelled ? cancelled.id : undefined;
+      const apptId = cancelled ? (cancelled as any).id : undefined;
       return { 
         result: { status: 'SUCESSO', mensagem: 'Agendamento cancelado com sucesso no banco de dados. Horário liberado!' },
         appointmentCancelledId: apptId
@@ -883,8 +972,8 @@ export class AiOrchestratorService {
 
     let activeAppointmentInfo = undefined;
     if (existingAppt) {
-      const profObj = profs.find(p => p.id === existingAppt.professionalId);
-      const srvObj = services.find(s => s.id === existingAppt.serviceId);
+      const profObj = profs.find((p: any) => p.id === existingAppt.professionalId);
+      const srvObj = services.find((s: any) => s.id === existingAppt.serviceId);
       const st = (existingAppt.startTime instanceof Date) ? existingAppt.startTime : new Date(existingAppt.startTime);
       const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(st);
       const y = parts.find(p => p.type === 'year')?.value;
@@ -925,31 +1014,72 @@ export class AiOrchestratorService {
       }
     }
 
+    // Se o cliente responde confirmando (1 / sim / confirmo) e há horário pendente na sessão sem registro prévio
+    const lowerTrim = userMessage.trim().toLowerCase();
+    const isConfirmWord = lowerTrim === '1' || lowerTrim === 'sim' || lowerTrim === 'confirmo' || lowerTrim === 'confirmar' || lowerTrim === 'está confirmado' || lowerTrim === 'esta confirmado' || lowerTrim === 'pode confirmar' || lowerTrim === 'ok';
+
+    if (!existingAppt && isConfirmWord && (session.pendingBookingTime || session.pendingBookingDateStr)) {
+      const targetDate = session.pendingBookingDateStr || this.getTomorrowDateStr();
+      const targetTime = session.pendingBookingTime || '14:00';
+      const targetProfId = session.pendingBookingProfId || profs[0]?.id;
+      const targetServiceId = session.pendingBookingServiceId || services[0]?.id;
+      const clientName = session.customerName || session.suggestedPushName || 'Cliente WhatsApp';
+
+      const exec = await this.executeToolCall(tenantId, 'create_appointment', {
+        professionalId: targetProfId,
+        serviceId: targetServiceId,
+        customerName: clientName,
+        customerPhone,
+        dateStr: targetDate,
+        timeStr: targetTime
+      });
+
+      if (exec.appointmentCreated) {
+        await dbRepository.updateAppointmentDetails(exec.appointmentCreated.id, { status: 'CONFIRMED' });
+        exec.appointmentCreated.status = 'CONFIRMED';
+        session.pendingBookingTime = undefined;
+        session.pendingBookingDateStr = undefined;
+        const profObj = profs.find((p: any) => p.id === targetProfId) || profs[0];
+        const [y, m, d] = targetDate.split('-');
+        const replyText = `Excelente, *${clientName}*! Seu agendamento com *${profObj?.name || 'nosso profissional'}* para o dia *${d}/${m} às ${targetTime}* está *Confirmado com sucesso*. Te esperamos lá!`;
+        session.history.push({ role: 'user', text: userMessage });
+        session.history.push({ role: 'model', text: replyText });
+        return { replyText, functionCallsExecuted: ['create_appointment'], engine: 'LLAMA_LIVE_LLM', appointmentCreated: exec.appointmentCreated };
+      }
+    }
+
     // 1. Atualiza dados de sessão a partir do texto do usuário
     const extractedIntent = extractBookingIntentFromText(userMessage);
     if (extractedIntent.timeStr) session.pendingBookingTime = extractedIntent.timeStr;
     if (extractedIntent.dateStr) session.pendingBookingDateStr = extractedIntent.dateStr;
 
+    const matchedProfInMsg = findBestMatchingProfessional(profs, userMessage);
+    if (matchedProfInMsg) {
+      session.pendingBookingProfId = matchedProfInMsg.id;
+    }
+
     const possibleName = extractCleanCustomerName(userMessage);
+    const matchesAnyProf = profs.some((p: any) => normalizeText(possibleName) === normalizeText(p.name));
+    const isExplicitCustomerName = userMessage.toLowerCase().includes('meu nome') || 
+                                   userMessage.toLowerCase().includes('me chamo') || 
+                                   userMessage.toLowerCase().includes('sou o') || 
+                                   userMessage.toLowerCase().includes('sou a') || 
+                                   userMessage.toLowerCase().includes('em nome de') || 
+                                   userMessage.toLowerCase().includes('no nome de') || 
+                                   userMessage.toLowerCase().includes('anota');
+
     if (possibleName && possibleName.length >= 2) {
-      if (!session.customerName || userMessage.toLowerCase().includes('meu nome') || userMessage.toLowerCase().includes('me chamo') || userMessage.toLowerCase().includes('sou o')) {
+      // Se não coincidir com o nome de um profissional da equipe, ou se foi explicitamente apresentado como nome do cliente
+      if (isExplicitCustomerName || (!matchesAnyProf && !session.customerName)) {
         session.customerName = possibleName;
       }
     }
 
-    if (userMessage.toLowerCase().includes('lucas')) {
-      const profLucas = profs.find(p => p.name.toLowerCase().includes('lucas'));
-      if (profLucas) session.pendingBookingProfId = profLucas.id;
-    } else if (userMessage.toLowerCase().includes('matheus')) {
-      const profMatheus = profs.find(p => p.name.toLowerCase().includes('matheus'));
-      if (profMatheus) session.pendingBookingProfId = profMatheus.id;
-    }
-
     // M5: Persistência do serviço selecionado na sessão ao mencionar um serviço do catálogo
     const lowerMsg = userMessage.toLowerCase();
-    const matchedServiceInMsg = services.find(s => {
+    const matchedServiceInMsg = services.find((s: any) => {
       const sLow = s.name.toLowerCase();
-      return lowerMsg.includes(sLow) || sLow.split(' ').filter(w => w.length > 3).some(w => lowerMsg.includes(w));
+      return lowerMsg.includes(sLow) || sLow.split(' ').filter((w: string) => w.length > 3).some((w: string) => lowerMsg.includes(w));
     });
     if (matchedServiceInMsg) {
       session.pendingBookingServiceId = matchedServiceInMsg.id;
@@ -995,7 +1125,13 @@ export class AiOrchestratorService {
     const messages: any[] = [
       { role: 'system', content: fullInstruction }
     ];
-    for (const h of session.history.slice(0, -1)) {
+    
+    const maxHistory = 15;
+    const historySlice = session.history.length > maxHistory 
+      ? session.history.slice(-maxHistory, -1) 
+      : session.history.slice(0, -1);
+      
+    for (const h of historySlice) {
       if (h.text && typeof h.text === 'string' && h.text.trim()) {
         messages.push({
           role: h.role === 'user' ? 'user' : 'assistant',
@@ -1016,9 +1152,9 @@ export class AiOrchestratorService {
       for (let round = 0; round < 5; round++) {
         let resp: Response | null = null;
 
-        // 1. Tenta Groq com modelos suportados (gpt-oss-20b primeiro por menor latência e maior limite)
+        // 1. Tenta Groq com modelos oficiais suportados
         if (groqKey) {
-          const groqModels = ['openai/gpt-oss-20b', 'qwen/qwen3.6-27b', 'openai/gpt-oss-120b'];
+          const groqModels = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'qwen/qwen3.6-27b', 'groq/compound'];
           for (const gModel of groqModels) {
             try {
               const abortCtrl = new AbortController();
@@ -1044,10 +1180,11 @@ export class AiOrchestratorService {
                 resp = r;
                 break;
               } else {
-                console.warn(`[Groq ${gModel} returned status ${r.status}]`);
+                logger.warn(`[Groq ${gModel} returned status ${r.status}]`);
+                if (r.status === 401 || r.status === 403 || r.status === 404) break;
               }
             } catch (e: any) {
-              console.warn(`[Groq ${gModel} Error]:`, e.message);
+              logger.warn(`[Groq ${gModel} Error]:`, e.message);
             }
           }
         }
@@ -1080,10 +1217,11 @@ export class AiOrchestratorService {
                 resp = r;
                 break;
               } else {
-                console.warn(`[NVIDIA ${nModel} returned status ${r.status}]`);
+                logger.warn(`[NVIDIA ${nModel} returned status ${r.status}]`);
+                if (r.status === 401 || r.status === 403 || r.status === 404) break;
               }
             } catch (e: any) {
-              console.warn(`[NVIDIA ${nModel} Error]:`, e.message);
+              logger.warn(`[NVIDIA ${nModel} Error]:`, e.message);
             }
           }
         }
@@ -1098,6 +1236,27 @@ export class AiOrchestratorService {
         const msg = choice?.message;
 
         if (!msg) throw new Error('LLM retornou resposta vazia.');
+
+        // Suporte a modelos que retornam tool calls formatados em JSON dentro de msg.content
+        if ((!msg.tool_calls || msg.tool_calls.length === 0) && msg.content) {
+          const contentTrimmed = msg.content.trim();
+          const jsonMatch = contentTrimmed.match(/\{[\s\S]*"(?:function|name)"\s*:\s*"([a-zA-Z0-9_]+)"[\s\S]*\}/);
+          if (jsonMatch) {
+            try {
+              const parsed = JSON.parse(jsonMatch[0]);
+              const fnName = parsed.function || parsed.name;
+              const fnArgs = parsed.parameters || parsed.arguments || parsed.args || {};
+              msg.tool_calls = [{
+                id: `call_${Date.now()}`,
+                type: 'function',
+                function: {
+                  name: fnName,
+                  arguments: typeof fnArgs === 'string' ? fnArgs : JSON.stringify(fnArgs)
+                }
+              }];
+            } catch (e) {}
+          }
+        }
 
         // Verifica se o modelo quer chamar ferramentas
         if (msg.tool_calls && msg.tool_calls.length > 0) {
@@ -1210,13 +1369,13 @@ export class AiOrchestratorService {
         // Se a resposta estiver vazia ou for muito curta após filtragem, monta confirmação limpa e calorosa
         if (!finalReply || finalReply.length < 5) {
           if (appointmentCreated) {
-            const profObj = profs.find(p => p.id === appointmentCreated.professionalId) || profs[0];
+            const profObj = profs.find((p: any) => p.id === appointmentCreated.professionalId) || profs[0];
             const st = (appointmentCreated.startTime instanceof Date) ? appointmentCreated.startTime : new Date(appointmentCreated.startTime);
             const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(st);
-            const sD = parts.find(p => p.type === 'day')?.value || '01';
-            const sM = parts.find(p => p.type === 'month')?.value || '01';
-            const sH = parts.find(p => p.type === 'hour')?.value || '09';
-            const sMin = parts.find(p => p.type === 'minute')?.value || '00';
+            const sD = parts.find((p: any) => p.type === 'day')?.value || '01';
+            const sM = parts.find((p: any) => p.type === 'month')?.value || '01';
+            const sH = parts.find((p: any) => p.type === 'hour')?.value || '09';
+            const sMin = parts.find((p: any) => p.type === 'minute')?.value || '00';
             const cName = appointmentCreated.customerName || session.customerName || 'você';
             finalReply = `Prontinho, *${cName}*! Seu agendamento com *${profObj?.name || 'nosso profissional'}* está pré-agendado para o dia *${sD}/${sM} às ${sH}:${sMin}* (Status: Pendente de confirmação).\n\nPor favor, responda com *1* para Confirmar ou *2* para Cancelar.`;
           } else if (appointmentCancelledId) {
@@ -1238,7 +1397,7 @@ export class AiOrchestratorService {
 
       throw new Error('Número máximo de rounds de tool calling atingido.');
     } catch (error: any) {
-      console.warn('[GLM-5.2 LLM Engine Exception]:', error.message);
+      logger.warn('[GLM-5.2 LLM Engine Exception]:', error.message);
       const simResult = await this.simulateHumanReceptionist(tenantId, customerPhone, userMessage, systemPrompt, session);
       simResult.engine = 'LOCAL_FALLBACK';
       simResult.errorReason = error.message;
@@ -1260,7 +1419,13 @@ export class AiOrchestratorService {
     const services = await dbRepository.listServices(tenantId);
     const profs = await dbRepository.listProfessionals(tenantId);
 
-    const defaultProfId = session?.pendingBookingProfId || profs[0]?.id || 'prof-1';
+    // Extrai profissional se o cliente mencionou o nome ou primeiro nome de algum profissional
+    const matchedProf = findBestMatchingProfessional(profs, userMessage);
+    if (matchedProf && session) {
+      session.pendingBookingProfId = matchedProf.id;
+    }
+    const targetProf = matchedProf || profs.find((p: any) => p.id === session?.pendingBookingProfId) || profs[0];
+    const defaultProfId = targetProf?.id || profs[0]?.id || 'prof-1';
     const defaultServiceId = session?.pendingBookingServiceId || services[0]?.id || 'srv-1';
 
     // 0.0 Waitlist confirmation (#1)
@@ -1332,31 +1497,44 @@ export class AiOrchestratorService {
           activeAppt.status = 'CONFIRMED';
           await dbRepository.updateAppointmentDetails(activeAppt.id, { status: 'CONFIRMED' });
           return {
-            replyText: `Maravilha, *${clientNameStr}*! Seu agendamento para *${dateFormatted} às ${timeStrFormatted}* foi **CONFIRMADO** com sucesso! Te esperamos aqui. `,
+            replyText: `Maravilha, *${clientNameStr}*! Seu agendamento para *${dateFormatted} às ${timeStrFormatted}* foi **CONFIRMADO** com sucesso! Te esperamos aqui.`,
             functionCallsExecuted: ['confirm_appointment']
           };
         } else if (isExplicitReminderCancel) {
           activeAppt.status = 'CANCELLED';
           await dbRepository.updateAppointmentDetails(activeAppt.id, { status: 'CANCELLED' });
           return {
-            replyText: `Entendido, *${clientNameStr}*! Seu agendamento para *${dateFormatted} às ${timeStrFormatted}* foi **CANCELADO**. Se quiser agendar para outro dia ou horário, é só nos chamar por aqui! `,
+            replyText: `Entendido, *${clientNameStr}*! Seu agendamento para *${dateFormatted} às ${timeStrFormatted}* foi **CANCELADO**. Se quiser agendar para outro dia ou horário, é só nos chamar por aqui!`,
             functionCallsExecuted: ['cancel_appointment']
           };
         }
+      } else if (isExplicitReminderConfirm && (session?.pendingBookingTime || session?.pendingBookingDateStr)) {
+        const targetDate = session.pendingBookingDateStr || this.getTomorrowDateStr();
+        const targetTime = session.pendingBookingTime || '14:00';
+        const clientName = session.customerName || session.suggestedPushName || 'Cliente WhatsApp';
+
+        const exec = await this.executeToolCall(tenantId, 'create_appointment', {
+          professionalId: defaultProfId,
+          serviceId: defaultServiceId,
+          customerName: clientName,
+          customerPhone,
+          dateStr: targetDate,
+          timeStr: targetTime
+        });
+
+        if (exec.appointmentCreated) {
+          await dbRepository.updateAppointmentDetails(exec.appointmentCreated.id, { status: 'CONFIRMED' });
+          exec.appointmentCreated.status = 'CONFIRMED';
+          session.pendingBookingTime = undefined;
+          session.pendingBookingDateStr = undefined;
+          const [y, m, d] = targetDate.split('-');
+          return {
+            replyText: `Maravilha, *${clientName}*! Seu agendamento com *${targetProf?.name || 'nosso profissional'}* para *${d}/${m} às ${targetTime}* foi **CONFIRMADO** com sucesso! Te esperamos aqui.`,
+            functionCallsExecuted: ['create_appointment'],
+            appointmentCreated: exec.appointmentCreated
+          };
+        }
       }
-    }
-
-    // Extrai profissional se o cliente mencionou o nome ou primeiro nome de algum profissional (ex: "Matheus tem horário?", "com o Lucas", "vai ser com Matheus")
-    const matchedProf = profs.find(p => {
-      const pNameLower = p.name.toLowerCase();
-      const firstName = pNameLower.split(' ')[0];
-      const firstNameRegex = new RegExp(`\\b${firstName}\\b`, 'i');
-      const fullNameRegex = new RegExp(`\\b${pNameLower}\\b`, 'i');
-      return fullNameRegex.test(lower) || firstNameRegex.test(lower);
-    });
-
-    if (matchedProf && session) {
-      session.pendingBookingProfId = matchedProf.id;
     }
 
     // 0.0 Pergunta de Verificação de Agendamento ("Está marcado com Matheus?", "Confirmado com Lucas?")
@@ -1365,13 +1543,13 @@ export class AiOrchestratorService {
       if (activeAppt) {
         const stDate = activeAppt.startTime instanceof Date ? activeAppt.startTime : new Date(activeAppt.startTime);
         const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(stDate);
-        const d = parts.find(p => p.type === 'day')?.value || '01';
-        const m = parts.find(p => p.type === 'month')?.value || '01';
-        const y = parts.find(p => p.type === 'year')?.value || '2026';
-        const h = parts.find(p => p.type === 'hour')?.value || '00';
-        const min = parts.find(p => p.type === 'minute')?.value || '00';
+        const d = parts.find((p: any) => p.type === 'day')?.value || '01';
+        const m = parts.find((p: any) => p.type === 'month')?.value || '01';
+        const y = parts.find((p: any) => p.type === 'year')?.value || '2026';
+        const h = parts.find((p: any) => p.type === 'hour')?.value || '00';
+        const min = parts.find((p: any) => p.type === 'minute')?.value || '00';
         const timeFormatted = `${h}:${min}`;
-        const pObj = profs.find(p => p.id === activeAppt.professionalId);
+        const pObj = profs.find((p: any) => p.id === activeAppt.professionalId);
         const pName = pObj ? pObj.name : 'nosso profissional';
         const clientName = activeAppt.customerName || session?.customerName || 'Cliente';
 
@@ -1391,18 +1569,18 @@ export class AiOrchestratorService {
       lower.includes('quem faz') || 
       lower.includes('quem trabalha');
 
-    const matchedServiceForWho = services.find(s => {
+    const matchedServiceForWho = services.find((s: any) => {
       const sNameLower = s.name.toLowerCase();
-      return lower.includes(sNameLower) || sNameLower.split(' ').filter(w => w.length > 3).some(w => lower.includes(w));
+      return lower.includes(sNameLower) || sNameLower.split(' ').filter((w: string) => w.length > 3).some((w: string) => lower.includes(w));
     });
 
     if (isWhoAttendsQuery) {
       let matchingProfs = profs;
       if (matchedServiceForWho) {
-        matchingProfs = profs.filter(p => !p.servicesHandled || p.servicesHandled.length === 0 || p.servicesHandled.includes(matchedServiceForWho.id));
+        matchingProfs = profs.filter((p: any) => !p.servicesHandled || p.servicesHandled.length === 0 || p.servicesHandled.includes(matchedServiceForWho.id));
         if (matchingProfs.length === 0) matchingProfs = profs;
       }
-      const profNames = matchingProfs.map(p => `*${p.name}*`).join(' e ');
+      const profNames = matchingProfs.map((p: any) => `*${p.name}*`).join(' e ');
       const dayLabel = hasExplicitDateInMessage ? ` para *${dateFormattedLabel}*` : '';
       const sLabel = matchedServiceForWho ? ` para *${matchedServiceForWho.name}*` : '';
       return {
@@ -1413,7 +1591,7 @@ export class AiOrchestratorService {
 
     // 0.2 Pergunta de Profissionais Específicos ("só o lucas atende?", "o matheus também atende?")
     if (lower.includes('so lucas') || lower.includes('só lucas') || lower.includes('só o lucas') || lower.includes('so o lucas') || lower.includes('so matheus') || lower.includes('só matheus') || lower.includes('so o matheus') || lower.includes('só o matheus') || lower.includes('tambem atende') || lower.includes('também atende')) {
-      const profNames = profs.map(p => `*${p.name}*`).join(' e ');
+      const profNames = profs.map((p: any) => `*${p.name}*`).join(' e ');
       return {
         replyText: `Temos ${profNames} atendendo na nossa equipe!\n\nSe você preferir agendar com um profissional específico, só me avisar o nome dele que busco os horários pra você.`,
         functionCallsExecuted: []
@@ -1617,7 +1795,7 @@ export class AiOrchestratorService {
       session.pendingBookingTime = undefined;
       session.pendingBookingDateStr = undefined;
 
-      const profObj = profs.find(p => p.id === targetProfId) || profs[0];
+      const profObj = profs.find((p: any) => p.id === targetProfId) || profs[0];
       const profName = profObj ? ` com *${profObj.name}*` : '';
       const [y, m, d] = targetDateStr.split('-');
       return {
@@ -1662,29 +1840,8 @@ export class AiOrchestratorService {
           session.pendingBookingDateStr = dateStr;
         }
 
-        if (!session?.customerName) {
-          if (session?.suggestedPushName) {
-            return {
-              replyText: `O horário das *${timeStr}* para *${dateFormattedLabel}* está disponível. O agendamento é em seu nome, *${session.suggestedPushName}*, ou para outra pessoa?`,
-              functionCallsExecuted: executedTools
-            };
-          }
-          return {
-            replyText: `O horário das *${timeStr}* para *${dateFormattedLabel}* está disponível. Por favor, informe seu nome completo para registrarmos o agendamento.`,
-            functionCallsExecuted: executedTools
-          };
-        }
-
-        const hasValidRealPhone = isValidRealPhoneNumber(phoneInText || session?.customerPhone || customerPhone);
-        if (!hasValidRealPhone) {
-          return {
-            replyText: `Perfeito, *${session.customerName}*! O horário das *${timeStr}* para *${dateFormattedLabel}* está reservado. Por favor, informe seu número de WhatsApp com DDD para envio da confirmação e lembretes.`,
-            functionCallsExecuted: executedTools
-          };
-        }
-
-        const clientName = session.customerName || 'Cliente';
-        const clientPhone = phoneInText || session.customerPhone || customerPhone;
+        const clientName = session?.customerName || session?.suggestedPushName || 'Cliente WhatsApp';
+        const clientPhone = phoneInText || session?.customerPhone || customerPhone;
 
         const exec = await this.executeToolCall(tenantId, 'create_appointment', {
           professionalId: defaultProfId,
@@ -1697,14 +1854,12 @@ export class AiOrchestratorService {
         executedTools.push('create_appointment');
         const [y, m, d] = dateStr.split('-');
 
-        const replyMsg = existingAppt 
-          ? `Prontinho, *${clientName}*! Seu horário foi alterado para *${dateFormattedLabel} (${d}/${m}/${y})* às *${timeStr}* (Status: Pendente de confirmação).\n\nPor favor, responda com *1* para Confirmar ou *2* para Cancelar.`
-          : `Prontinho, *${clientName}*! Seu horário para *${dateFormattedLabel} (${d}/${m}/${y})* às *${timeStr}* foi registrado e está *Pendente de confirmação*.\n\nPor favor, responda com *1* para Confirmar ou *2* para Cancelar.`;
+        const profObj = profs.find((p: any) => p.id === defaultProfId) || profs[0];
+        const profNameStr = profObj ? ` com *${profObj.name}*` : '';
 
-        if (session) {
-          session.pendingBookingTime = undefined;
-          session.pendingBookingDateStr = undefined;
-        }
+        const replyMsg = existingAppt 
+          ? `Prontinho, *${clientName}*! Seu horário${profNameStr} foi alterado para *${dateFormattedLabel} (${d}/${m}/${y})* às *${timeStr}* (Status: Pendente de confirmação).\n\nPor favor, responda com *1* para Confirmar ou *2* para Cancelar.`
+          : `Prontinho, *${clientName}*! Seu agendamento${profNameStr} para *${dateFormattedLabel} (${d}/${m}/${y})* às *${timeStr}* foi realizado com sucesso e está *Pendente de confirmação*.\n\nPor favor, responda com *1* para Confirmar ou *2* para Cancelar.`;
 
         return {
           replyText: replyMsg,
@@ -1728,9 +1883,9 @@ export class AiOrchestratorService {
         breakdown += `*${p.name}*\n`;
         let pServices = services;
         if (p.servicesHandled && p.servicesHandled.length > 0) {
-          pServices = services.filter(s => p.servicesHandled!.includes(s.id));
+          pServices = services.filter((s: any) => p.servicesHandled!.includes(s.id));
         }
-        pServices.forEach(s => {
+        pServices.forEach((s: any) => {
           breakdown += `  - ${s.name}: R$ ${s.price.toFixed(2)} (${s.durationMinutes} min)\n`;
         });
         if (p.workSchedule) {
@@ -1800,6 +1955,16 @@ export class AiOrchestratorService {
     const isPeriodOrDayQuery = 
       hasExplicitDateInMessage || 
       Boolean(matchedProf) ||
+      lower.includes('disponibilidade') ||
+      lower.includes('disponivel') ||
+      lower.includes('disponível') ||
+      lower.includes('tem vaga') ||
+      lower.includes('tem horário') ||
+      lower.includes('tem horario') ||
+      lower.includes('tem hora') ||
+      lower.includes('livre') ||
+      lower.includes('livres') ||
+      lower.includes('qualquer dia') ||
       lower.includes('pela manhã') || 
       lower.includes('pela manha') || 
       lower.includes('pela tarde') || 
@@ -1815,6 +1980,7 @@ export class AiOrchestratorService {
 
     if (isPeriodOrDayQuery) {
       const targetProfIdToQuery = matchedProf ? matchedProf.id : (session?.pendingBookingProfId || undefined);
+      const targetProfObj = profs.find((p: any) => p.id === targetProfIdToQuery) || matchedProf;
       const slotsExec = await this.executeToolCall(tenantId, 'get_available_slots', { 
         professionalId: targetProfIdToQuery, 
         serviceId: defaultServiceId, 
@@ -1830,7 +1996,7 @@ export class AiOrchestratorService {
 
       const periodLabel = periodFilter === 'morning' ? ' pela manhã' : periodFilter === 'afternoon' ? ' pela tarde' : '';
       const [y, m, d] = dateStr.split('-');
-      const profLabel = matchedProf ? ` para o *${matchedProf.name}*` : '';
+      const profLabel = targetProfObj ? ` para o *${targetProfObj.name}*` : '';
 
       if (availableSlots.length > 0) {
         return {
@@ -1838,9 +2004,9 @@ export class AiOrchestratorService {
           functionCallsExecuted: executedTools
         };
       } else {
-        const profNameStr = matchedProf ? `O *${matchedProf.name}*` : 'Nossa equipe';
+        const profNameStr = targetProfObj ? `O *${targetProfObj.name}*` : 'Nossa equipe';
         if (session) {
-          session.pendingWaitlist = { dateStr, professionalId: matchedProf?.id || profs[0]?.id, serviceId: defaultServiceId };
+          session.pendingWaitlist = { dateStr, professionalId: targetProfObj?.id || profs[0]?.id, serviceId: defaultServiceId };
         }
         return {
           replyText: `${profNameStr} está com a agenda cheia para *${dateFormattedLabel} (${d}/${m})*.\n\nQuer entrar na *lista de espera*? Se abrir um horário, você será avisado automaticamente. Responda *sim* para entrar na lista ou me diga outro dia que prefere.`,
@@ -1850,9 +2016,9 @@ export class AiOrchestratorService {
     }
 
     // 7. Detecta se o cliente mencionou algum serviço específico do catálogo
-    const matchedService = services.find(s => {
+    const matchedService = services.find((s: any) => {
       const sNameLower = s.name.toLowerCase();
-      return lower.includes(sNameLower) || sNameLower.split(' ').filter(w => w.length > 3).some(w => lower.includes(w));
+      return lower.includes(sNameLower) || sNameLower.split(' ').filter((w: string) => w.length > 3).some((w: string) => lower.includes(w));
     });
 
     if (matchedService && session) {
@@ -1864,20 +2030,23 @@ export class AiOrchestratorService {
 
     if (isExplicitBookingCommand) {
       const serviceLabel = matchedService ? `*${matchedService.name}* (R$ ${matchedService.price.toFixed(2)})` : 'seu atendimento';
+      const targetProfToBook = matchedProf || profs.find((p: any) => p.id === session?.pendingBookingProfId);
+      const targetProfIdToBook = targetProfToBook?.id || undefined;
+      const profLabel = targetProfToBook ? ` com *${targetProfToBook.name}*` : '';
 
       if (hasExplicitDateInMessage) {
-        const slotsExec = await this.executeToolCall(tenantId, 'get_available_slots', { professionalId: defaultProfId, serviceId: matchedService ? matchedService.id : defaultServiceId, dateStr });
+        const slotsExec = await this.executeToolCall(tenantId, 'get_available_slots', { professionalId: targetProfIdToBook, serviceId: matchedService ? matchedService.id : defaultServiceId, dateStr });
         executedTools.push('get_available_slots');
         const availableSlots: string[] = slotsExec.result.horariosDisponiveis || [];
         const profMap = slotsExec.result.profMap;
 
         return {
-          replyText: `Claro! Vamos agendar ${serviceLabel} para *${dateFormattedLabel}*.\n\nHorários disponíveis:\n${formatHumanSlots(availableSlots, undefined, profMap)}\n\nQual desses fica melhor pra você?`,
+          replyText: `Claro! Vamos agendar ${serviceLabel}${profLabel} para *${dateFormattedLabel}*.\n\nHorários disponíveis:\n${formatHumanSlots(availableSlots, undefined, profMap)}\n\nQual desses fica melhor pra você?`,
           functionCallsExecuted: executedTools
         };
       } else {
         return {
-          replyText: `Claro! Vamos agendar ${serviceLabel}. Qual dia (ex: hoje, amanhã, sábado) e horário fica melhor pra você vir?`,
+          replyText: `Claro! Vamos agendar ${serviceLabel}${profLabel}. Qual dia (ex: hoje, amanhã, sábado) e horário fica melhor pra você vir?`,
           functionCallsExecuted: []
         };
       }
@@ -1907,10 +2076,11 @@ export class AiOrchestratorService {
       const isMudarChoice = lower.includes('mudar') || lower.includes('reagendar') || lower.includes('alterar') || lower.includes('trocar') || lower.includes('sim') || lower.includes('1');
       const clientName = session.customerName || 'Cliente';
       const clientPhone = session.customerPhone || customerPhone;
+      const targetProfId = session.pendingBookingProfId || defaultProfId;
 
       if (isMudarChoice) {
         const exec = await this.executeToolCall(tenantId, 'create_appointment', {
-          professionalId: defaultProfId,
+          professionalId: targetProfId,
           serviceId: defaultServiceId,
           customerName: clientName,
           customerPhone: clientPhone,
@@ -1926,7 +2096,7 @@ export class AiOrchestratorService {
         };
       } else {
         const exec = await this.executeToolCall(tenantId, 'create_appointment', {
-          professionalId: defaultProfId,
+          professionalId: targetProfId,
           serviceId: defaultServiceId,
           customerName: clientName,
           customerPhone: clientPhone,
@@ -1958,13 +2128,13 @@ export class AiOrchestratorService {
         // Usa Intl.DateTimeFormat para datas corretas no fuso de Brasília
         const cancelSt = activeApptForCancel.startTime instanceof Date ? activeApptForCancel.startTime : new Date(activeApptForCancel.startTime);
         const cancelParts = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(cancelSt);
-        const cancelDay = cancelParts.find(p => p.type === 'day')?.value || '01';
-        const cancelMonth = cancelParts.find(p => p.type === 'month')?.value || '01';
-        const cancelHour = cancelParts.find(p => p.type === 'hour')?.value || '00';
-        const cancelMin = cancelParts.find(p => p.type === 'minute')?.value || '00';
+        const cancelDay = cancelParts.find((p: any) => p.type === 'day')?.value || '01';
+        const cancelMonth = cancelParts.find((p: any) => p.type === 'month')?.value || '01';
+        const cancelHour = cancelParts.find((p: any) => p.type === 'hour')?.value || '00';
+        const cancelMin = cancelParts.find((p: any) => p.type === 'minute')?.value || '00';
         const cancelDateStr = `${cancelDay}/${cancelMonth}`;
         const cancelTimeStr = `${cancelHour}:${cancelMin}`;
-        const cancelProfObj = profs.find(p => p.id === activeApptForCancel.professionalId);
+        const cancelProfObj = profs.find((p: any) => p.id === activeApptForCancel.professionalId);
         if (session) {
           session.pendingActionConfirmation = {
             type: 'CANCEL',

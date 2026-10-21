@@ -321,6 +321,11 @@
     }
 
     .plan-card.popular {
+      border-color: var(--wa-card-border);
+      background: #ffffff;
+    }
+
+    .plan-card.popular.selected {
       border-color: var(--wa-green);
       background: linear-gradient(180deg, #f0fdf4 0%, #ffffff 100%);
     }
@@ -442,17 +447,15 @@
       border-color: #cbd5e1;
     }
 
-    .plan-card.selected .btn-select-plan,
-    .plan-card.popular .btn-select-plan {
-      background: var(--wa-green);
-      border-color: var(--wa-green);
-      color: white;
+    .plan-card.selected .btn-select-plan {
+      background: var(--wa-green) !important;
+      border-color: var(--wa-green) !important;
+      color: white !important;
       box-shadow: 0 4px 12px rgba(0, 168, 132, 0.25);
     }
 
-    .plan-card.selected .btn-select-plan:hover,
-    .plan-card.popular .btn-select-plan:hover {
-      background: var(--wa-green-dark);
+    .plan-card.selected .btn-select-plan:hover {
+      background: var(--wa-green-dark) !important;
     }
 
     /* Registration Section (Multi-Step Form) */
@@ -813,6 +816,7 @@
   <!-- Main Container -->
   <div class="main-container">
     
+    <div id="step-1-wrapper">
     <!-- Hero Header -->
     <header class="hero-header">
       <div class="hero-badge"><i class="fa-solid fa-bolt"></i> Escolha o Plano Ideal para seu Negócio</div>
@@ -855,7 +859,7 @@
           <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Página pública de agendamento</li>
           <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Acesso vitalício sem mensalidade</li>
         </ul>
-        <button type="button" class="btn-select-plan" id="btn-FREE" data-plan="FREE">
+        <button type="button" class="btn-select-plan" id="btn-FREE" data-plan="FREE" onclick="selectPlan('FREE', true); event.stopPropagation();">
           Começar Grátis
         </button>
       </div>
@@ -880,13 +884,13 @@
           <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Catálogo completo & agenda online</li>
           <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Suporte WhatsApp</li>
         </ul>
-        <button type="button" class="btn-select-plan" id="btn-SINGLE_USER" data-plan="SINGLE_USER">
+        <button type="button" class="btn-select-plan" id="btn-SINGLE_USER" data-plan="SINGLE_USER" onclick="selectPlan('SINGLE_USER', true); event.stopPropagation();">
           Escolher Starter
         </button>
       </div>
 
       <!-- Plano Pro (Mais Popular) -->
-      <div class="plan-card popular selected" id="plan-card-MULTI_USER" onclick="selectPlan('MULTI_USER', true)">
+      <div class="plan-card popular" id="plan-card-MULTI_USER" onclick="selectPlan('MULTI_USER', true)">
         <div class="plan-badge">Mais Escolhido ⭐</div>
         <div class="plan-header">
           <h3 class="plan-name">Pro Negócios</h3>
@@ -908,10 +912,12 @@
           <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Métricas Financeiras e Faturamento</li>
           <li class="plan-feature-item"><i class="fa-solid fa-check"></i> Suporte Prioritário</li>
         </ul>
-        <button type="button" class="btn-select-plan" id="btn-MULTI_USER" data-plan="MULTI_USER">
+        <button type="button" class="btn-select-plan" id="btn-MULTI_USER" data-plan="MULTI_USER" onclick="selectPlan('MULTI_USER', true); event.stopPropagation();">
           Escolher Pro
         </button>
       </div>
+
+    </div>
 
     </div>
 
@@ -953,7 +959,8 @@
         <button type="button" class="btn-change-plan" onclick="scrollToPlans()">Mudar Plano</button>
       </div>
 
-      <form id="register-form" onsubmit="handleRegisterSubmit(event)">
+      <form id="register-form" novalidate onsubmit="handleRegisterSubmit(event)">
+        <input type="hidden" id="selected-plan-hidden" name="plan" value="MULTI_USER">
         
         <!-- STEP 2: DADOS PESSOAIS & ACESSO -->
         <div class="form-step active" id="form-step-2">
@@ -1104,65 +1111,101 @@
       updateSummaryBanner();
     }
 
-    function selectPlan(planKey, shouldScroll = false) {
+    function selectPlan(planKey, shouldScroll) {
+      if (!planPrices[planKey]) planKey = 'MULTI_USER';
       currentPlan = planKey;
-      document.querySelectorAll('.plan-card').forEach(card => card.classList.remove('selected'));
-      const selectedCard = document.getElementById(`plan-card-${planKey}`);
-      if (selectedCard) selectedCard.classList.add('selected');
 
-      document.querySelectorAll('.btn-select-plan').forEach(btn => {
-        const key = btn.getAttribute('data-plan');
-        if (key === 'FREE') {
-          btn.textContent = 'Começar Grátis';
-        } else if (key === 'SINGLE_USER') {
-          btn.textContent = 'Escolher Starter';
-        } else if (key === 'MULTI_USER') {
-          btn.textContent = 'Escolher Pro';
-        }
+      // Update card selection visual
+      document.querySelectorAll('.plan-card').forEach(function(card) { 
+        card.classList.remove('selected'); 
       });
+      var selectedCard = document.getElementById('plan-card-' + planKey);
+      if (selectedCard) {
+        selectedCard.classList.add('selected');
+      }
 
-      const currentBtn = document.getElementById(`btn-${planKey}`);
-      if (currentBtn) currentBtn.textContent = '✓ Selecionado';
+      // Update button texts
+      document.querySelectorAll('.btn-select-plan').forEach(function(btn) {
+        var key = btn.getAttribute('data-plan');
+        if (key === 'FREE') btn.innerHTML = 'Começar Grátis';
+        else if (key === 'SINGLE_USER') btn.innerHTML = 'Escolher Starter';
+        else if (key === 'MULTI_USER') btn.innerHTML = 'Escolher Pro';
+      });
+      var currentBtn = document.getElementById('btn-' + planKey);
+      if (currentBtn) {
+        currentBtn.innerHTML = '<i class="fa-solid fa-check"></i> Selecionado';
+      }
 
+      // Update plan badge in the form directly with this plan's data
       updateSummaryBanner();
 
-      // Somente rola para o formulário se o usuário tiver clicado explicitamente no card ou botão
+      // Store selected plan in hidden input for form submission
+      var hiddenPlan = document.getElementById('selected-plan-hidden');
+      if (hiddenPlan) hiddenPlan.value = planKey;
+
       if (shouldScroll) {
-        document.getElementById('register-flow-box').scrollIntoView({ behavior: 'smooth' });
+        var target = document.getElementById('register-flow-box');
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
       }
     }
 
     function updateSummaryBanner() {
-      const planInfo = planPrices[currentPlan];
+      const planInfo = planPrices[currentPlan] || planPrices['MULTI_USER'];
       const price = currentPeriod === 'annual' ? planInfo.annual : planInfo.monthly;
       const periodLabel = currentPlan === 'FREE' ? 'Gratuito Vitalício' : (currentPeriod === 'annual' ? 'Plano Anual' : 'Plano Mensal');
-      const testLabel = currentPlan === 'FREE' ? 'Sem Mensalidade' : '7 Dias Grátis';
-      document.getElementById('summary-plan-name').textContent = `Plano ${planInfo.name}`;
-      document.getElementById('summary-plan-details').textContent = `R$ ${price}/mês (${periodLabel}) • ${testLabel} • ${planInfo.usersText}`;
+      const testLabel = currentPlan === 'FREE' ? '100% Gratuito' : '7 Dias Grátis';
+      const nameEl = document.getElementById('summary-plan-name');
+      const detailEl = document.getElementById('summary-plan-details');
+      if (nameEl) nameEl.textContent = `Plano ${planInfo.name}`;
+      if (detailEl) detailEl.textContent = `R$ ${price}/mês (${periodLabel}) • ${testLabel} • ${planInfo.usersText}`;
     }
 
     function scrollToPlans() {
-      document.getElementById('plans-container').scrollIntoView({ behavior: 'smooth' });
+      const target = document.getElementById('plans-container') || document.getElementById('step-1-wrapper');
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+
+    function showStep2() {
+      document.querySelectorAll('.form-step').forEach(function(el) { el.classList.remove('active'); });
+      var step2 = document.getElementById('form-step-2');
+      if (step2) step2.classList.add('active');
+      for (var i = 1; i <= 4; i++) {
+        var navEl = document.getElementById('step-nav-' + i);
+        if (!navEl) continue;
+        navEl.classList.remove('active', 'completed');
+        if (i < 2) navEl.classList.add('completed');
+        else if (i === 2) navEl.classList.add('active');
+      }
     }
 
     function goToStep(stepNumber) {
-      // Esconde todos os passos
-      document.querySelectorAll('.form-step').forEach(el => el.classList.remove('active'));
-      
-      // Atualiza o passo ativo
-      const targetStep = document.getElementById(`form-step-${stepNumber}`);
+      if (stepNumber === 1) {
+        scrollToPlans();
+        for (var i = 1; i <= 4; i++) {
+          var navEl = document.getElementById('step-nav-' + i);
+          if (!navEl) continue;
+          navEl.classList.remove('active', 'completed');
+          if (i === 1) navEl.classList.add('active');
+        }
+        return;
+      }
+
+      document.querySelectorAll('.form-step').forEach(function(el) { el.classList.remove('active'); });
+      var targetStep = document.getElementById('form-step-' + stepNumber);
       if (targetStep) targetStep.classList.add('active');
 
-      // Atualiza os indicadores visuais
-      for (let i = 1; i <= 4; i++) {
-        const navEl = document.getElementById(`step-nav-${i}`);
+      for (var i = 1; i <= 4; i++) {
+        var navEl = document.getElementById('step-nav-' + i);
         if (!navEl) continue;
         navEl.classList.remove('active', 'completed');
-        if (i < stepNumber) {
-          navEl.classList.add('completed');
-        } else if (i === stepNumber) {
-          navEl.classList.add('active');
-        }
+        if (i < stepNumber) navEl.classList.add('completed');
+        else if (i === stepNumber) navEl.classList.add('active');
       }
     }
 
@@ -1227,16 +1270,39 @@
       const ownerName = document.getElementById('reg-owner-name').value.trim();
       const email = document.getElementById('reg-email').value.trim();
       const password = document.getElementById('reg-password').value;
+      const passwordConfirm = document.getElementById('reg-password-confirm').value;
       const companyName = document.getElementById('reg-company-name').value.trim();
       const segment = document.getElementById('reg-segment').value;
       const phone = document.getElementById('reg-phone').value.trim();
       const businessAddress = document.getElementById('reg-address').value.trim();
 
+      if (!ownerName) {
+        goToStep(2);
+        showAlert('Por favor, informe o seu nome completo.');
+        return;
+      }
+      if (!email || !email.includes('@')) {
+        goToStep(2);
+        showAlert('Por favor, informe um endereço de e-mail válido.');
+        return;
+      }
+      if (!password || password.length < 6) {
+        goToStep(2);
+        showAlert('A senha deve conter no mínimo 6 caracteres.');
+        return;
+      }
+      if (password !== passwordConfirm) {
+        goToStep(2);
+        showAlert('As senhas não coincidem. Por favor, verifique.');
+        return;
+      }
       if (!companyName) {
+        goToStep(3);
         showAlert('Por favor, informe o nome do seu estabelecimento.');
         return;
       }
       if (!phone || phone.replace(/\D/g, '').length < 10) {
+        goToStep(3);
         showAlert('Por favor, informe um WhatsApp comercial com DDD válido.');
         return;
       }
@@ -1273,10 +1339,22 @@
           return;
         }
 
+        // Se requer confirmação de e-mail (fluxo padrão comercial)
+        if (data.requireVerification) {
+          submitBtn.innerHTML = '<i class="fa-solid fa-envelope-circle-check"></i> Redirecionando para verificação...';
+          const devParam = data.devCode ? `&devCode=${encodeURIComponent(data.devCode)}` : '';
+          setTimeout(() => {
+            window.location.href = `/verify-email?email=${encodeURIComponent(email)}${devParam}`;
+          }, 800);
+          return;
+        }
+
         // Salva dados de autenticação no localStorage para login automático instantâneo
-        localStorage.setItem('saas_token', data.token);
-        localStorage.setItem('saas_user', JSON.stringify(data.user));
-        localStorage.setItem('saas_tenant', JSON.stringify(data.tenant));
+        if (data.token) {
+          localStorage.setItem('saas_token', data.token);
+          localStorage.setItem('saas_user', JSON.stringify(data.user));
+          localStorage.setItem('saas_tenant', JSON.stringify(data.tenant));
+        }
 
         // Redireciona diretamente para o painel de controle com boas-vindas
         setTimeout(() => {

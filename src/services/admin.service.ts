@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { dbRepository, DbTenantItem, DbTenantUser } from './db.service.js';
 
 export class AdminService {
@@ -23,7 +24,7 @@ export class AdminService {
       maxUsers,
       status: 'ACTIVE',
       aiConfig: {
-        systemPrompt: `Somos a ${data.name}, uma barbearia moderna. Trate o cliente com simpatia e foco na excelência dos cortes!`,
+        systemPrompt: `Somos a ${data.name}. Atenda o cliente com excelência, simpatia, rapidez nos agendamentos e tire todas as dúvidas!`,
         businessInfo: 'Horário de Atendimento: Segunda a Sábado das 08h às 19h.'
       },
       users: [

@@ -161,6 +161,20 @@
       transform: translateY(-1px);
     }
 
+    .alert-success {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      color: #15803d;
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 20px;
+      display: none;
+      align-items: center;
+      gap: 8px;
+    }
+
     .alert-error {
       background: #fef2f2;
       border: 1px solid #fecaca;
@@ -242,17 +256,24 @@
       <p class="brand-subtitle">Acesse o painel do seu estabelecimento</p>
     </div>
 
+    <div class="alert-success" id="login-success"><i class="fa-solid fa-circle-check"></i> <span id="login-success-text"></span></div>
     <div class="alert-error" id="login-alert"><i class="fa-solid fa-circle-exclamation"></i> <span id="login-alert-text"></span></div>
 
     <form onsubmit="handleLoginSubmit(event)">
       <div class="form-group">
         <label>Email de Acesso</label>
-        <input type="email" id="login-email" class="form-control" placeholder="seu@email.com.br" required value="dono@estilobeleza.com.br">
+        <input type="email" id="login-email" class="form-control" placeholder="seu@email.com.br" required autocomplete="email">
       </div>
 
-      <div class="form-group">
+      <div class="form-group" style="margin-bottom: 8px;">
         <label>Senha de Acesso</label>
-        <input type="password" id="login-password" class="form-control" placeholder="••••••••" required value="123456">
+        <input type="password" id="login-password" class="form-control" placeholder="••••••••" required autocomplete="current-password">
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; margin-bottom: 18px;">
+        <a href="/reset-password" style="font-size: 12.5px; color: var(--wa-green-dark); text-decoration: none; font-weight: 600;">
+          Esqueceu a senha?
+        </a>
       </div>
 
       <button type="submit" class="btn-login" id="btn-login-submit">
@@ -267,26 +288,43 @@
       </a>
     </div>
 
-    <div class="demo-credentials">
-      <strong>Contas de Demonstração Rápidas:</strong>
-      • Dono Estilo & Beleza: <code>dono@estilobeleza.com.br</code> / <code>123456</code><br>
-      • Profissional Matheus: <code>matheus@estilobeleza.com.br</code> / <code>123456</code><br>
-      • Clínica Saúde: <code>contato@clinicasaude.com.br</code> / <code>123456</code>
-    </div>
+    <!-- Contas de Demonstração / Testes (Apenas quando solicitado ou parâmetro ?demo) -->
+    <details class="demo-credentials" id="demo-credentials-box" style="margin-top: 20px; cursor: pointer;">
+      <summary style="font-weight: 600; color: var(--wa-text-sub); outline: none; list-style: none; display: flex; align-items: center; justify-content: space-between; user-select: none;">
+        <span><i class="fa-solid fa-flask" style="color: var(--wa-green); margin-right: 6px;"></i> Contas de Demonstração</span>
+        <i class="fa-solid fa-chevron-down" style="font-size: 11px;"></i>
+      </summary>
+      <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 12px;">
+        <button type="button" onclick="fillAndLogin('iran.s.araujo@gmail.com', '123456')" style="text-align: left; padding: 8px 12px; background: white; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer; font-size: 12px; display: flex; justify-content: space-between; align-items: center;">
+          <span>👤 <strong>Iran Araújo (Admin)</strong><br><small style="color: #64748b;">iran.s.araujo@gmail.com</small></span>
+          <span style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 11px;">Entrar ➔</span>
+        </button>
+        <button type="button" onclick="fillAndLogin('dono@estilobeleza.com.br', '123456')" style="text-align: left; padding: 8px 12px; background: white; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer; font-size: 12px; display: flex; justify-content: space-between; align-items: center;">
+          <span>💼 <strong>Carlos Dono (Empresa A)</strong><br><small style="color: #64748b;">dono@estilobeleza.com.br</small></span>
+          <span style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 11px;">Entrar ➔</span>
+        </button>
+        <button type="button" onclick="fillAndLogin('contato@clinicasaude.com.br', '123456')" style="text-align: left; padding: 8px 12px; background: white; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer; font-size: 12px; display: flex; justify-content: space-between; align-items: center;">
+          <span>🏥 <strong>Dra. Ana Saúde (Empresa B)</strong><br><small style="color: #64748b;">contato@clinicasaude.com.br</small></span>
+          <span style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 11px;">Entrar ➔</span>
+        </button>
+      </div>
+    </details>
   </div>
 
   <script>
     const baseUrl = window.location.protocol.startsWith('http') ? '' : 'http://localhost:3001';
 
     async function handleLoginSubmit(e) {
-      e.preventDefault();
+      if (e && e.preventDefault) e.preventDefault();
       const email = document.getElementById('login-email').value.trim();
       const password = document.getElementById('login-password').value.trim();
       const alertBox = document.getElementById('login-alert');
       const alertText = document.getElementById('login-alert-text');
+      const successBox = document.getElementById('login-success');
       const btn = document.getElementById('btn-login-submit');
 
       alertBox.style.display = 'none';
+      if (successBox) successBox.style.display = 'none';
       btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Entrando...';
 
       try {
@@ -308,6 +346,14 @@
           setTimeout(() => {
             window.location.href = '/dashboard';
           }, 600);
+        } else if (data.requireVerification) {
+          // Bloqueio por falta de confirmação de e-mail: redireciona para confirmação OTP
+          alertText.textContent = data.error || 'Por favor, confirme seu e-mail antes de fazer login.';
+          alertBox.style.display = 'flex';
+          btn.innerHTML = '<i class="fa-solid fa-envelope"></i> Redirecionando para verificação...';
+          setTimeout(() => {
+            window.location.href = `/verify-email?email=${encodeURIComponent(email)}`;
+          }, 1200);
         } else {
           alertText.textContent = data.error || 'Credenciais inválidas. Verifique seu e-mail e senha.';
           alertBox.style.display = 'flex';
@@ -319,6 +365,37 @@
         btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Entrar no Painel';
       }
     }
+
+    function fillAndLogin(email, password) {
+      document.getElementById('login-email').value = email;
+      document.getElementById('login-password').value = password;
+      handleLoginSubmit(null);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('verified') === 'true') {
+        const successBox = document.getElementById('login-success');
+        const successText = document.getElementById('login-success-text');
+        if (successBox && successText) {
+          successText.textContent = 'E-mail confirmado com sucesso! Faça login para acessar.';
+          successBox.style.display = 'flex';
+        }
+      } else if (urlParams.get('reset') === 'true') {
+        const successBox = document.getElementById('login-success');
+        const successText = document.getElementById('login-success-text');
+        if (successBox && successText) {
+          successText.textContent = 'Senha redefinida com sucesso! Entre com a nova senha.';
+          successBox.style.display = 'flex';
+        }
+      }
+
+      // Se a URL contiver ?demo=true ou ?demo, expande as credenciais de teste
+      if (urlParams.has('demo')) {
+        const demoBox = document.getElementById('demo-credentials-box');
+        if (demoBox) demoBox.open = true;
+      }
+    });
   </script>
 
 </body>

@@ -35,13 +35,13 @@ export function calculateAvailableSlots(params) {
         }
     }
     // 3. Limite Diário de Atendimentos por Profissional
-    if (params.maxAppointmentsPerDay !== undefined && params.currentDayAppointmentCount !== undefined) {
+    if (typeof params.maxAppointmentsPerDay === 'number' && params.maxAppointmentsPerDay > 0 && typeof params.currentDayAppointmentCount === 'number') {
         if (params.currentDayAppointmentCount >= params.maxAppointmentsPerDay) {
             return [];
         }
     }
     // 3.1 Limite Diário de Atendimentos por Plano do Estabelecimento (ex: Plano Free limite de 5/dia)
-    if (params.maxDailyAppointmentsForTenant !== undefined && params.currentTenantDailyAppointmentCount !== undefined) {
+    if (typeof params.maxDailyAppointmentsForTenant === 'number' && params.maxDailyAppointmentsForTenant > 0 && typeof params.currentTenantDailyAppointmentCount === 'number') {
         if (params.currentTenantDailyAppointmentCount >= params.maxDailyAppointmentsForTenant) {
             return [];
         }
