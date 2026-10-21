@@ -947,8 +947,8 @@ export class AiOrchestratorService {
 
     session.history.push({ role: 'user', text: userMessage });
 
-    const systemPrompt = customConfig?.systemPrompt || tenant.aiConfig.systemPrompt;
-    const businessInfo = customConfig?.businessInfo || tenant.aiConfig.businessInfo;
+    const systemPrompt = customConfig?.systemPrompt || tenant.aiConfig?.systemPrompt || `Você é a atendente inteligente da ${tenant.name}.`;
+    const businessInfo = customConfig?.businessInfo || tenant.aiConfig?.businessInfo || 'Horário de atendimento: Segunda a Sexta das 08h às 18h.';
 
     const services = await dbRepository.listServices(tenantId);
     const profs = await dbRepository.listProfessionals(tenantId);

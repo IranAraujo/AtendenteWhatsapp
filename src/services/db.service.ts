@@ -147,13 +147,24 @@ class DbRepository {
   }
 
   async getTenantById(id: string): Promise<any> {
-    return prisma.tenant.findUnique({
+    const tenant = await prisma.tenant.findUnique({
       where: { id },
       include: {
         users: true,
         aiConfig: true
       }
     });
+    if (tenant && !tenant.aiConfig) {
+      (tenant as any).aiConfig = {
+        tenantId: tenant.id,
+        systemPrompt: `Você é a atendente inteligente da ${tenant.name}. Seja simpática, clara e prestativa nos agendamentos.`,
+        businessInfo: 'Horário de funcionamento: Segunda a Sexta das 08:00 às 18:00.',
+        faqItems: [],
+        voiceId: 'pt-BR-FranciscaNeural',
+        voiceReplyMode: 'WHEN_AUDIO_RECEIVED'
+      };
+    }
+    return tenant;
   }
 
   async updateTenantPlan(tenantId: string, planTier: string) {
@@ -891,13 +902,24 @@ class DbRepository {
 
 
   async getTenantBySlug(slug: string): Promise<any> {
-    return prisma.tenant.findUnique({
+    const tenant = await prisma.tenant.findUnique({
       where: { slug },
       include: {
         users: true,
         aiConfig: true
       }
     });
+    if (tenant && !tenant.aiConfig) {
+      (tenant as any).aiConfig = {
+        tenantId: tenant.id,
+        systemPrompt: `Você é a atendente inteligente da ${tenant.name}. Seja simpática, clara e prestativa nos agendamentos.`,
+        businessInfo: 'Horário de funcionamento: Segunda a Sexta das 08:00 às 18:00.',
+        faqItems: [],
+        voiceId: 'pt-BR-FranciscaNeural',
+        voiceReplyMode: 'WHEN_AUDIO_RECEIVED'
+      };
+    }
+    return tenant;
   }
 
 }

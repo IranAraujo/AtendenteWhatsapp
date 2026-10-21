@@ -12,13 +12,24 @@ class DbRepository {
         });
     }
     async getTenantById(id) {
-        return prisma.tenant.findUnique({
+        const tenant = await prisma.tenant.findUnique({
             where: { id },
             include: {
                 users: true,
                 aiConfig: true
             }
         });
+        if (tenant && !tenant.aiConfig) {
+            tenant.aiConfig = {
+                tenantId: tenant.id,
+                systemPrompt: `Você é a atendente inteligente da ${tenant.name}. Seja simpática, clara e prestativa nos agendamentos.`,
+                businessInfo: 'Horário de funcionamento: Segunda a Sexta das 08:00 às 18:00.',
+                faqItems: [],
+                voiceId: 'pt-BR-FranciscaNeural',
+                voiceReplyMode: 'WHEN_AUDIO_RECEIVED'
+            };
+        }
+        return tenant;
     }
     async updateTenantPlan(tenantId, planTier) {
         const maxUsers = planTier === 'FREE' || planTier === 'SINGLE_USER' ? 1 : 5;
@@ -732,13 +743,24 @@ class DbRepository {
         return Array.from(map.values());
     }
     async getTenantBySlug(slug) {
-        return prisma.tenant.findUnique({
+        const tenant = await prisma.tenant.findUnique({
             where: { slug },
             include: {
                 users: true,
                 aiConfig: true
             }
         });
+        if (tenant && !tenant.aiConfig) {
+            tenant.aiConfig = {
+                tenantId: tenant.id,
+                systemPrompt: `Você é a atendente inteligente da ${tenant.name}. Seja simpática, clara e prestativa nos agendamentos.`,
+                businessInfo: 'Horário de funcionamento: Segunda a Sexta das 08:00 às 18:00.',
+                faqItems: [],
+                voiceId: 'pt-BR-FranciscaNeural',
+                voiceReplyMode: 'WHEN_AUDIO_RECEIVED'
+            };
+        }
+        return tenant;
     }
 }
 export const dbRepository = new DbRepository();

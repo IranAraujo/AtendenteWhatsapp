@@ -43,6 +43,16 @@ export async function seedDatabase() {
         }
       }
     });
+  } else {
+    await prisma.aiConfig.upsert({
+      where: { tenantId: iranTenant.id },
+      update: {},
+      create: {
+        tenantId: iranTenant.id,
+        systemPrompt: 'Você é a atendente virtual da Iran Org. Seja muito educada, ágil e prestativa.',
+        businessInfo: 'Horário de funcionamento: Seg a Sex das 08:00 às 18:00.'
+      }
+    });
   }
 
   let iranUser = await prisma.user.findFirst({ where: { email: iranEmail } });
